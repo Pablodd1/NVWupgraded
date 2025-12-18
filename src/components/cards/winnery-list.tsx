@@ -16,14 +16,19 @@ const WineryCard: FC<WineryCardProps> = ({ winery, addToItinerary }) => {
 
   // Get WhatsApp contact if available (assumes winery.whatsapp holds the number)
   const whatsappNumber = winery.contact_info.phone;
-  const whatsappLink = whatsappNumber ? `https://wa.me/${whatsappNumber.replace(/\D/g, "")}` : "";
+  let formattedNumber = whatsappNumber ? whatsappNumber.replace(/\D/g, "") : "";
+  // Ensure country code '1' for US numbers if only 10 digits are provided
+  if (formattedNumber.length === 10) {
+    formattedNumber = "1" + formattedNumber;
+  }
+  const whatsappLink = formattedNumber ? `https://wa.me/${formattedNumber}` : "";
 
   // Handle multiple tastings
   const hasMultipleTastings = winery.tasting_info && winery.tasting_info.length > 1;
   const tastingPrices = winery.tasting_info?.map(t => t.tasting_price) || [];
   const minPrice = Math.min(...tastingPrices);
   const maxPrice = Math.max(...tastingPrices);
-  const priceDisplay = hasMultipleTastings 
+  const priceDisplay = hasMultipleTastings
     ? `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`
     : `$${winery.tasting_info?.[0]?.tasting_price?.toFixed(2) ?? "N/A"}`;
 
@@ -57,7 +62,7 @@ const WineryCard: FC<WineryCardProps> = ({ winery, addToItinerary }) => {
             </h2>
           </Link>
           <p className="text-sm text-wine-secondary truncate">{winery.description}</p>
-          
+
           {/* Multiple Tasting Indicator */}
           {hasMultipleTastings && (
             <div className="mt-2">
@@ -82,7 +87,7 @@ const WineryCard: FC<WineryCardProps> = ({ winery, addToItinerary }) => {
           <div className="flex items-center space-x-2 capitalize">
             <FaWineBottle className="text-wine-accent" />
             <p>
-              {uniqueWineTypes && uniqueWineTypes.length > 0 
+              {uniqueWineTypes && uniqueWineTypes.length > 0
                 ? `${uniqueWineTypes.slice(0, 2).join(", ")}${uniqueWineTypes.length > 2 ? "..." : ""}`
                 : "N/A"
               }
@@ -94,9 +99,8 @@ const WineryCard: FC<WineryCardProps> = ({ winery, addToItinerary }) => {
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             disabled={!!isAdded}
-            className={`py-2 px-4 ${!!isAdded ? "bg-[#bebebe]" : "bg-wine-primary"} text-wine-background font-medium rounded-md ${
-              !isAdded && "hover:bg-primary-focus"
-            } transition-all duration-300`}
+            className={`py-2 px-4 ${!!isAdded ? "bg-[#bebebe]" : "bg-wine-primary"} text-wine-background font-medium rounded-md ${!isAdded && "hover:bg-primary-focus"
+              } transition-all duration-300`}
             onClick={() => addToItinerary(winery)}
           >
             {!!isAdded ? "Added!" : "Add to Itinerary"}

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
+import { toast } from "react-toastify";
 
 const fetcher = (url: string) => fetch(url, { method: "GET" }).then((res) => res.json());
 
@@ -60,7 +61,41 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen p-4 bg-gray-100 pt-20">
-      <h3 className="text-2xl font-bold mb-4">Admin Dashboard</h3>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-2xl font-bold">Admin Dashboard</h3>
+        <button
+          onClick={() => {
+            if (!bookings || bookings.length === 0) return toast.info("No bookings to export");
+            const headers = ["Booking ID", "Customer Name", "Email", "Wineries", "Date", "Status", "Payment Method"];
+            const csvContent = [
+              headers.join(","),
+              ...bookings.map((b: any) => [
+                b._id,
+                `"${b.userId?.name || 'N/A'}"`,
+                b.userId?.email || 'N/A',
+                `"${b.wineries?.map((w: any) => w.wineryId?.name).join(' | ')}"`,
+                new Date(b.createdAt).toLocaleDateString(),
+                b.status,
+                b.payment_method || "Pay at Winery"
+              ].join(","))
+            ].join("\n");
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `nvw-bookings-report-${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }}
+          className="btn btn-sm btn-outline btn-primary flex items-center gap-2"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+          Export Report (CSV)
+        </button>
+      </div>
       <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link href="/admin/dashboard/create-winery" className="btn btn-primary">
           <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,6 +144,9 @@ export default function Dashboard() {
               <th className="w-1/6 border border-gray-200 px-4 py-2 text-left text-sm font-semibold uppercase tracking-wider">
                 Status
               </th>
+              <th className="w-1/6 border border-gray-200 px-4 py-2 text-left text-sm font-semibold uppercase tracking-wider">
+                Payment
+              </th>
               <th className="w-1/6 border border-gray-200 px-4 py-2 text-center text-sm font-semibold uppercase tracking-wider">
                 Actions
               </th>
@@ -119,9 +157,8 @@ export default function Dashboard() {
               bookings.map((booking: any) => (
                 <tr
                   key={booking._id}
-                  className={`transition-colors duration-200 ${
-                    booking._id % 2 === 0 ? "bg-gray-50" : "bg-white"
-                  } hover:bg-gray-100`}
+                  className={`transition-colors duration-200 ${booking._id % 2 === 0 ? "bg-gray-50" : "bg-white"
+                    } hover:bg-gray-100`}
                 >
                   <td className="w-1/6 border border-gray-200 px-4 py-2 text-gray-800 text-sm font-mono truncate">
                     {booking._id}
@@ -145,6 +182,9 @@ export default function Dashboard() {
                   </td>
                   <td className="w-1/6 border border-gray-200 px-4 py-2 text-gray-800 text-sm capitalize truncate">
                     {booking.status}
+                  </td>
+                  <td className="w-1/6 border border-gray-200 px-4 py-2 text-gray-800 text-sm capitalize truncate">
+                    {booking.payment_method?.replace('_', ' ') || "Pay at Winery"}
                   </td>
                   <td className="w-1/6 border border-gray-200 px-4 py-2 text-center">
                     <div className="flex justify-center gap-2">
@@ -222,22 +262,22 @@ export default function Dashboard() {
           </tbody>
         </table>
         {totalPages > 1 && (
-        <div className="mt-4  pb-4  sm:mb-0  flex justify-center items-center gap-4">
-          <button className="btn btn-sm" disabled={page === 1} onClick={() => setPage((prev) => Math.max(prev - 1, 1))}>
-            Previous
-          </button>
-          <span>
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            className="btn btn-sm"
-            disabled={page === totalPages}
-            onClick={() => setPage((prev) => (prev < totalPages ? prev + 1 : prev))}
-          >
-            Next
-          </button>
-        </div>
-      )}
+          <div className="mt-4  pb-4  sm:mb-0  flex justify-center items-center gap-4">
+            <button className="btn btn-sm" disabled={page === 1} onClick={() => setPage((prev) => Math.max(prev - 1, 1))}>
+              Previous
+            </button>
+            <span>
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              className="btn btn-sm"
+              disabled={page === totalPages}
+              onClick={() => setPage((prev) => (prev < totalPages ? prev + 1 : prev))}
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Pagination Controls */}
@@ -263,6 +303,9 @@ export default function Dashboard() {
               </p>
               <p>
                 <strong>Status:</strong> {selectedBooking.status}
+              </p>
+              <p>
+                <strong>Payment Method:</strong> {selectedBooking.payment_method?.replace('_', ' ') || "Pay at Winery"}
               </p>
               <p>
                 <strong>Created At:</strong>{" "}
