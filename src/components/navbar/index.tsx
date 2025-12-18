@@ -139,7 +139,7 @@ const UserProfile = ({ user, handleLogout, loading }: { user: IUser; handleLogou
   <div className="relative flex items-center space-x-2 neumorphism-card p-3">
     <FaUserAlt size={28} className="text-gray-800 rounded-full" />
     <div className="flex flex-col">
-      <span className="font-semibold text-sm text-gray-800">{user.name}</span>
+      <span className="font-semibold text-sm text-gray-800">{`${user.firstName} ${user.lastName}`}</span>
       <button
         onClick={handleLogout}
         className="text-gray-600 hover:text-red-600 flex items-center space-x-1 text-xs"
@@ -184,7 +184,7 @@ const MobileBottomNav = ({
         <NavLink
           icon={<FaUserAlt size={20} />}
           href="#"
-          label={user ? user.name : "Sign In"}
+          label={user ? `${user.firstName} ${user.lastName}` : "Sign In"}
           onClick={() => {
             if (user) {
               toggleProfileMenu();
@@ -203,7 +203,7 @@ const MobileBottomNav = ({
         <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg p-6 rounded-t-xl transform transition-all duration-300 z-30 neumorphism-card">
           <div className="flex flex-col items-center space-y-4">
             <FaUserAlt size={50} className="text-gray-800 rounded-full" />
-            <span className="font-semibold text-lg text-gray-800">{user.name}</span>
+            <span className="font-semibold text-lg text-gray-800">{`${user.firstName} ${user.lastName}`}</span>
             {user.role === "admin" && (
               <Link href={"/admin/dashboard"} className="text-gray-600 text-sm font-semibold w-full text-center py-2">
                 Admin Dashboard
@@ -246,10 +246,10 @@ const NavLink = ({
     <span className="text-xs font-semibold ">{label}</span>
     {badge
       ? badge > 0 && (
-          <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center animate-bounce">
-            {badge}
-          </span>
-        )
+        <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center animate-bounce">
+          {badge}
+        </span>
+      )
       : ""}
   </Link>
 );

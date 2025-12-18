@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Invalid booking data" }, { status: 400 });
     }
 
-    const user = await UserModel.findById(userId).select("name email");
+    const user = await UserModel.findById(userId).select("firstName lastName email phone");
     if (!user) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     for (const wineryBooking of data) {
       const { wineryId, dateTime, numberOfGuests = 1 } = wineryBooking;
-      
+
       if (!dateTime) {
         reservationErrors.push(`Missing booking date/time for winery ${wineryId}`);
         continue;
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       // Parse date and time slot from datetime
       const bookingDate = new Date(dateTime);
       const date = bookingDate.toISOString().split('T')[0];
-      
+
       // Determine time slot from booking time
       const hour = bookingDate.getHours();
       let timeSlot = "Afternoon (12:00 PM - 3:00 PM)";
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
       slot.bookedCapacity += numberOfGuests;
       slot.availableCapacity -= numberOfGuests;
       await slot.save();
-      
+
       reservedSlots.push({
         slotId: slot._id,
         wineryId,
@@ -96,9 +96,9 @@ export async function POST(req: NextRequest) {
           await slot.save();
         }
       }
-      
+
       return NextResponse.json(
-        { 
+        {
           message: "Booking failed: Capacity issues",
           errors: reservationErrors
         },
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     // All slots successfully reserved - create booking
     const firstWinery = data[0];
     const paymentMethod = firstWinery?.payment_method || "pay_winery";
-    
+
     const booking = new BookingModel({ userId, payment_method: paymentMethod });
     booking.wineries = data.map((winery) => ({
       wineryId: winery.wineryId,
@@ -119,18 +119,18 @@ export async function POST(req: NextRequest) {
       foodPairings: winery.foodPairings,
     }));
     await booking.save();
-    
+
     // Send email/SMS notifications for each winery in the booking
     const notificationResults = [];
     for (const winery of data) {
       const wineryDetails = await WineryModel.findById(winery.wineryId)
         .select("name contact_info.email contact_info.phone");
-      
+
       if (wineryDetails) {
         try {
           const notificationResult = await sendBookingNotifications({
             bookingId: booking._id.toString(),
-            customerFirstName: user.firstName || user.name || "Guest",
+            customerFirstName: user.firstName || "Guest",
             customerLastName: user.lastName || "",
             customerEmail: user.email,
             customerPhone: user.phone,
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
             numberOfGuests: winery.numberOfGuests || 1,
             specialRequests: booking.specialRequests
           });
-          
+
           notificationResults.push({
             wineryId: winery.wineryId,
             wineryName: wineryDetails.name,
@@ -159,10 +159,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ 
-      message: "Booking created successfully", 
+    return NextResponse.json({
+      message: "Booking created successfully",
       booking: booking.toJSON(),
-      notifications: notificationResults 
+      notifications: notificationResults
     }, { status: 201 });
   } catch (error) {
     console.error("Error creating booking:", error);

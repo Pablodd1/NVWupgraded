@@ -185,7 +185,7 @@ export async function sendBookingEmails(booking: any, winery: any, user: any, st
 
     const emailData = {
       _id: booking._id,
-      customerName: user.name || "Customer",
+      customerName: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : "Customer",
       customerEmail: user.email,
       wineryName: winery.wineryName || "Unknown Winery",
       wineryEmail: winery.wineryEmail,

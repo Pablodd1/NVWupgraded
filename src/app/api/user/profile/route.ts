@@ -27,12 +27,13 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: "Date of birth updated successfully",
       user: {
         _id: user._id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         dateOfBirth: user.dateOfBirth,
         role: user.role,

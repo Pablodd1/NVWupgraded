@@ -249,8 +249,8 @@ export default function InventoryManagement() {
                         {editingSlot?._id === slot._id ? (
                           <input
                             type="number"
-                            value={editingSlot.totalCapacity}
-                            onChange={(e) => setEditingSlot({
+                            value={editingSlot?.totalCapacity || 0}
+                            onChange={(e) => editingSlot && setEditingSlot({
                               ...editingSlot,
                               totalCapacity: parseInt(e.target.value)
                             })}
@@ -264,9 +264,8 @@ export default function InventoryManagement() {
                         {slot.bookedCapacity}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`font-semibold ${
-                          slot.availableCapacity === 0 ? 'text-red-600' : 'text-green-600'
-                        }`}>
+                        <span className={`font-semibold ${slot.availableCapacity === 0 ? 'text-red-600' : 'text-green-600'
+                          }`}>
                           {slot.availableCapacity}
                         </span>
                       </td>
@@ -291,7 +290,7 @@ export default function InventoryManagement() {
                             <>
                               <button
                                 onClick={() => handleUpdateSlot(slot._id!, {
-                                  totalCapacity: editingSlot.totalCapacity
+                                  totalCapacity: editingSlot?.totalCapacity || slot.totalCapacity
                                 })}
                                 className="text-green-600 hover:text-green-900"
                               >
@@ -315,9 +314,8 @@ export default function InventoryManagement() {
                               </button>
                               <button
                                 onClick={() => handleToggleBlock(slot)}
-                                className={`${
-                                  slot.isBlocked ? 'text-green-600 hover:text-green-900' : 'text-red-600 hover:text-red-900'
-                                }`}
+                                className={`${slot.isBlocked ? 'text-green-600 hover:text-green-900' : 'text-red-600 hover:text-red-900'
+                                  }`}
                                 title={slot.isBlocked ? "Unblock" : "Block"}
                               >
                                 {slot.isBlocked ? <FaUnlock /> : <FaLock />}

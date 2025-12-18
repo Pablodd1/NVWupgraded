@@ -27,11 +27,11 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     // Filter by tasting price range
     filtered = filtered.filter((winery) => {
       if (!winery.tasting_info || !Array.isArray(winery.tasting_info) || winery.tasting_info.length === 0) return false;
-      
+
       // Check if any tasting falls within the price range
-      return winery.tasting_info.some(tasting => 
+      return winery.tasting_info.some(tasting =>
         tasting && typeof tasting.tasting_price === 'number' &&
-        tasting.tasting_price >= filters.priceRange[0] && 
+        tasting.tasting_price >= filters.priceRange[0] &&
         tasting.tasting_price <= filters.priceRange[1]
       );
     });
@@ -40,9 +40,9 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     if (filters.tastingPrice !== undefined) {
       filtered = filtered.filter((winery) => {
         if (!winery.tasting_info || !Array.isArray(winery.tasting_info) || winery.tasting_info.length === 0) return false;
-        
+
         // Check if any tasting is within the tasting price range
-        return winery.tasting_info.some(tasting => 
+        return winery.tasting_info.some(tasting =>
           tasting && typeof tasting.tasting_price === 'number' &&
           tasting.tasting_price <= filters.tastingPrice
         );
@@ -52,7 +52,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     // Filter by number of wines per tasting
     filtered = filtered.filter((winery) => {
       if (!winery.tasting_info || !Array.isArray(winery.tasting_info) || winery.tasting_info.length === 0) return false;
-      
+
       // Check if any tasting has the required number of wines
       return winery.tasting_info.some(tasting => {
         if (!tasting) return false;
@@ -64,13 +64,13 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     // Filter by number of people
     filtered = filtered.filter((winery) => {
       if (!winery.tasting_info || !Array.isArray(winery.tasting_info) || winery.tasting_info.length === 0) return false;
-      
+
       // Check if any tasting has the required number of people
       return winery.tasting_info.some(tasting => {
         if (!tasting || !tasting.booking_info?.number_of_people || !Array.isArray(tasting.booking_info.number_of_people)) {
           return false;
         }
-        
+
         return tasting.booking_info.number_of_people.some(people => {
           const numPeople = people || 1;
           return numPeople >= filters.numberOfPeople[0] && numPeople <= filters.numberOfPeople[1];
@@ -81,18 +81,18 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     if (Object.values(filters.wineType).some((value) => value)) {
       filtered = filtered.filter((winery) => {
         if (!winery.tasting_info || !Array.isArray(winery.tasting_info) || winery.tasting_info.length === 0) return false;
-        
+
         // Check if any tasting has the required wine types
         return winery.tasting_info.some(tasting => {
           if (!tasting || !tasting.wine_types || !Array.isArray(tasting.wine_types)) return false;
-          
+
           // Get selected wine types
           const selectedTypes = Object.keys(filters.wineType).filter(
             (type) => filters.wineType[type as keyof typeof filters.wineType]
           );
-          
+
           // Check if any of the selected types match the tasting's wine types
-          return selectedTypes.some(selectedType => 
+          return selectedTypes.some(selectedType =>
             tasting.wine_types.some(wineType => {
               // Normalize both strings for comparison
               const normalizedSelected = selectedType.toLowerCase().trim();
@@ -108,9 +108,9 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     if (filters.ava.length > 0) {
       filtered = filtered.filter((winery) => {
         if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
-        
+
         // Check if any tasting is in the selected AVA
-        return winery.tasting_info.some(tasting => 
+        return winery.tasting_info.some(tasting =>
           tasting.ava && filters.ava.includes(tasting.ava)
         );
       });
@@ -120,11 +120,11 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     if (filters.time) {
       filtered = filtered.filter((winery) => {
         if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
-        
+
         // Check if any tasting has the required time
         return winery.tasting_info.some(tasting => {
           if (!tasting.available_times || !Array.isArray(tasting.available_times)) return false;
-          
+
           return tasting.available_times.some((time) => filters.time.toLowerCase() === time.toLowerCase());
         });
       });
@@ -134,11 +134,11 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     if (filters.specialFeatures.length > 0) {
       filtered = filtered.filter((winery) => {
         if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
-        
+
         // Check if any tasting has all the required special features
         return winery.tasting_info.some(tasting => {
           if (!tasting.special_features || !Array.isArray(tasting.special_features)) return false;
-          
+
           return filters.specialFeatures.every((feature) => tasting.special_features.includes(feature));
         });
       });
@@ -146,7 +146,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
 
     // Filter by multiple tastings availability
     if (filters.multipleTastings) {
-      filtered = filtered.filter((winery) => 
+      filtered = filtered.filter((winery) =>
         winery.tasting_info && winery.tasting_info.length > 1
       );
     }
@@ -155,7 +155,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     if (filters.foodPairings) {
       filtered = filtered.filter((winery) => {
         if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
-        
+
         // Check if any tasting has food pairings
         return winery.tasting_info.some(tasting =>
           tasting.food_pairing_options && tasting.food_pairing_options.length > 0
@@ -167,7 +167,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     if (filters.toursAvailable) {
       filtered = filtered.filter((winery) => {
         if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
-        
+
         // Check if any tasting has tours available
         return winery.tasting_info.some(tasting =>
           tasting.tours && tasting.tours.available
@@ -268,7 +268,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
               min="0"
               max="200"
               value={filters.tastingPrice || 200}
-              onChange={(e) => handleFilterChange({ target: { name: e.target.name, value: Number(e.target.value) } })}
+              onChange={(e) => handleFilterChange('tastingPrice', Number(e.target.value))}
               className="range range-primary w-full"
               aria-label="Select tasting price range"
             />
