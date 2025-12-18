@@ -1,32 +1,17 @@
-"use client";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import "./globals.css";
-import { Navbar } from "@/components/navbar";
-import { ItineraryProvider } from "@/store/itinerary";
-import WineLoader from "@/components/loader/wine-loader";
-import { ToastContainer } from "react-toastify";
+import ClientWrapper from "@/components/layout/client-wrapper";
+
+export const metadata = {
+  title: "Napa Valley Wineries",
+  description: "Experience the finest wineries in Napa Valley",
+};
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const [isAppLoading, setAppLoading] = useState(true);
-
-  useEffect(() => {
-    setTimeout(() => {
-      setAppLoading(false);
-    }, 500);
-  }, []);
-
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="font-inter">
-        {isAppLoading ? (
-          <WineLoader />
-        ) : (
-          <ItineraryProvider>
-            <Navbar />
-            {children}
-          </ItineraryProvider>
-        )}
-        {/* <ToastContainer theme="colored" stacked={true} newestOnTop={true} /> */}
+        <ClientWrapper>{children}</ClientWrapper>
       </body>
     </html>
   );
