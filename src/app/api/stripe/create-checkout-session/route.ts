@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import UserModel from "@/models/user.model";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
