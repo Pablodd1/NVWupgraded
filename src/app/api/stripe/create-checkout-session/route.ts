@@ -15,14 +15,25 @@ interface CheckoutSessionRequest {
   bookData: {};
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
+let stripe: Stripe | null = null;
+const getStripe = () => {
+  if (!stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error("STRIPE_SECRET_KEY is not defined in environment variables");
+    }
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: "2025-01-27.acacia" as any, // Use a modern version or omit for default
+    });
+  }
+  return stripe;
+};
 
 export async function POST(req: Request) {
   try {
     await dbConnect();
     const { bookData, line_items, success_url, cancel_url, metadata }: CheckoutSessionRequest = await req.json();
 
-    const session = await stripe.checkout.sessions.create({
+    const session = await getStripe().checkout.sessions.create({
       payment_method_types: ["card"],
       line_items,
       mode: "payment",

@@ -1,25 +1,47 @@
 import mongoose from "mongoose";
 
-let isConnected = false;
+/** 
+ * Global is used here to maintain a cached connection across hot reloads
+ * in development. This prevents connections from growing exponentially
+ * during API Route usage.
+ */
+let cached = (global as any).mongoose;
+
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null };
+}
 
 export async function dbConnect() {
-  if (isConnected) return;
+  if (cached.conn) {
+    return cached.conn;
+  }
 
   const MONGO_URI = process.env.MONGODB_URI || process.env.NEXT_PUBLIC_MONGO_URI || "";
 
-  try {
-    if (!MONGO_URI) {
-      throw new Error("MongoDB URI is not set. Please define MONGODB_URI in .env.local");
-    }
-    console.log("🔗 Attempting to connect to:", MONGO_URI.replace(/:([^@]+)@/, ":****@")); // Log masked URI
-    await mongoose.connect(MONGO_URI, {
-      dbName: "nvw",
-      bufferCommands: false,
-    });
-    isConnected = true;
-    console.log("✅ MongoDB Connected");
-  } catch (error) {
-    console.error("❌ MongoDB Connection Error:", error);
-    throw error; // Re-throw so callers know connection failed
+  if (!MONGO_URI) {
+    throw new Error("MongoDB URI is not set. Please define MONGODB_URI in .env.local");
   }
+
+  if (!cached.promise) {
+    const opts = {
+      dbName: "nvw",
+      bufferCommands: true, // Enable buffering to handle initial connection delay better
+    };
+
+    console.log("🔗 Attempting to connect to MongoDB...");
+    cached.promise = mongoose.connect(MONGO_URI, opts).then((mongoose) => {
+      console.log("✅ MongoDB Connected Successfully");
+      return mongoose;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    console.error("❌ MongoDB Connection Error:", e);
+    throw e;
+  }
+
+  return cached.conn;
 }
