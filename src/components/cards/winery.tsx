@@ -25,27 +25,29 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
 
   // Get current tasting info based on selection
   const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex] || primaryTastingInfo;
-  
+
   // Get available slots from the currently selected tasting
   const availableSlots = currentTastingInfo?.booking_info?.available_slots || [];
-  
+
   // Filter out invalid dates before processing
   const validSlots = availableSlots.filter((slot) => {
     const date = new Date(slot);
     return !isNaN(date.getTime());
   });
-  
+
   // Extract unique dates from valid slots
   const uniqueDatesSet = new Set(validSlots.map((slot) => {
     const date = new Date(slot);
-    return date.toISOString().split("T")[0];
+    // Use local date string to avoid timezone shifts
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().split("T")[0];
   }));
   const availableDates = Array.from(uniqueDatesSet).sort();
-  
+
   // Set min/max dates for date picker
   const minDate = availableDates.length > 0 ? availableDates[0] : "";
   const maxDate = availableDates.length > 0 ? availableDates[availableDates.length - 1] : "";
-  const initialDate = availableDates.length > 0 ? availableDates[0] : "";
 
   // Initialize selected date on mount - use useMemo to prevent infinite loop
   useEffect(() => {
@@ -54,20 +56,40 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
     }
   }, [availableDates.length, selectedDate]);
 
+  // Initial load of default booking details
+  useEffect(() => {
+    // Ensure the parent knows about the default selection (Tasting) immediately
+    onUpdate(winery._id || winery.name, {
+      selectedDate,
+      selectedTime,
+      selectedTastingIndex,
+      tasting: selections.tasting,
+      foodPairings: selections.foodPairings,
+      tours: selections.tours || [],
+      otherFeature: selections.otherFeature || [],
+    });
+    // We only want to run this once on mount or when the tasting index changes to set defaults
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTastingIndex]);
+
   // Update available times when date changes
   useEffect(() => {
     if (selectedDate) {
       const timesForDate = validSlots
         .filter((slot) => {
           const date = new Date(slot);
-          return !isNaN(date.getTime()) && date.toISOString().split("T")[0] === selectedDate;
+          if (isNaN(date.getTime())) return false;
+
+          const offset = date.getTimezoneOffset();
+          const localDate = new Date(date.getTime() - (offset * 60 * 1000));
+          return localDate.toISOString().split("T")[0] === selectedDate;
         })
         .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-      
+
       setAvailableTimes(timesForDate);
-      
+
       // Auto-select first available time if current selection is invalid
-      if (timesForDate.length > 0 && !timesForDate.includes(selectedTime)) {
+      if (timesForDate.length > 0 && (!selectedTime || !timesForDate.includes(selectedTime))) {
         setSelectedTime(timesForDate[0]);
       }
     } else {
@@ -91,7 +113,7 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedTime, selectedTastingIndex, selections.tasting]);
+  }, [selectedDate, selectedTime, selectedTastingIndex, selections.tasting, selections.foodPairings, selections.tours, selections.otherFeature]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const dateValue = e.target.value;
@@ -263,7 +285,7 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
                 </option>
                 {availableTimes.map((time, idx) => {
                   const date = new Date(time);
-                  const timeString = !isNaN(date.getTime()) 
+                  const timeString = !isNaN(date.getTime())
                     ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
                     : "Invalid time";
                   return (
