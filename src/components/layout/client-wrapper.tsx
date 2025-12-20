@@ -9,10 +9,7 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
     const [isAppLoading, setAppLoading] = useState(true);
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setAppLoading(false);
-        }, 500);
-        return () => clearTimeout(timer);
+        setAppLoading(false);
     }, []);
 
     if (isAppLoading) {

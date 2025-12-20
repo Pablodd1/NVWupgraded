@@ -9,7 +9,7 @@ interface VoiceSearchPanelProps {
   className?: string;
 }
 
-export default function VoiceSearchPanel({ 
+export default function VoiceSearchPanel({
   onFiltersApplied,
   className = ""
 }: VoiceSearchPanelProps) {
@@ -20,9 +20,6 @@ export default function VoiceSearchPanel({
   const handleTranscriptReceived = async (newTranscript: string) => {
     setTranscript(newTranscript);
     setIsProcessing(true);
-
-    // Simulate small delay for AI processing effect
-    await new Promise(resolve => setTimeout(resolve, 500));
 
     // Process with NLP
     const result = processNaturalLanguage(newTranscript);
@@ -51,7 +48,7 @@ export default function VoiceSearchPanel({
           <h3 className="text-lg font-bold text-gray-900">🎤 AI Voice Search</h3>
           <span className="badge badge-sm badge-primary">Beta</span>
         </div>
-        <VoiceSearchButton 
+        <VoiceSearchButton
           onTranscriptReceived={handleTranscriptReceived}
         />
       </div>
@@ -102,24 +99,22 @@ export default function VoiceSearchPanel({
               <div className="flex items-center gap-2">
                 <span className="text-sm font-medium text-gray-600">AI Confidence:</span>
                 <div className="flex-1 bg-gray-200 rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full transition-all ${
-                      nlpResult.confidence >= 0.7 
-                        ? 'bg-green-500' 
-                        : nlpResult.confidence >= 0.4 
-                        ? 'bg-yellow-500' 
-                        : 'bg-red-500'
-                    }`}
+                  <div
+                    className={`h-2 rounded-full transition-all ${nlpResult.confidence >= 0.7
+                        ? 'bg-green-500'
+                        : nlpResult.confidence >= 0.4
+                          ? 'bg-yellow-500'
+                          : 'bg-red-500'
+                      }`}
                     style={{ width: `${nlpResult.confidence * 100}%` }}
                   />
                 </div>
-                <span className={`text-sm font-semibold ${
-                  nlpResult.confidence >= 0.7 
-                    ? 'text-green-600' 
-                    : nlpResult.confidence >= 0.4 
-                    ? 'text-yellow-600' 
-                    : 'text-red-600'
-                }`}>
+                <span className={`text-sm font-semibold ${nlpResult.confidence >= 0.7
+                    ? 'text-green-600'
+                    : nlpResult.confidence >= 0.4
+                      ? 'text-yellow-600'
+                      : 'text-red-600'
+                  }`}>
                   {(nlpResult.confidence * 100).toFixed(0)}%
                 </span>
               </div>

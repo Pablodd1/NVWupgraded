@@ -120,13 +120,6 @@ export default function Home() {
                 {nlpQuery ? "Showing results based on your AI search" : "Use filters or voice search to find your perfect winery"}
               </p>
             </div>
-            <button
-              onClick={() => setShowVoiceSearch(!showVoiceSearch)}
-              className={`btn btn-sm ${showVoiceSearch ? 'btn-error' : 'btn-primary'} flex items-center gap-2`}
-            >
-              {showVoiceSearch ? <FaTimes /> : <FaMicrophone />}
-              {showVoiceSearch ? "Close AI Search" : "AI Voice Search"}
-            </button>
           </div>
 
           {/* Voice Search Panel */}
