@@ -6,7 +6,7 @@ import { FaUserAlt, FaUserShield, FaWineBottle, FaTimes, FaArrowRight } from "re
 
 const TEST_ACCOUNTS = {
     customer: { email: "customer@example.com", password: "customer123", label: "Customer", icon: FaUserAlt, redirect: "/" },
-    admin: { email: "admin@napawineries.com", password: "admin123", label: "Admin", icon: FaUserShield, redirect: "/admin" },
+    admin: { email: "admin@napawineries.com", password: "admin123", label: "Admin", icon: FaUserShield, redirect: "/admin/dashboard" },
     winery: { email: "owner@napawineries.com", password: "owner123", label: "Winery", icon: FaWineBottle, redirect: "/winery-dashboard" },
 };
 
