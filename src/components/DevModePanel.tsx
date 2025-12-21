@@ -4,7 +4,7 @@ import { useAuthStore } from "@/store/authStore";
 import { FaUserAlt, FaUserShield, FaWineBottle, FaTimes } from "react-icons/fa";
 
 const TEST_ACCOUNTS = {
-    customer: { email: "customer@test.com", password: "customer123", label: "Customer", icon: FaUserAlt },
+    customer: { email: "customer@example.com", password: "customer123", label: "Customer", icon: FaUserAlt },
     admin: { email: "admin@napawineries.com", password: "admin123", label: "Admin", icon: FaUserShield },
     winery: { email: "owner@napawineries.com", password: "owner123", label: "Winery", icon: FaWineBottle },
 };
