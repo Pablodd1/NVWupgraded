@@ -1,24 +1,38 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { FaUserAlt, FaUserShield, FaWineBottle, FaTimes } from "react-icons/fa";
+import { FaUserAlt, FaUserShield, FaWineBottle, FaTimes, FaArrowRight } from "react-icons/fa";
 
 const TEST_ACCOUNTS = {
-    customer: { email: "customer@example.com", password: "customer123", label: "Customer", icon: FaUserAlt },
-    admin: { email: "admin@napawineries.com", password: "admin123", label: "Admin", icon: FaUserShield },
-    winery: { email: "owner@napawineries.com", password: "owner123", label: "Winery", icon: FaWineBottle },
+    customer: { email: "customer@example.com", password: "customer123", label: "Customer", icon: FaUserAlt, redirect: "/" },
+    admin: { email: "admin@napawineries.com", password: "admin123", label: "Admin", icon: FaUserShield, redirect: "/admin" },
+    winery: { email: "owner@napawineries.com", password: "owner123", label: "Winery", icon: FaWineBottle, redirect: "/winery-dashboard" },
 };
 
 export default function DevModePanel() {
     const [isOpen, setIsOpen] = useState(true);
     const [loadingRole, setLoadingRole] = useState<string | null>(null);
     const { login, user, logout } = useAuthStore();
+    const router = useRouter();
 
     const handleQuickLogin = async (role: keyof typeof TEST_ACCOUNTS) => {
         setLoadingRole(role);
         const account = TEST_ACCOUNTS[role];
-        await login(account.email, account.password);
+        const result = await login(account.email, account.password);
         setLoadingRole(null);
+
+        // Auto-redirect to role-specific page after successful login
+        if (result.success) {
+            router.push(account.redirect);
+        }
+    };
+
+    const getDashboardLink = () => {
+        if (!user) return null;
+        if (user.role === "admin") return "/admin";
+        if (user.role === "winery") return "/winery-dashboard";
+        return "/itinerary";
     };
 
     if (!isOpen) {
@@ -34,7 +48,7 @@ export default function DevModePanel() {
     }
 
     return (
-        <div className="fixed bottom-4 right-4 z-50 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 w-64">
+        <div className="fixed bottom-4 right-4 z-50 bg-white border border-gray-200 rounded-xl shadow-2xl p-4 w-72">
             <div className="flex justify-between items-center mb-3">
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">🧪 Dev Mode</span>
                 <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-600">
@@ -43,10 +57,19 @@ export default function DevModePanel() {
             </div>
 
             {user ? (
-                <div className="text-center">
-                    <p className="text-sm text-gray-600 mb-2">
+                <div className="space-y-2">
+                    <p className="text-sm text-gray-600 text-center">
                         Logged in as <span className="font-semibold text-primary">{user.role}</span>
                     </p>
+
+                    {/* Quick Navigation Links */}
+                    <button
+                        onClick={() => router.push(getDashboardLink()!)}
+                        className="btn btn-sm btn-primary w-full flex items-center justify-center gap-2"
+                    >
+                        Go to Dashboard <FaArrowRight size={12} />
+                    </button>
+
                     <button
                         onClick={() => logout()}
                         className="btn btn-sm btn-outline btn-error w-full"
@@ -56,6 +79,7 @@ export default function DevModePanel() {
                 </div>
             ) : (
                 <div className="space-y-2">
+                    <p className="text-xs text-gray-500 text-center mb-2">Click to login & go to dashboard</p>
                     {(Object.keys(TEST_ACCOUNTS) as (keyof typeof TEST_ACCOUNTS)[]).map((role) => {
                         const account = TEST_ACCOUNTS[role];
                         const Icon = account.icon;
@@ -64,14 +88,17 @@ export default function DevModePanel() {
                                 key={role}
                                 onClick={() => handleQuickLogin(role)}
                                 disabled={loadingRole !== null}
-                                className="btn btn-sm btn-outline w-full flex items-center justify-start gap-2 hover:bg-primary hover:text-white hover:border-primary transition-all"
+                                className="btn btn-sm btn-outline w-full flex items-center justify-between hover:bg-primary hover:text-white hover:border-primary transition-all"
                             >
-                                {loadingRole === role ? (
-                                    <span className="loading loading-spinner loading-xs"></span>
-                                ) : (
-                                    <Icon size={14} />
-                                )}
-                                {account.label}
+                                <span className="flex items-center gap-2">
+                                    {loadingRole === role ? (
+                                        <span className="loading loading-spinner loading-xs"></span>
+                                    ) : (
+                                        <Icon size={14} />
+                                    )}
+                                    {account.label}
+                                </span>
+                                <FaArrowRight size={10} className="opacity-50" />
                             </button>
                         );
                     })}
@@ -80,3 +107,4 @@ export default function DevModePanel() {
         </div>
     );
 }
+
