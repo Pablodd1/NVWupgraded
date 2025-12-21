@@ -4,6 +4,7 @@ import User from "@/models/user.model";
 import Winery from "@/models/winery.model";
 import { requireAdmin } from "@/lib/rbac";
 import bcrypt from "bcryptjs";
+import { autoGenerateWinerySlots } from "@/lib/slotGenerator";
 
 export async function POST(req: NextRequest) {
   try {
@@ -131,6 +132,13 @@ export async function POST(req: NextRequest) {
     await Winery.findByIdAndUpdate(newWinery._id, {
       owner: newUser._id,
     });
+
+    // Auto-generate slots for the next 30 days
+    // Re-fetch the winery document to ensure we have a Mongoose-enabled object for .save()
+    const wineryDoc = await Winery.findById(newWinery._id);
+    if (wineryDoc) {
+      await autoGenerateWinerySlots(wineryDoc, 30);
+    }
 
     return NextResponse.json(
       {

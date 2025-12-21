@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { getUserIdFromToken } from "@/lib/auth";
 import User from "@/models/user.model";
 
+import { autoGenerateWinerySlots } from "@/lib/slotGenerator";
+
 export async function POST(req: Request) {
   try {
     await dbConnect();
@@ -12,11 +14,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
     const user = await User.findById(userId);
-    if (!user || user.role !== "winery" && user.role !== "admin") {
+    if (!user || (user.role !== "winery" && user.role !== "admin")) {
       return NextResponse.json({ message: "Forbidden: Only winery or admin users can create a winery." }, { status: 403 });
     }
     const data = await req.json();
     const winery = await Winery.create({ ...data, owner: userId });
+
+    // Auto-generate slots for the next 30 days
+    await autoGenerateWinerySlots(winery, 30);
+
     return NextResponse.json({ message: "sucess", winery }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ message: error.message }, { status: 400 });
