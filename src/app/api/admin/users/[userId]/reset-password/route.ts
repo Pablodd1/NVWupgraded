@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbConnect";
 import User from "@/models/user.model";
 import { requireAdmin } from "@/lib/rbac";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export async function POST(
   req: NextRequest,

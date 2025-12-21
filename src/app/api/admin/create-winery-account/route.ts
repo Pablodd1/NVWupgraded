@@ -3,7 +3,7 @@ import { dbConnect } from "@/lib/dbConnect";
 import User from "@/models/user.model";
 import Winery from "@/models/winery.model";
 import { requireAdmin } from "@/lib/rbac";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       email,
       password,
       phone,
-      
+
       // Winery details
       wineryName,
       wineryAddress,

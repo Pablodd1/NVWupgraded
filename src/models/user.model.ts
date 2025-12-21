@@ -1,5 +1,5 @@
 import { Schema, model, models, Document, Model } from "mongoose";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export interface IUser {
   firstName: string;
@@ -23,11 +23,11 @@ const UserSchema = new Schema<IUser>(
     phone: { type: String, required: true, trim: true },
     password: { type: String, required: true },
     dateOfBirth: { type: Date },
-    role: { 
-      type: String, 
-      default: "customer", 
+    role: {
+      type: String,
+      default: "customer",
       enum: ["customer", "winery", "admin"],
-      required: true 
+      required: true
     },
     wineryId: { type: Schema.Types.ObjectId, ref: "Winery" },
     isActive: { type: Boolean, default: true },
