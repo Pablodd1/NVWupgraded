@@ -28,9 +28,9 @@ export async function dbConnect() {
       bufferCommands: true, // Enable buffering to handle initial connection delay better
     };
 
-    console.log("🔗 Attempting to connect to MongoDB...");
+
     cached.promise = mongoose.connect(MONGO_URI, opts).then((mongoose) => {
-      console.log("✅ MongoDB Connected Successfully");
+
       return mongoose;
     });
   }

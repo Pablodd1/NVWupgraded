@@ -69,7 +69,6 @@ export async function POST(req: Request) {
       const demoUser = demoCreds.find(u => u.email === email && u.pass === password);
 
       if (demoUser) {
-        console.log("🚀 Demo Mode Login Successful for:", email);
         const token = createToken({
           userId: "demo_" + demoUser.role,
           email: demoUser.email,

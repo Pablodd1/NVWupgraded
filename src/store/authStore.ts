@@ -33,6 +33,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   register: async ({ firstName, lastName, email, phone, password, dateOfBirth }) => {
+    set({ loading: true });
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -51,10 +52,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
     } catch (error) {
       console.error("Register Error:", error);
       return { success: false, message: "Something went wrong. Please try again." };
+    } finally {
+      set({ loading: false });
     }
   },
 
   login: async (email, password) => {
+    set({ loading: true });
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -73,6 +77,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
     } catch (error) {
       console.error("Login Error:", error);
       return { success: false, message: "Something went wrong. Please try again." };
+    } finally {
+      set({ loading: false });
     }
   },
 

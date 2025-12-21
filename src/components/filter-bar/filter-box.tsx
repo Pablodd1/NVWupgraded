@@ -22,7 +22,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     setIsLoading(true);
     let filtered = wineries;
 
-    console.log('Applying filters:', filters);
+
 
     // Filter by tasting price range
     filtered = filtered.filter((winery) => {
@@ -175,7 +175,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
       });
     }
 
-    console.log('Filtered results:', filtered.length, 'wineries');
+
     onFilterApply(filtered);
     setIsLoading(false);
   }, [filters, wineries, onFilterApply]);

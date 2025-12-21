@@ -54,10 +54,10 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
 
   useEffect(() => {
     fetchAvailableSlots();
-    
+
     // Refresh data every 5 minutes to stay current
     const interval = setInterval(fetchAvailableSlots, 5 * 60 * 1000);
-    
+
     return () => clearInterval(interval);
   }, [wineryId]);
 
@@ -65,13 +65,13 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
     try {
       setLoading(true);
       const response = await axios.get(`/api/winery/${wineryId}/available-slots`);
-      
+
       if (response.data.success) {
         setSlotsData(response.data);
         setError(null);
       }
     } catch (err: any) {
-      console.error("Error fetching slots:", err);
+
       setError("Unable to load availability");
     } finally {
       setLoading(false);
@@ -109,9 +109,9 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
           <div>
             <h3 className="text-2xl font-serif font-bold mb-1">Available Now</h3>
             <p className="text-wine-primary/80 text-sm">
-              Updated: {currentTime.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit' 
+              Updated: {currentTime.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit'
               })}
             </p>
           </div>
@@ -158,18 +158,18 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
               {today.slotsAvailable} Slots
             </span>
           </div>
-          
+
           <div className="space-y-2">
             {today.slots.map((slot, index) => {
               // Extract hour from time slot string
               const timeMatch = slot.timeSlot.match(/(\d+):(\d+)\s*(AM|PM)/);
               const slotHour = timeMatch ? parseInt(timeMatch[1]) + (timeMatch[3] === 'PM' && timeMatch[1] !== '12' ? 12 : 0) : 24;
               const isPast = slotHour < currentHour;
-              
+
               if (isPast) return null; // Don't show past slots
-              
+
               return (
-                <div 
+                <div
                   key={index}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-wine-primary/5 transition-colors"
                 >
@@ -206,15 +206,14 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
           // Collapsed View - Quick Summary
           <div className="grid grid-cols-7 gap-2">
             {next7Days.map((day, index) => (
-              <div 
+              <div
                 key={index}
-                className={`text-center p-2 rounded-lg transition-all ${
-                  day.isToday 
-                    ? 'bg-wine-primary text-white' 
+                className={`text-center p-2 rounded-lg transition-all ${day.isToday
+                    ? 'bg-wine-primary text-white'
                     : day.slotsAvailable > 0
-                    ? 'bg-green-50 hover:bg-green-100 cursor-pointer'
-                    : 'bg-gray-100'
-                }`}
+                      ? 'bg-green-50 hover:bg-green-100 cursor-pointer'
+                      : 'bg-gray-100'
+                  }`}
                 title={`${day.dayOfWeekLong}, ${day.month} ${day.day}`}
               >
                 <div className="text-xs font-medium mb-1">{day.dayOfWeek}</div>
@@ -234,15 +233,14 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
           // Expanded View - Detailed List
           <div className="space-y-3">
             {next7Days.map((day, index) => (
-              <div 
+              <div
                 key={index}
-                className={`p-4 rounded-lg border-2 ${
-                  day.isToday 
-                    ? 'border-wine-primary bg-wine-primary/5' 
+                className={`p-4 rounded-lg border-2 ${day.isToday
+                    ? 'border-wine-primary bg-wine-primary/5'
                     : day.slotsAvailable > 0
-                    ? 'border-green-200 bg-green-50/50'
-                    : 'border-gray-200 bg-gray-50'
-                }`}
+                      ? 'border-green-200 bg-green-50/50'
+                      : 'border-gray-200 bg-gray-50'
+                  }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div>
@@ -266,7 +264,7 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
                 {day.slots.length > 0 && (
                   <div className="mt-3 space-y-1">
                     {day.slots.map((slot, slotIndex) => (
-                      <div 
+                      <div
                         key={slotIndex}
                         className="flex items-center justify-between text-sm p-2 bg-white rounded"
                       >

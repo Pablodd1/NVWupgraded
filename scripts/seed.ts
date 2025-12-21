@@ -483,12 +483,148 @@ const wineries = [
       distance_from_user: 7.2,
     },
   },
+  {
+    name: "Beringer Vineyards",
+    location: {
+      address: "2000 Main St, St Helena, CA 94574",
+      latitude: 38.5053,
+      longitude: -122.4705,
+      is_mountain_location: false,
+    },
+    contact_info: {
+      phone: "(707) 963-7115",
+      email: "reservations@beringer.com",
+      website: "https://www.beringer.com",
+    },
+    description: "Napa Valley's oldest continuously operating winery. Featuring the historic Rhine House and extensive wine caves.",
+    tasting_info: [
+      {
+        tasting_title: "Old Winery Tour & Tasting",
+        tasting_description: "Explore the historic wine caves and taste current releases.",
+        ava: "St. Helena",
+        tasting_price: 35,
+        available_times: ["10:30 AM", "12:00 PM", "2:00 PM", "4:00 PM"],
+        wine_types: ["Red", "White"],
+        number_of_wines_per_tasting: 4,
+        special_features: ["Historic Site", "Caves", "Gardens"],
+        images: [
+          "https://images.unsplash.com/photo-1574672280450-482020227916",
+          "https://images.unsplash.com/photo-1596701768856-74fc2104526d"
+        ],
+        food_pairing_options: [],
+        tours: {
+          available: true,
+          tour_price: 55,
+          tour_options: [{ tour_id: "tour8", description: "Legacy Cave Tour", cost: 55 }]
+        },
+        wine_details: [
+          {
+            id: "wine12",
+            name: "Private Reserve Cabernet",
+            description: "A classic representation of Napa Valley Cabernet.",
+            year: 2017,
+            tasting_notes: "Rich, layered, and age-worthy.",
+            photo: "https://images.unsplash.com/photo-1559818816-dc5c6353d9e6"
+          }
+        ],
+        booking_info: {
+          booking_enabled: true,
+          max_guests_per_slot: 10,
+          number_of_people: [2, 3, 4, 5, 6],
+          dynamic_pricing: { enabled: false, weekend_multiplier: 1.0 },
+          available_slots: ["10:30 AM", "12:00 PM", "2:00 PM", "4:00 PM"]
+        },
+        other_features: []
+      }
+    ],
+    amenities: {
+      virtual_sommelier: true,
+      augmented_reality_tours: true,
+      handicap_accessible: true
+    },
+    user_reviews: [],
+    transportation: {
+      uber_availability: true,
+      lyft_availability: true,
+      distance_from_user: 10.5
+    }
+  },
+  {
+    name: "V. Sattui Winery",
+    location: {
+      address: "1111 White Ln, St Helena, CA 94574",
+      latitude: 38.4877,
+      longitude: -122.4590,
+      is_mountain_location: false,
+    },
+    contact_info: {
+      phone: "(707) 963-7774",
+      email: "info@vsattui.com",
+      website: "https://www.vsattui.com",
+    },
+    description: "A family-owned winery known for its deli, picnic grounds, and diverse portfolio of small-lot wines.",
+    tasting_info: [
+      {
+        tasting_title: "Marketplace Tasting",
+        tasting_description: "Casual tasting in our artisan marketplace.",
+        ava: "St. Helena",
+        tasting_price: 45,
+        available_times: ["10:00 AM", "4:00 PM"],
+        wine_types: ["Red", "White", "Rosé", "Sparkling"],
+        number_of_wines_per_tasting: 6,
+        special_features: ["Picnic Area", "Deli", "External Booking Only"],
+        images: [
+          "https://images.unsplash.com/photo-1528643329766-3b1029c0b168",
+          "https://images.unsplash.com/photo-1585553616435-2dc0a54e271d"
+        ],
+        food_pairing_options: [],
+        tours: {
+          available: false,
+          tour_price: 0,
+          tour_options: []
+        },
+        wine_details: [
+          {
+            id: "wine13",
+            name: "Gamay Rouge",
+            description: "A fruity, slightly sweet blush wine.",
+            year: 2021,
+            tasting_notes: "Strawberry, cranberry, and floral notes.",
+            photo: "https://images.unsplash.com/photo-1584916201218-f4242ceb4809"
+          }
+        ],
+        booking_info: {
+          booking_enabled: true,
+          max_guests_per_slot: 20,
+          number_of_people: [2, 3, 4, 5, 6],
+          dynamic_pricing: { enabled: false, weekend_multiplier: 1.0 },
+          available_slots: ["10:00 AM", "4:00 PM"]
+        },
+        other_features: []
+      }
+    ],
+    amenities: {
+      virtual_sommelier: false,
+      augmented_reality_tours: false,
+      handicap_accessible: true
+    },
+    user_reviews: [],
+    transportation: {
+      uber_availability: true,
+      lyft_availability: true,
+      distance_from_user: 9.8
+    },
+    payment_method: {
+      type: 'external_booking',
+      external_booking_link: 'https://www.vsattui.com/visit/tastings'
+    }
+  }
 ];
 
 async function seedDatabase() {
   try {
     console.log("🌱 Starting database seeding...");
-    
+
     // Connect to MongoDB
     await mongoose.connect(MONGODB_URI, {
       dbName: "nvw",
@@ -580,14 +716,14 @@ async function seedDatabase() {
     console.log("  Password: customer123");
     console.log("  Role: customer");
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
-    
+
     console.log(`📊 Summary:`);
     console.log(`  - Users created: 3`);
     console.log(`  - Wineries created: ${wineries.length}`);
-    
+
     await mongoose.disconnect();
     console.log("✅ Disconnected from MongoDB");
-    
+
   } catch (error) {
     console.error("❌ Error seeding database:", error);
     process.exit(1);

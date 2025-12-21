@@ -74,186 +74,181 @@ export default function ItineraryPage() {
       );
     });
   };
-const handleConfirmBooking = async () => {
-  console.log("Starting confirmation process...");
-  console.log("User:", user);
-  console.log("Itinerary:", itinerary);
-  
-  if (!user) {
-    console.log("No user found, showing auth modal");
-    return setShowAuthModal(true);
-  }
+  const handleConfirmBooking = async () => {
 
-  // Check age verification for alcohol-related bookings
-  console.log("Checking age verification...");
-  console.log("User date of birth:", user.dateOfBirth);
-  
-  if (user.dateOfBirth && !isUser21OrOlder(user.dateOfBirth)) {
-    console.log("User is under 21, blocking booking");
-    toast.error("You must be 21 or older to book wine tastings and alcohol-related services.");
-    return;
-  } else if (!user.dateOfBirth) {
-    console.log("User has no date of birth, showing age verification modal");
-    setShowDateOfBirthModal(true);
-    return;
-  }
 
-  console.log("Age verification passed");
+    if (!user) {
 
-  // Validate that all wineries have required booking details
-  const missingDetails = itinerary.filter(w => !w.bookingDetails?.selectedTime || !w.bookingDetails?.selectedDate);
-  if (missingDetails.length > 0) {
-    toast.error(`Please select date and time for: ${missingDetails.map(w => w.name).join(', ')}`);
-    return;
-  }
+      return setShowAuthModal(true);
+    }
 
-  const data = itinerary.map((winery) => {
-    const selectedTastingIndex = winery.bookingDetails?.selectedTastingIndex || 0;
-    const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
-    
-    return {
-      wineryId: winery._id,
-      dateTime: winery.bookingDetails?.selectedTime,
-      numberOfGuests: winery.bookingDetails?.numberOfGuests || 1,
-      tastingIndex: selectedTastingIndex,
-      tasting: winery.bookingDetails?.tasting && currentTastingInfo?.tasting_price ? currentTastingInfo.tasting_price : null,
-      foodPairings: winery.bookingDetails?.foodPairings || [],
-      tours: winery.bookingDetails?.tours || [],
-      otherFeature: winery.bookingDetails?.otherFeature || [],
-      payment_method: winery.payment_method,
-    };
-  });
+    // Check age verification for alcohol-related bookings
 
-  try {
-    console.log("Itinerary data:", itinerary);
-    console.log("Payment methods:", itinerary.map(w => ({ name: w.name, payment_method: w.payment_method })));
-    
-    const requiresStripe = itinerary.some((winery) => winery?.payment_method?.type === "pay_stripe");
-    const hasExternalBooking = itinerary.some((winery) => winery?.payment_method?.type === "external_booking");
-    
-    console.log("Requires Stripe:", requiresStripe);
-    console.log("Has External Booking:", hasExternalBooking);
 
-    if (requiresStripe) {
-      setLoadingPayment(true);
-      const lineItems = itinerary
-        .filter((winery) => winery?.payment_method?.type === "pay_stripe")
-        .map((winery) => {
-          let totalCost = 0;
-          const items = [];
-          const selectedTastingIndex = winery.bookingDetails?.selectedTastingIndex || 0;
-          const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
+    if (user.dateOfBirth && !isUser21OrOlder(user.dateOfBirth)) {
 
-          // Add tasting price if selected
-          if (currentTastingInfo?.tasting_price) {
-            totalCost += currentTastingInfo.tasting_price;
-          }
+      toast.error("You must be 21 or older to book wine tastings and alcohol-related services.");
+      return;
+    } else if (!user.dateOfBirth) {
 
-          // Add food pairing prices
-          if (winery.bookingDetails?.foodPairings?.length) {
-            totalCost += winery.bookingDetails.foodPairings.reduce((sum, foodItem) => {
-              return foodItem.price ? sum + foodItem.price : sum;
-            }, 0);
-          }
+      setShowDateOfBirthModal(true);
+      return;
+    }
 
-          // Add tour prices
-          if (winery.bookingDetails?.tours?.length) {
-            totalCost += winery.bookingDetails.tours.reduce((sum, tour) => {
-              return tour.price ? sum + tour.price : sum;
-            }, 0);
-          }
 
-          // Add other features prices
-          if (winery.bookingDetails?.otherFeature?.length) {
-            totalCost += winery.bookingDetails.otherFeature.reduce((sum, feature) => {
-              return feature.price ? sum + feature.price : sum;
-            }, 0);
-          }
 
-          // Create a single line item if there's a cost
-          if (totalCost > 0) {
-            items.push({
-              price_data: {
-                currency: "usd",
-                product_data: {
-                  name: `${winery.name} - ${currentTastingInfo?.tasting_title || 'Booking'} (Tasting & Food Pairings)`,
-                },
-                unit_amount: Math.round(totalCost * 100), // Convert to cents
-              },
-              quantity: 1,
-            });
-          }
+    // Validate that all wineries have required booking details
+    const missingDetails = itinerary.filter(w => !w.bookingDetails?.selectedTime || !w.bookingDetails?.selectedDate);
+    if (missingDetails.length > 0) {
+      toast.error(`Please select date and time for: ${missingDetails.map(w => w.name).join(', ')}`);
+      return;
+    }
 
-          return items;
-        })
-        .flat();
+    const data = itinerary.map((winery) => {
+      const selectedTastingIndex = winery.bookingDetails?.selectedTastingIndex || 0;
+      const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
 
-      // Validate lineItems
-      if (!lineItems.length) {
-        console.error("No valid line items for Stripe checkout. Itinerary:", itinerary);
-        throw new Error("No items selected for payment. Please add a tasting or food pairing.");
-      }
+      return {
+        wineryId: winery._id,
+        dateTime: winery.bookingDetails?.selectedTime,
+        numberOfGuests: winery.bookingDetails?.numberOfGuests || 1,
+        tastingIndex: selectedTastingIndex,
+        tasting: winery.bookingDetails?.tasting && currentTastingInfo?.tasting_price ? currentTastingInfo.tasting_price : null,
+        foodPairings: winery.bookingDetails?.foodPairings || [],
+        tours: winery.bookingDetails?.tours || [],
+        otherFeature: winery.bookingDetails?.otherFeature || [],
+        payment_method: winery.payment_method,
+      };
+    });
 
-      const response = await axios.post("/api/stripe/create-checkout-session", {
-        line_items: lineItems,
-        success_url: `${window.location.origin}/itinerary?success=true`,
-        cancel_url: `${window.location.origin}/itinerary?cancel=true`,
-        metadata: { itinerary: JSON.stringify(data) },
-        bookData: data,
-      });
+    try {
 
-      const { sessionId } = response.data;
-      const stripe = await stripePromise;
-      if (stripe) {
-        await stripe.redirectToCheckout({ sessionId });
-      } else {
-        throw new Error("Stripe failed to initialize");
-      }
-    } else {
-      // Check if any wineries use external booking links
+
+      const requiresStripe = itinerary.some((winery) => winery?.payment_method?.type === "pay_stripe");
       const hasExternalBooking = itinerary.some((winery) => winery?.payment_method?.type === "external_booking");
-      
-      if (hasExternalBooking) {
-        // Handle external booking links
-        const externalBookings = itinerary.filter((winery) => winery?.payment_method?.type === "external_booking");
-        
-        if (externalBookings.length > 0) {
-          // For external bookings, redirect to the winery's booking link
-          const firstExternalBooking = externalBookings[0];
-          if (firstExternalBooking.payment_method?.external_booking_link) {
-            // Still send confirmation to our system (no payment processing)
-            await axios.post("/api/itinerary/book", { data });
-            toast.success("Booking confirmed! Redirecting to winery booking page...");
-            window.open(firstExternalBooking.payment_method.external_booking_link, '_blank');
-            return;
+
+
+
+      if (requiresStripe) {
+        setLoadingPayment(true);
+        const lineItems = itinerary
+          .filter((winery) => winery?.payment_method?.type === "pay_stripe")
+          .map((winery) => {
+            let totalCost = 0;
+            const items = [];
+            const selectedTastingIndex = winery.bookingDetails?.selectedTastingIndex || 0;
+            const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
+
+            // Add tasting price if selected
+            if (currentTastingInfo?.tasting_price) {
+              totalCost += currentTastingInfo.tasting_price;
+            }
+
+            // Add food pairing prices
+            if (winery.bookingDetails?.foodPairings?.length) {
+              totalCost += winery.bookingDetails.foodPairings.reduce((sum, foodItem) => {
+                return foodItem.price ? sum + foodItem.price : sum;
+              }, 0);
+            }
+
+            // Add tour prices
+            if (winery.bookingDetails?.tours?.length) {
+              totalCost += winery.bookingDetails.tours.reduce((sum, tour) => {
+                return tour.price ? sum + tour.price : sum;
+              }, 0);
+            }
+
+            // Add other features prices
+            if (winery.bookingDetails?.otherFeature?.length) {
+              totalCost += winery.bookingDetails.otherFeature.reduce((sum, feature) => {
+                return feature.price ? sum + feature.price : sum;
+              }, 0);
+            }
+
+            // Create a single line item if there's a cost
+            if (totalCost > 0) {
+              items.push({
+                price_data: {
+                  currency: "usd",
+                  product_data: {
+                    name: `${winery.name} - ${currentTastingInfo?.tasting_title || 'Booking'} (Tasting & Food Pairings)`,
+                  },
+                  unit_amount: Math.round(totalCost * 100), // Convert to cents
+                },
+                quantity: 1,
+              });
+            }
+
+            return items;
+          })
+          .flat();
+
+        // Validate lineItems
+        if (!lineItems.length) {
+          console.error("No valid line items for Stripe checkout. Itinerary:", itinerary);
+          throw new Error("No items selected for payment. Please add a tasting or food pairing.");
+        }
+
+        const response = await axios.post("/api/stripe/create-checkout-session", {
+          line_items: lineItems,
+          success_url: `${window.location.origin}/itinerary?success=true`,
+          cancel_url: `${window.location.origin}/itinerary?cancel=true`,
+          metadata: { itinerary: JSON.stringify(data) },
+          bookData: data,
+        });
+
+        const { sessionId } = response.data;
+        const stripe = await stripePromise;
+        if (stripe) {
+          await stripe.redirectToCheckout({ sessionId });
+        } else {
+          throw new Error("Stripe failed to initialize");
+        }
+      } else {
+        // Check if any wineries use external booking links
+        const hasExternalBooking = itinerary.some((winery) => winery?.payment_method?.type === "external_booking");
+
+        if (hasExternalBooking) {
+          // Handle external booking links
+          const externalBookings = itinerary.filter((winery) => winery?.payment_method?.type === "external_booking");
+
+          if (externalBookings.length > 0) {
+            // For external bookings, redirect to the winery's booking link
+            const firstExternalBooking = externalBookings[0];
+            if (firstExternalBooking.payment_method?.external_booking_link) {
+              // Still send confirmation to our system (no payment processing)
+              await axios.post("/api/itinerary/book", { data });
+              toast.success("Booking confirmed! Redirecting to winery booking page...");
+              window.open(firstExternalBooking.payment_method.external_booking_link, '_blank');
+              return;
+            }
           }
         }
+
+        // Pay at winery - no payment processing needed
+
+        const response = await axios.post("/api/itinerary/book", { data });
+
+        if (response.status === 201) {
+
+          setShowRideModal(true);
+        }
       }
-      
-      // Pay at winery - no payment processing needed
-      console.log("Processing pay at winery booking...");
-      const response = await axios.post("/api/itinerary/book", { data });
-      console.log("Booking response:", response);
-      if (response.status === 201) {
-        console.log("Booking successful, showing ride modal");
-        setShowRideModal(true);
+    } catch (error: any) {
+      console.error("Booking error:", error);
+      if (error.response?.status === 404) {
+        alert("Payment processing is currently unavailable. Please try again later or contact support.");
+      } else if (error.message.includes("Stripe")) {
+        alert("Failed to initialize payment. Please check your connection and try again.");
+      } else if (error.message.includes("No items selected")) {
+        alert(error.message);
+      } else {
+        alert("Failed to process booking. Please try again later.");
       }
+    } finally {
+      setLoadingPayment(false);
     }
-  } catch (error: any) {
-    console.error("Booking error:", error);
-    if (error.response?.status === 404) {
-      alert("Payment processing is currently unavailable. Please try again later or contact support.");
-    } else if (error.message.includes("Stripe")) {
-      alert("Failed to initialize payment. Please check your connection and try again.");
-    } else if (error.message.includes("No items selected")) {
-      alert(error.message);
-    } else {
-      alert("Failed to process booking. Please try again later.");
-    }
-  } finally {
-    setLoadingPayment(false);
-  }
-};
+  };
 
   const handleDateOfBirthSuccess = () => {
     // Retry the booking process after date of birth is updated
@@ -282,9 +277,8 @@ const handleConfirmBooking = async () => {
     if (service === "uber") {
       rideURL = `https://m.uber.com/ul/?action=setPickup&pickup[latitude]=${location.latitude}&pickup[longitude]=${location.longitude}&dropoff[latitude]=${earliestWinery.location.latitude}&dropoff[longitude]=${earliestWinery.location.longitude}&pickup_time=${pickupTime}&intent=ride`;
     } else if (service === "lyft") {
-      rideURL = `https://ride.lyft.com/?id=lyft&pickup[latitude]=${location.latitude}&pickup[longitude]=${
-        location.longitude
-      }&destination=${encodeURIComponent(earliestWinery.location.address)}`;
+      rideURL = `https://ride.lyft.com/?id=lyft&pickup[latitude]=${location.latitude}&pickup[longitude]=${location.longitude
+        }&destination=${encodeURIComponent(earliestWinery.location.address)}`;
     }
     window.open(rideURL, "_blank");
   };
@@ -395,7 +389,7 @@ const handleConfirmBooking = async () => {
       </Modal>
 
       {showAuthModal && <AuthModal setShowPopup={setShowAuthModal} showLoginForm={true} />}
-      <DateOfBirthModal 
+      <DateOfBirthModal
         isOpen={showDateOfBirthModal}
         onClose={() => setShowDateOfBirthModal(false)}
         onSuccess={handleDateOfBirthSuccess}

@@ -9,8 +9,8 @@ interface VoiceSearchButtonProps {
   className?: string;
 }
 
-export default function VoiceSearchButton({ 
-  onTranscriptReceived, 
+export default function VoiceSearchButton({
+  onTranscriptReceived,
   disabled = false,
   className = ""
 }: VoiceSearchButtonProps) {
@@ -20,13 +20,13 @@ export default function VoiceSearchButton({
 
   useEffect(() => {
     // Check if browser supports Web Speech API
-    const SpeechRecognition = 
-      (window as any).SpeechRecognition || 
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
       (window as any).webkitSpeechRecognition;
-    
+
     if (SpeechRecognition) {
       setIsSupported(true);
-      
+
       // Initialize speech recognition
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
@@ -43,9 +43,9 @@ export default function VoiceSearchButton({
 
       recognition.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
-        console.log("Voice transcript:", transcript);
+
         onTranscriptReceived(transcript);
-        
+
         toast.success(`Got it: "${transcript}"`, {
           autoClose: 2000
         });
@@ -54,7 +54,7 @@ export default function VoiceSearchButton({
       recognition.onerror = (event: any) => {
         console.error("Speech recognition error:", event.error);
         setIsListening(false);
-        
+
         const errorMessages: { [key: string]: string } = {
           'no-speech': 'No speech detected. Please try again.',
           'audio-capture': 'Microphone not found. Please check your device.',
@@ -62,7 +62,7 @@ export default function VoiceSearchButton({
           'network': 'Network error. Please check your connection.',
           'aborted': 'Speech recognition cancelled.',
         };
-        
+
         const message = errorMessages[event.error] || `Error: ${event.error}`;
         toast.error(message);
       };
@@ -115,14 +115,13 @@ export default function VoiceSearchButton({
     <button
       onClick={toggleListening}
       disabled={disabled || isListening}
-      className={`btn btn-sm ${
-        isListening 
-          ? 'btn-error animate-pulse' 
+      className={`btn btn-sm ${isListening
+          ? 'btn-error animate-pulse'
           : 'btn-ghost hover:btn-primary'
-      } tooltip tooltip-bottom ${className}`}
+        } tooltip tooltip-bottom ${className}`}
       data-tip={
-        isListening 
-          ? "Listening... Click to stop" 
+        isListening
+          ? "Listening... Click to stop"
           : "Click to speak your wine preferences"
       }
     >

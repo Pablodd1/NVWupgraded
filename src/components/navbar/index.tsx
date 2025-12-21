@@ -83,6 +83,7 @@ export function Navbar() {
             </nav>
 
             <div className="flex items-center space-x-6">
+              <VoiceFilter />
               <ItineraryButton itineraryCount={itinerary.length} />
               {user ? (
                 <UserProfile user={user} handleLogout={handleLogout} loading={loading} />

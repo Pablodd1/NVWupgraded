@@ -14,8 +14,7 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
   useEffect(() => {
     const calculateTotalPrice = () => {
       return wineries.reduce((total, winery) => {
-        console.log("winery payment_method:", winery.payment_method);
-        console.log("winery payment_method type:", winery.payment_method?.type);
+
         let wineryCost = 0;
         const bookingDetails = winery.bookingDetails;
         const selectedTastingIndex = bookingDetails?.selectedTastingIndex || 0;
@@ -37,7 +36,7 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
           if (bookingDetails?.tours) {
             wineryCost += bookingDetails.tours.reduce((sum, tour) => sum + tour.price, 0);
           }
-          
+
           // Add other features prices if selected
           if (bookingDetails?.otherFeature) {
             wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + feature.price, 0);
@@ -45,8 +44,8 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
         } else if (!winery.payment_method || typeof winery.payment_method === 'string') {
           // Fallback for wineries without proper payment method structure
           // Assume they use pay_stripe if no payment method is set
-          console.log("Winery without proper payment method, assuming pay_stripe:", winery.name);
-          
+
+
           // Add tasting price for the selected tasting
           if (currentTastingInfo?.tasting_price) {
             wineryCost += currentTastingInfo.tasting_price;
@@ -61,7 +60,7 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
           if (bookingDetails?.tours) {
             wineryCost += bookingDetails.tours.reduce((sum, tour) => sum + tour.price, 0);
           }
-          
+
           // Add other features prices if selected
           if (bookingDetails?.otherFeature) {
             wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + feature.price, 0);
@@ -115,7 +114,7 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
               const bookingDetails = winery.bookingDetails;
               const selectedTastingIndex = bookingDetails?.selectedTastingIndex || 0;
               const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
-              
+
               return (
                 <li key={winery._id || winery.name} className="mt-2">
                   <span className="font-medium">{winery.name}</span>
@@ -125,10 +124,10 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                     </div>
                   )}
                   {bookingDetails &&
-                  (bookingDetails.tasting ||
-                    bookingDetails.foodPairings?.length > 0 ||
-                    bookingDetails.tours?.length > 0 ||
-                    bookingDetails.otherFeature?.length > 0) ? (
+                    (bookingDetails.tasting ||
+                      bookingDetails.foodPairings?.length > 0 ||
+                      bookingDetails.tours?.length > 0 ||
+                      bookingDetails.otherFeature?.length > 0) ? (
                     <ul className="ml-4 list-disc">
                       {currentTastingInfo?.tasting_price && (
                         <li>Tasting: ${currentTastingInfo.tasting_price.toFixed(2)}</li>

@@ -7,9 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "seed": "tsx scripts/seed.ts",
-    "seed:slots": "tsx scripts/seed-slots.ts",
-    "create:accounts": "tsx scripts/create-test-accounts.ts"
+    "seed": "tsx --env-file=.env.local scripts/seed.ts && tsx --env-file=.env.local scripts/seed-slots.ts",
+    "seed:slots": "tsx --env-file=.env.local scripts/seed-slots.ts",
+    "create:accounts": "tsx --env-file=.env.local scripts/create-test-accounts.ts"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4",

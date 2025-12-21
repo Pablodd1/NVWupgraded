@@ -5,6 +5,8 @@ import Link from "next/link";
 import { FC } from "react";
 import { FaWineBottle, FaDollarSign, FaMapMarkerAlt, FaWhatsapp } from "react-icons/fa";
 
+import Image from "next/image";
+
 interface WineryCardProps {
   winery: Winery;
   addToItinerary: (winery: Winery) => void;
@@ -38,13 +40,15 @@ const WineryCard: FC<WineryCardProps> = ({ winery, addToItinerary }) => {
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch rounded-xl bg-wine-background transition-all hover:shadow-neumorphismHover ease-in-out duration-300">
-      <div className="w-full sm:w-1/3 h-40 sm:h-auto overflow-hidden lg:rounded-l-xl rounded-t-xl">
+      <div className="w-full sm:w-1/3 h-48 sm:h-auto overflow-hidden lg:rounded-l-xl rounded-t-xl relative">
         <Link href={`/winery/${winery._id}`}>
           {winery.tasting_info?.[0]?.images?.[0] ? (
-            <img
+            <Image
               src={winery.tasting_info?.[0]?.images?.[0]}
               alt={winery.name}
-              className="w-full h-full object-cover transform hover:scale-105 transition-all duration-500"
+              fill
+              className="object-cover transform hover:scale-105 transition-all duration-500"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           ) : (
             <div className="w-full h-full bg-gray-300 flex items-center justify-center">

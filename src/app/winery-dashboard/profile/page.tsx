@@ -3,36 +3,27 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "react-toastify";
-
-interface WineryProfile {
-  _id: string;
-  name: string;
-  location: {
-    address: string;
-    lat: number;
-    long: number;
-  };
-  contact_info: {
-    phone: string;
-    email: string;
-    website: string;
-  };
-  description: string;
-  opening_hours?: {
-    monday?: string;
-    tuesday?: string;
-    wednesday?: string;
-    thursday?: string;
-    friday?: string;
-    saturday?: string;
-    sunday?: string;
-  };
-}
+import {
+  FaMapMarkerAlt,
+  FaPhoneAlt,
+  FaEnvelope,
+  FaGlobe,
+  FaWineGlass,
+  FaPlus,
+  FaTrash,
+  FaCar,
+  FaCreditCard,
+  FaLink,
+  FaMoneyBillWave,
+  FaCheckCircle,
+  FaTimesCircle
+} from "react-icons/fa";
+import { Winery, TastingInfo, FoodPairingOption } from "@/app/interfaces";
 
 export default function WineryProfile() {
   const { user, loading, fetchUser } = useAuthStore();
   const router = useRouter();
-  const [profile, setProfile] = useState<WineryProfile | null>(null);
+  const [profile, setProfile] = useState<Winery | null>(null);
   const [saving, setSaving] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
@@ -54,7 +45,28 @@ export default function WineryProfile() {
         const response = await fetch("/api/winery-dashboard/profile");
         if (response.ok) {
           const data = await response.json();
-          setProfile(data.winery);
+          // Normalize data for the form
+          const winery = data.winery;
+
+          // Ensure structure matches interface and schema
+          if (!winery.location) {
+            winery.location = { address: "", latitude: 0, longitude: 0, is_mountain_location: false };
+          } else {
+            // Map 'lat'/'long' to 'latitude'/'longitude' if coming from old structure
+            if (winery.location.lat !== undefined) winery.location.latitude = winery.location.lat;
+            if (winery.location.long !== undefined) winery.location.longitude = winery.location.long;
+            if (winery.location.latitude === undefined) winery.location.latitude = 0;
+            if (winery.location.longitude === undefined) winery.location.longitude = 0;
+            if (winery.location.is_mountain_location === undefined) winery.location.is_mountain_location = false;
+          }
+
+          if (!winery.contact_info) winery.contact_info = { phone: "", email: "", website: "" };
+          if (!winery.amenities) winery.amenities = { virtual_sommelier: false, augmented_reality_tours: false, handicap_accessible: false };
+          if (!winery.transportation) winery.transportation = { uber_availability: false, lyft_availability: false, distance_from_user: 0 };
+          if (!winery.payment_method) winery.payment_method = { type: 'pay_winery' };
+          if (!winery.tasting_info) winery.tasting_info = [];
+
+          setProfile(winery);
         } else {
           toast.error("Failed to load profile");
         }
@@ -71,26 +83,76 @@ export default function WineryProfile() {
     }
   }, [user]);
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (path: string, value: any) => {
     setProfile(prev => {
       if (!prev) return prev;
-      
-      if (field.includes('.')) {
-        const [parent, child] = field.split('.');
-        return {
-          ...prev,
-          [parent]: {
-            ...(prev[parent as keyof WineryProfile] as any),
-            [child]: value
-          }
-        };
+      const newProfile = JSON.parse(JSON.stringify(prev)); // Deep clone
+
+      const keys = path.split('.');
+      let current = newProfile;
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (!current[keys[i]]) current[keys[i]] = {};
+        current = current[keys[i]];
       }
-      
-      return {
-        ...prev,
-        [field]: value
-      };
+      current[keys[keys.length - 1]] = value;
+
+      return newProfile;
     });
+  };
+
+  const handleTastingChange = (index: number, field: string, value: any) => {
+    setProfile(prev => {
+      if (!prev) return prev;
+      const newProfile = { ...prev };
+      const newTastings = [...newProfile.tasting_info];
+      const keys = field.split('.');
+
+      let current: any = newTastings[index];
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (!current[keys[i]]) current[keys[i]] = {};
+        current = current[keys[i]];
+      }
+      current[keys[keys.length - 1]] = value;
+
+      newProfile.tasting_info = newTastings;
+      return newProfile;
+    });
+  };
+
+  const addTasting = () => {
+    if (!profile) return;
+    const newTasting: TastingInfo = {
+      tasting_title: "New Tasting Package",
+      tasting_description: "Describe this experience",
+      ava: "",
+      tasting_price: 50,
+      available_times: ["10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM"],
+      wine_types: ["Red", "White"],
+      number_of_wines_per_tasting: 4,
+      special_features: [],
+      images: [],
+      food_pairing_options: [],
+      tours: { available: false, tour_price: 0, tour_options: [] },
+      wine_details: [],
+      booking_info: {
+        booking_enabled: true,
+        max_guests_per_slot: 10,
+        number_of_people: [1, 2, 4, 6],
+        dynamic_pricing: { enabled: false, weekend_multiplier: 1.2 },
+        available_slots: []
+      },
+      other_features: []
+    };
+    setProfile({
+      ...profile,
+      tasting_info: [...profile.tasting_info, newTasting]
+    });
+  };
+
+  const removeTasting = (index: number) => {
+    if (!profile) return;
+    const newTastings = profile.tasting_info.filter((_, i) => i !== index);
+    setProfile({ ...profile, tasting_info: newTastings });
   };
 
   const handleSave = async () => {
@@ -100,20 +162,18 @@ export default function WineryProfile() {
     try {
       const response = await fetch("/api/winery-dashboard/profile", {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(profile)
       });
 
       if (response.ok) {
-        toast.success("Profile updated successfully!");
+        toast.success("Everything updated! Your winery UI reflects these changes now.");
       } else {
         const error = await response.json();
         toast.error(error.message || "Failed to update profile");
       }
     } catch (error) {
-      console.error("Failed to save profile:", error);
+      console.error("Save error:", error);
       toast.error("Error saving profile");
     } finally {
       setSaving(false);
@@ -125,201 +185,320 @@ export default function WineryProfile() {
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="text-center">
           <div className="loading loading-spinner loading-lg text-primary"></div>
-          <p className="mt-4 text-gray-600">Loading profile...</p>
+          <p className="mt-4 text-gray-600">Syncing with system...</p>
         </div>
       </div>
     );
   }
 
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <p className="text-gray-600">No winery profile found. Please contact support.</p>
-        </div>
-      </div>
-    );
-  }
+  if (!profile) return null;
 
   return (
-    <div className="min-h-screen bg-gray-100 pt-20 pb-20 md:pb-4">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50 pt-20 pb-20 md:pb-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Winery Profile</h1>
-            <p className="mt-2 text-gray-600">Update your winery information</p>
+            <h1 className="text-4xl font-serif font-bold text-gray-900">{profile.name || "Winery Dashboard"}</h1>
+            <p className="text-gray-600 mt-1">Full Control: Experience, Filtration, Transport & Payments</p>
           </div>
-          <button
-            onClick={() => router.push("/winery-dashboard")}
-            className="btn btn-ghost btn-sm"
-          >
-            ← Back to Dashboard
-          </button>
+          <div className="flex gap-3">
+            <button onClick={() => router.push("/winery-dashboard")} className="btn btn-ghost">Dashboard Overview</button>
+            <button onClick={handleSave} disabled={saving} className="btn btn-primary px-8">
+              {saving ? <span className="loading loading-spinner loading-xs"></span> : "Save All Changes"}
+            </button>
+          </div>
         </div>
 
-        {/* Profile Form */}
-        <div className="bg-white rounded-lg shadow-md p-6 space-y-6">
-          {/* Basic Information */}
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Basic Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Winery Name
-                </label>
-                <input
-                  type="text"
-                  value={profile.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="Enter winery name"
-                />
-              </div>
-              
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={profile.description}
-                  onChange={(e) => handleInputChange('description', e.target.value)}
-                  className="textarea textarea-bordered w-full h-32"
-                  placeholder="Describe your winery..."
-                />
-              </div>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Controls - Left Side */}
+          <div className="lg:col-span-2 space-y-8">
 
-          {/* Location */}
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-3">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  value={profile.location.address}
-                  onChange={(e) => handleInputChange('location.address', e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="Enter address"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Latitude
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={profile.location.lat}
-                  onChange={(e) => handleInputChange('location.lat', parseFloat(e.target.value))}
-                  className="input input-bordered w-full"
-                  placeholder="Latitude"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Longitude
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  value={profile.location.long}
-                  onChange={(e) => handleInputChange('location.long', parseFloat(e.target.value))}
-                  className="input input-bordered w-full"
-                  placeholder="Longitude"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Contact Information */}
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Contact Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  value={profile.contact_info.phone}
-                  onChange={(e) => handleInputChange('contact_info.phone', e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="Phone number"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={profile.contact_info.email}
-                  onChange={(e) => handleInputChange('contact_info.email', e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="Email address"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Website
-                </label>
-                <input
-                  type="url"
-                  value={profile.contact_info.website}
-                  onChange={(e) => handleInputChange('contact_info.website', e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="Website URL"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Opening Hours */}
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Opening Hours</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map(day => (
-                <div key={day}>
-                  <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
-                    {day}
-                  </label>
+            {/* 1. Basic & Location */}
+            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+              <h2 className="text-2xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
+                <FaMapMarkerAlt className="text-wine-secondary" />
+                Identity & Location
+              </h2>
+              <div className="space-y-6">
+                <div className="form-control">
+                  <label className="label font-bold text-gray-700">Winery Display Name</label>
                   <input
-                    type="text"
-                    value={profile.opening_hours?.[day as keyof typeof profile.opening_hours] || ''}
-                    onChange={(e) => handleInputChange(`opening_hours.${day}`, e.target.value)}
-                    className="input input-bordered w-full"
-                    placeholder="e.g., 10:00 AM - 6:00 PM"
+                    type="text" value={profile.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    className="input input-bordered w-full focus:border-wine-primary"
                   />
                 </div>
-              ))}
-            </div>
+                <div className="form-control">
+                  <label className="label font-bold text-gray-700">Official Description (for AI Search & Results)</label>
+                  <textarea
+                    value={profile.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    className="textarea textarea-bordered h-32 focus:border-wine-primary"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-control">
+                    <label className="label font-bold text-gray-700">Address</label>
+                    <input
+                      type="text" value={profile.location.address}
+                      onChange={(e) => handleInputChange('location.address', e.target.value)}
+                      className="input input-bordered focus:border-wine-primary"
+                    />
+                  </div>
+                  <div className="flex items-center gap-4 mt-8">
+                    <label className="label cursor-pointer flex gap-3">
+                      <input
+                        type="checkbox" checked={profile.location.is_mountain_location}
+                        onChange={(e) => handleInputChange('location.is_mountain_location', e.target.checked)}
+                        className="checkbox checkbox-primary"
+                      />
+                      <span className="label-text font-semibold">Mountain Location (Filtration Tag)</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="form-control">
+                    <label className="label font-bold text-gray-700">Latitude</label>
+                    <input
+                      type="number" step="any" value={profile.location.latitude}
+                      onChange={(e) => handleInputChange('location.latitude', parseFloat(e.target.value))}
+                      className="input input-bordered focus:border-wine-primary"
+                    />
+                  </div>
+                  <div className="form-control">
+                    <label className="label font-bold text-gray-700">Longitude</label>
+                    <input
+                      type="number" step="any" value={profile.location.longitude}
+                      onChange={(e) => handleInputChange('location.longitude', parseFloat(e.target.value))}
+                      className="input input-bordered focus:border-wine-primary"
+                    />
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* 2. Tasting Packages (UX & Filtration Management) */}
+            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-serif font-bold text-wine-primary flex items-center gap-2">
+                  <FaWineGlass className="text-wine-secondary" />
+                  Tasting Experiences
+                </h2>
+                <button onClick={addTasting} className="btn btn-outline btn-sm gap-2">
+                  <FaPlus /> Add Package
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {profile.tasting_info.map((tasting, idx) => (
+                  <div key={idx} className="border border-gray-200 rounded-xl p-6 relative bg-gray-50/50">
+                    <button
+                      onClick={() => removeTasting(idx)}
+                      className="absolute top-4 right-4 text-red-500 hover:text-red-700 p-2"
+                    >
+                      <FaTrash size={18} />
+                    </button>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Tasting Title</label>
+                        <input
+                          type="text" value={tasting.tasting_title}
+                          onChange={(e) => handleTastingChange(idx, 'tasting_title', e.target.value)}
+                          className="input input-bordered input-sm font-bold"
+                        />
+                      </div>
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Price ($)</label>
+                        <input
+                          type="number" value={tasting.tasting_price}
+                          onChange={(e) => handleTastingChange(idx, 'tasting_price', Number(e.target.value))}
+                          className="input input-bordered input-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-control mb-4">
+                      <label className="label text-xs font-bold uppercase text-gray-500">Wine Types (Comma Separated - Crucial for Filtration)</label>
+                      <input
+                        type="text" value={tasting.wine_types?.join(', ') || ''}
+                        onChange={(e) => handleTastingChange(idx, 'wine_types', e.target.value.split(',').map(s => s.trim()))}
+                        className="input input-bordered input-sm"
+                        placeholder="Cabernet, Chardonnay, Pinot Noir..."
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Wines Count</label>
+                        <input
+                          type="number" value={tasting.number_of_wines_per_tasting}
+                          onChange={(e) => handleTastingChange(idx, 'number_of_wines_per_tasting', Number(e.target.value))}
+                          className="input input-bordered input-sm"
+                        />
+                      </div>
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500">AVA Region</label>
+                        <input
+                          type="text" value={tasting.ava}
+                          onChange={(e) => handleTastingChange(idx, 'ava', e.target.value)}
+                          className="input input-bordered input-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
 
-          {/* Save Button */}
-          <div className="flex justify-end pt-6 border-t border-gray-200">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="btn btn-primary"
-            >
-              {saving ? (
-                <>
-                  <span className="loading loading-spinner loading-sm"></span>
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </button>
+          {/* Sidebar Controls - Right Side */}
+          <div className="space-y-8">
+
+            {/* 3. Payment Method (Business Control) */}
+            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+              <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
+                <FaCreditCard className="text-wine-secondary" />
+                Payment & Billing
+              </h2>
+              <div className="space-y-4">
+                <div className="form-control">
+                  <label className="label font-bold text-gray-700">Payment Strategy</label>
+                  <select
+                    value={profile.payment_method?.type || 'pay_winery'}
+                    onChange={(e) => handleInputChange('payment_method.type', e.target.value)}
+                    className="select select-bordered w-full"
+                  >
+                    <option value="pay_stripe">In-App Payment (Pre-paid / Stripe)</option>
+                    <option value="external_booking">External Booking Link</option>
+                    <option value="pay_winery">Pay at Winery (Cash/Card on site)</option>
+                  </select>
+                </div>
+
+                {profile.payment_method?.type === 'external_booking' && (
+                  <div className="form-control">
+                    <label className="label font-bold text-gray-700">Booking URL</label>
+                    <div className="flex gap-2">
+                      <span className="btn btn-ghost btn-sm btn-circle"><FaLink /></span>
+                      <input
+                        type="url" value={profile.payment_method?.external_booking_link}
+                        onChange={(e) => handleInputChange('payment_method.external_booking_link', e.target.value)}
+                        className="input input-bordered input-sm flex-grow"
+                        placeholder="https://tock.com/your-winery"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="bg-gray-50 p-4 rounded-xl text-xs text-gray-500">
+                  <p className="flex items-center gap-2">
+                    <FaCheckCircle className="text-green-500" />
+                    Payments flow directly to your configuration.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            {/* 4. Amenities (Filtration & UX) */}
+            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+              <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
+                <FaPlus className="text-wine-secondary" />
+                Experience Amenities
+              </h2>
+              <div className="space-y-4">
+                <label className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
+                  <span className="font-semibold text-gray-700">Virtual Sommelier</span>
+                  <input
+                    type="checkbox" checked={profile.amenities.virtual_sommelier}
+                    onChange={(e) => handleInputChange('amenities.virtual_sommelier', e.target.checked)}
+                    className="toggle toggle-primary"
+                  />
+                </label>
+                <label className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
+                  <span className="font-semibold text-gray-700">AR Tours Enabled</span>
+                  <input
+                    type="checkbox" checked={profile.amenities.augmented_reality_tours}
+                    onChange={(e) => handleInputChange('amenities.augmented_reality_tours', e.target.checked)}
+                    className="toggle toggle-primary"
+                  />
+                </label>
+                <label className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
+                  <span className="font-semibold text-gray-700">Handicap Accessible</span>
+                  <input
+                    type="checkbox" checked={profile.amenities.handicap_accessible}
+                    onChange={(e) => handleInputChange('amenities.handicap_accessible', e.target.checked)}
+                    className="toggle toggle-primary"
+                  />
+                </label>
+              </div>
+            </section>
+
+            {/* 5. Transportation (Directions & Booking) */}
+            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+              <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
+                <FaCar className="text-wine-secondary" />
+                Transportation Access
+              </h2>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Uber_logo_2018.png" className="w-8 h-4 object-contain grayscale" />
+                    <span className="font-semibold text-gray-700">Uber Availability</span>
+                  </div>
+                  <input
+                    type="checkbox" checked={profile.transportation.uber_availability}
+                    onChange={(e) => handleInputChange('transportation.uber_availability', e.target.checked)}
+                    className="toggle toggle-info"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/a0/Lyft_logo.svg/2560px-Lyft_logo.svg.png" className="w-8 h-4 object-contain grayscale" />
+                    <span className="font-semibold text-gray-700">Lyft Availability</span>
+                  </div>
+                  <input
+                    type="checkbox" checked={profile.transportation.lyft_availability}
+                    onChange={(e) => handleInputChange('transportation.lyft_availability', e.target.checked)}
+                    className="toggle toggle-secondary"
+                  />
+                </div>
+              </div>
+            </section>
+
+            {/* 6. Contact & Support */}
+            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+              <h2 className="text-xl font-serif font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <FaPhoneAlt className="text-gray-400" />
+                Public Contact
+              </h2>
+              <div className="space-y-4">
+                <div className="form-control">
+                  <label className="label text-xs font-bold uppercase text-gray-500">Phone</label>
+                  <input
+                    type="tel" value={profile.contact_info.phone}
+                    onChange={(e) => handleInputChange('contact_info.phone', e.target.value)}
+                    className="input input-bordered input-sm"
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label text-xs font-bold uppercase text-gray-500">Email</label>
+                  <input
+                    type="email" value={profile.contact_info.email}
+                    onChange={(e) => handleInputChange('contact_info.email', e.target.value)}
+                    className="input input-bordered input-sm"
+                  />
+                </div>
+                <div className="form-control">
+                  <label className="label text-xs font-bold uppercase text-gray-500">Website</label>
+                  <input
+                    type="url" value={profile.contact_info.website}
+                    onChange={(e) => handleInputChange('contact_info.website', e.target.value)}
+                    className="input input-bordered input-sm"
+                  />
+                </div>
+              </div>
+            </section>
           </div>
         </div>
       </div>

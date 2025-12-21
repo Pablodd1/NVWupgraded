@@ -117,19 +117,19 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const dateValue = e.target.value;
-    console.log("Date changed to:", dateValue);
+
     setSelectedDate(dateValue);
   };
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const timeValue = e.target.value;
-    console.log("Time changed to:", timeValue);
+
     setSelectedTime(timeValue);
   };
 
   const handleFoodPairingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValue = e.target.value;
-    console.log("Food pairing changed to:", selectedValue);
+
 
     if (!selectedValue) {
       setSelections((prev) => ({ ...prev, foodPairings: [] }));
@@ -146,7 +146,7 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
 
   const handleTourChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValue = e.target.value;
-    console.log("Tour changed to:", selectedValue);
+
 
     if (!selectedValue) {
       setSelections((prev) => ({ ...prev, tours: [] }));
@@ -163,7 +163,7 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
 
   const handleChangeOther = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedValue = e.target.value;
-    console.log("Other feature changed to:", selectedValue);
+
 
     if (!selectedValue) {
       setSelections((prev) => ({ ...prev, otherFeature: [] }));
@@ -211,7 +211,7 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
               value={selectedTastingIndex}
               onChange={(e) => {
                 const newIndex = Number(e.target.value);
-                console.log("Tasting changed to index:", newIndex);
+
                 setSelectedTastingIndex(newIndex);
                 // Reset date and time when tasting changes
                 setSelectedDate("");
@@ -362,13 +362,7 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
           )}
         </div>
 
-        {/* Debug Info (Remove in production) */}
-        <div className="mt-4 text-xs text-gray-400 border-t border-gray-200 pt-2">
-          <p>Available Dates: {availableDates.length}</p>
-          <p>Available Times: {availableTimes.length}</p>
-          <p>Selected Date: {selectedDate || "None"}</p>
-          <p>Selected Time: {selectedTime ? new Date(selectedTime).toLocaleString() : "None"}</p>
-        </div>
+
       </div>
     </div>
   );

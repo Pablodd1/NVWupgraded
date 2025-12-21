@@ -12,9 +12,9 @@ async function getTransporter() {
   if (transporter) return transporter;
 
   // Check if SMTP credentials are configured
-  const hasConfig = process.env.MAILTRAP_HOST && 
-                    process.env.MAILTRAP_USER && 
-                    process.env.MAILTRAP_PASS;
+  const hasConfig = process.env.MAILTRAP_HOST &&
+    process.env.MAILTRAP_USER &&
+    process.env.MAILTRAP_PASS;
 
   if (hasConfig) {
     // Use configured SMTP
@@ -39,10 +39,6 @@ async function getTransporter() {
         pass: testAccount.pass,
       },
     });
-    console.log("📧 Ethereal Email Account Created:");
-    console.log("   User:", testAccount.user);
-    console.log("   Pass:", testAccount.pass);
-    console.log("   View emails at: https://ethereal.email/messages");
   }
 
   return transporter;
@@ -60,9 +56,8 @@ interface SMSResult {
 
 async function sendSMS(to: string, message: string): Promise<SMSResult> {
   const smsEnabled = process.env.NEXT_PUBLIC_ENABLE_SMS === "true";
-  
+
   if (!smsEnabled) {
-    console.log("📱 SMS disabled. Would have sent to", to, ":", message);
     return { success: false, message: "SMS disabled in configuration" };
   }
 
@@ -87,7 +82,6 @@ async function sendSMS(to: string, message: string): Promise<SMSResult> {
       to: to
     });
 
-    console.log("✅ SMS sent:", smsResult.sid);
     return { success: true, message: smsResult.sid };
   } catch (error: any) {
     console.error("❌ SMS error:", error.message);
@@ -306,10 +300,10 @@ function getCustomerBookingConfirmationEmail(data: BookingNotificationData) {
       <strong>The Napa Valley Wineries Team</strong>
     </p>
   `;
-  
-  return EmailTemplate({ 
-    content, 
-    subject: `Booking Confirmed at ${data.wineryName}` 
+
+  return EmailTemplate({
+    content,
+    subject: `Booking Confirmed at ${data.wineryName}`
   });
 }
 
@@ -378,10 +372,10 @@ function getWineryBookingNotificationEmail(data: BookingNotificationData) {
       Please review and confirm this booking in your dashboard at your earliest convenience.
     </p>
   `;
-  
-  return EmailTemplate({ 
-    content, 
-    subject: `New Booking - ${data.customerFirstName} ${data.customerLastName}` 
+
+  return EmailTemplate({
+    content,
+    subject: `New Booking - ${data.customerFirstName} ${data.customerLastName}`
   });
 }
 
@@ -427,10 +421,10 @@ function getAdminBookingNotificationEmail(data: BookingNotificationData) {
       <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/dashboard" class="button">View in Admin Panel</a>
     </div>
   `;
-  
-  return EmailTemplate({ 
-    content, 
-    subject: `New Booking - ${data.bookingId}` 
+
+  return EmailTemplate({
+    content,
+    subject: `New Booking - ${data.bookingId}`
   });
 }
 
@@ -495,14 +489,14 @@ export async function sendBookingNotifications(params: SendBookingNotificationsP
         subject: `Booking Confirmed at ${data.wineryName}`,
         html: getCustomerBookingConfirmationEmail(data)
       });
-      
+
       results.emails.push({
         to: data.customerEmail,
         status: "success",
         messageId: customerEmail.messageId,
         previewUrl: nodemailer.getTestMessageUrl(customerEmail)
       });
-      
+
       console.log("📧 Customer email sent:", nodemailer.getTestMessageUrl(customerEmail));
     } catch (error: any) {
       results.emails.push({
@@ -520,14 +514,14 @@ export async function sendBookingNotifications(params: SendBookingNotificationsP
         subject: `New Booking - ${data.customerFirstName} ${data.customerLastName}`,
         html: getWineryBookingNotificationEmail(data)
       });
-      
+
       results.emails.push({
         to: data.wineryEmail,
         status: "success",
         messageId: wineryEmail.messageId,
         previewUrl: nodemailer.getTestMessageUrl(wineryEmail)
       });
-      
+
       console.log("📧 Winery email sent:", nodemailer.getTestMessageUrl(wineryEmail));
     } catch (error: any) {
       results.emails.push({
@@ -547,7 +541,7 @@ export async function sendBookingNotifications(params: SendBookingNotificationsP
           subject: `New Booking - ${data.bookingId}`,
           html: getAdminBookingNotificationEmail(data)
         });
-        
+
         results.emails.push({
           to: admin.email,
           status: "success",

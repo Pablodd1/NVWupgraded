@@ -5,6 +5,7 @@ const SupportPage = () => {
   const [selectedFaq, setSelectedFaq] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [showChat, setShowChat] = useState(false);
 
   const faqs = [
     {
@@ -102,11 +103,55 @@ const SupportPage = () => {
           <p className="text-gray-600 mb-4 text-sm md:text-base">Available Monday–Friday, 9 AM–6 PM (PST)</p>
           <button
             className="bg-primary text-white py-2 px-6 rounded-lg hover:bg-secondary focus:ring-2 focus:ring-primary transition duration-300"
-            onClick={() => alert("Launching live chat...")}
+            onClick={() => setShowChat(true)}
           >
             Start Live Chat
           </button>
         </div>
+
+        {/* Live Chat Widget Modal */}
+        {showChat && (
+          <div className="fixed bottom-5 right-5 w-80 md:w-96 bg-white rounded-xl shadow-2xl z-50 overflow-hidden border border-gray-200">
+            <div className="bg-primary text-white p-4 flex justify-between items-center">
+              <div>
+                <h3 className="font-bold">NVW Consierge</h3>
+                <p className="text-xs text-white/80">Typically replies in a few minutes</p>
+              </div>
+              <button
+                onClick={() => setShowChat(false)}
+                className="text-white hover:bg-white/20 rounded-full p-1"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="h-80 p-4 overflow-y-auto bg-gray-50 flex flex-col space-y-4">
+              <div className="flex justify-start">
+                <div className="bg-gray-200 rounded-lg rounded-tl-none p-3 max-w-[80%] text-sm text-gray-800">
+                  <p>Hello! 👋 Welcome to Napa Valley Wineries support. How can I help you plan your trip today?</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 border-t bg-white">
+              <form onSubmit={(e) => { e.preventDefault(); alert("Message sent! (Demo)"); }} className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Type a message..."
+                  className="flex-1 p-2 border rounded-md focus:outline-none focus:border-primary text-sm"
+                  autoFocus
+                />
+                <button type="submit" className="bg-primary text-white p-2 rounded-md hover:bg-primary-focus">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Email Support */}
         <div className="mb-6">
@@ -231,12 +276,33 @@ const SupportPage = () => {
       {/* Testimonials Section */}
       <div className="mt-10">
         <h3 className="text-xl lg:text-2xl font-bold text-primary mb-4">What Our Customers Say</h3>
-        <div className="bg-gray-100 p-6 rounded-lg shadow-md mb-6">
-          <p className="text-sm md:text-base text-gray-600">
-            "Booking my itinerary through this website made my Napa Valley experience unforgettable! The support was amazing when
-            I had questions about tasting fees."
-          </p>
-          <p className="font-semibold text-primary">-Johan Surich., New York</p>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-gray-100 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <p className="text-sm md:text-base text-gray-600 italic mb-4">
+              "Booking my itinerary through this website made my Napa Valley experience unforgettable! The support was amazing when
+              I had questions about tasting fees."
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">JS</div>
+              <div>
+                <p className="font-semibold text-primary">Johan Surich</p>
+                <p className="text-xs text-gray-500">New York, NY</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-100 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <p className="text-sm md:text-base text-gray-600 italic mb-4">
+              "I organized a bachelorette party for 8 people and the AI recommendations were spot on! We found a hidden gem winery that wasn't even on our radar. The shuttle coordination was seamless."
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-secondary text-white flex items-center justify-center font-bold">EM</div>
+              <div>
+                <p className="font-semibold text-primary">Emily Martinez</p>
+                <p className="text-xs text-gray-500">San Francisco, CA</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

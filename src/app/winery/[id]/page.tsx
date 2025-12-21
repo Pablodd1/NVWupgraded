@@ -24,6 +24,7 @@ import { useItinerary } from "@/store/itinerary";
 import { toast } from "react-toastify";
 import axios from "axios";
 import AvailableSlotsWidget from "@/components/winery/AvailableSlotsWidget";
+import Image from "next/image";
 
 const WineryDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -38,13 +39,13 @@ const WineryDetail = () => {
 
   // Get current tasting info based on selection
   const currentTastingInfo = winery?.tasting_info?.[selectedTastingIndex];
-  
+
   // Get images from the current tasting or fallback to first tasting
   const currentImages = currentTastingInfo?.images || winery?.tasting_info?.[0]?.images || [];
-  
+
   // Check if this winery uses external booking
   const hasExternalBooking = currentTastingInfo?.booking_info?.external_booking_link;
-  
+
   // Handler for external booking
   const handleExternalBooking = () => {
     if (hasExternalBooking) {
@@ -90,22 +91,14 @@ const WineryDetail = () => {
       const fetchWinery = async () => {
         try {
           const response = await axios.get(`/api/winery/${id}`);
-          console.log("Winery Data:", response.data);
-          
+
+
           const wineryData = response.data.winery;
-          
-          // Migrate old payment_method format to new format
-          if (typeof wineryData.payment_method === 'string') {
-            wineryData.payment_method = { 
-              type: wineryData.payment_method,
-              external_booking_link: ''
-            };
-          }
-          
+
           setWinery(wineryData);
           hasFetchedWinery.current = true;
         } catch (error) {
-          console.error("Error fetching winery:", error);
+          // Silent error for production
         }
       };
 
@@ -118,7 +111,14 @@ const WineryDetail = () => {
   }, [id]);
 
   if (!winery) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <span className="loading loading-spinner loading-lg text-primary"></span>
+          <p className="text-gray-600 font-medium">Loading winery details...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -126,7 +126,14 @@ const WineryDetail = () => {
       {/* Hero Section */}
       <div className="relative h-[80vh] overflow-hidden">
         {currentImages.length > 0 ? (
-          <img src={currentImages[currentImageIndex]} alt={winery.name} className="w-full h-full object-cover" />
+          <Image
+            src={currentImages[currentImageIndex]}
+            alt={winery.name}
+            fill
+            priority
+            className="object-cover"
+            sizes="100vw"
+          />
         ) : (
           <div className="w-full h-full bg-gray-300 flex items-center justify-center">
             <span className="text-gray-500">No images available</span>
@@ -139,7 +146,7 @@ const WineryDetail = () => {
             <div className="mt-8">
               {/* Show direct booking button if external booking is configured */}
               {hasExternalBooking ? (
-                <Button 
+                <Button
                   className="bg-wine-primary hover:bg-wine-primary/90 text-white px-8 py-6 text-lg"
                   onClick={handleExternalBooking}
                 >
@@ -183,11 +190,10 @@ const WineryDetail = () => {
             <h2 className="font-serif text-3xl mb-6 text-wine-primary">Choose Your Tasting Experience</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {winery.tasting_info.map((tasting, index) => (
-                <Card 
-                  key={index} 
-                  className={`p-6 cursor-pointer transition-all duration-300 hover:shadow-lg ${
-                    selectedTastingIndex === index ? 'ring-2 ring-wine-primary bg-wine-primary/5' : ''
-                  }`}
+                <Card
+                  key={index}
+                  className={`p-6 cursor-pointer transition-all duration-300 hover:shadow-lg ${selectedTastingIndex === index ? 'ring-2 ring-wine-primary bg-wine-primary/5' : ''
+                    }`}
                   onClick={() => setSelectedTastingIndex(index)}
                 >
                   <h3 className="font-serif text-xl mb-3 text-wine-primary">{tasting.tasting_title}</h3>
@@ -255,92 +261,94 @@ const WineryDetail = () => {
         </div>
 
         {/* Details Section - Only show if there's content */}
-        {(currentTastingInfo?.wine_details?.length > 0 || 
-          currentTastingInfo?.tours?.tour_options?.length > 0 || 
-          currentTastingInfo?.other_features?.length > 0 || 
+        {(currentTastingInfo?.wine_details?.length > 0 ||
+          currentTastingInfo?.tours?.tour_options?.length > 0 ||
+          currentTastingInfo?.other_features?.length > 0 ||
           currentTastingInfo?.food_pairing_options?.length > 0) && (
-          <div className="bg-white rounded-lg p-8 shadow-lg">
-            <h2 className="font-serif text-3xl mb-6 text-wine-primary">Tasting Details</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Wine Section - Only show if wine details exist */}
-              {currentTastingInfo?.wine_details && currentTastingInfo.wine_details.length > 0 && (
-                <div>
-                  <h3 className="font-serif text-xl mb-4">Featured Wines</h3>
-                  {currentTastingInfo.wine_details.map((wine, index) => (
-                    <div key={wine.id} className="mb-4">
-                      {wine.photo && (
-                        <div className="mb-4">
-                          <img 
-                            src={wine.photo} 
-                            alt={wine.name}
-                            className="w-full h-48 object-cover rounded-lg shadow-md"
-                          />
-                        </div>
-                      )}
-                      <p>
-                        <strong>Wine Name:</strong> {wine.name}
-                      </p>
-                      <p>
-                        <strong>Description:</strong> {wine.description}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="bg-white rounded-lg p-8 shadow-lg">
+              <h2 className="font-serif text-3xl mb-6 text-wine-primary">Tasting Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Wine Section - Only show if wine details exist */}
+                {currentTastingInfo?.wine_details && currentTastingInfo.wine_details.length > 0 && (
+                  <div>
+                    <h3 className="font-serif text-xl mb-4">Featured Wines</h3>
+                    {currentTastingInfo.wine_details.map((wine, index) => (
+                      <div key={wine.id} className="mb-4">
+                        {wine.photo && (
+                          <div className="mb-4 relative h-48 w-full">
+                            <Image
+                              src={wine.photo}
+                              alt={wine.name}
+                              fill
+                              className="object-cover rounded-lg shadow-md"
+                              sizes="(max-width: 768px) 100vw, 50vw"
+                            />
+                          </div>
+                        )}
+                        <p>
+                          <strong>Wine Name:</strong> {wine.name}
+                        </p>
+                        <p>
+                          <strong>Description:</strong> {wine.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-              {/* Tour Options Section - Only show if tours exist */}
-              {currentTastingInfo?.tours?.tour_options && currentTastingInfo.tours.tour_options.length > 0 && (
-                <div>
-                  <h3 className="font-serif text-xl mb-4">Tour Options</h3>
-                  {currentTastingInfo.tours.tour_options.map((tour, index) => (
-                    <div key={index + 1} className="mb-4 p-4 border border-gray-200 rounded-lg">
-                      <p className="mb-2">
-                        <strong>Tour:</strong> {tour.description}
-                      </p>
-                      <p className="text-lg font-semibold text-wine-primary">
-                        {tour.cost === 0 ? 'Free' : `$${tour.cost.toFixed(2)}`}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+                {/* Tour Options Section - Only show if tours exist */}
+                {currentTastingInfo?.tours?.tour_options && currentTastingInfo.tours.tour_options.length > 0 && (
+                  <div>
+                    <h3 className="font-serif text-xl mb-4">Tour Options</h3>
+                    {currentTastingInfo.tours.tour_options.map((tour, index) => (
+                      <div key={index + 1} className="mb-4 p-4 border border-gray-200 rounded-lg">
+                        <p className="mb-2">
+                          <strong>Tour:</strong> {tour.description}
+                        </p>
+                        <p className="text-lg font-semibold text-wine-primary">
+                          {tour.cost === 0 ? 'Free' : `$${tour.cost.toFixed(2)}`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-              {/* Other Features Section - Only show if features exist */}
-              {currentTastingInfo?.other_features && currentTastingInfo.other_features.length > 0 && (
-                <div>
-                  <h3 className="font-serif text-xl mb-4">Other Features</h3>
-                  {currentTastingInfo.other_features.map((feature, index) => (
-                    <div key={index + 1} className="mb-4 p-4 border border-gray-200 rounded-lg">
-                      <p className="mb-2">
-                        <strong>Feature:</strong> {feature.description}
-                      </p>
-                      <p className="text-lg font-semibold text-wine-primary">
-                        {feature.cost === 0 ? 'Free' : `$${feature.cost.toFixed(2)}`}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+                {/* Other Features Section - Only show if features exist */}
+                {currentTastingInfo?.other_features && currentTastingInfo.other_features.length > 0 && (
+                  <div>
+                    <h3 className="font-serif text-xl mb-4">Other Features</h3>
+                    {currentTastingInfo.other_features.map((feature, index) => (
+                      <div key={index + 1} className="mb-4 p-4 border border-gray-200 rounded-lg">
+                        <p className="mb-2">
+                          <strong>Feature:</strong> {feature.description}
+                        </p>
+                        <p className="text-lg font-semibold text-wine-primary">
+                          {feature.cost === 0 ? 'Free' : `$${feature.cost.toFixed(2)}`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
-              {/* Food Pairings Section - Only show if pairings exist */}
-              {currentTastingInfo?.food_pairing_options && currentTastingInfo.food_pairing_options.length > 0 && (
-                <div>
-                  <h3 className="font-serif text-xl mb-4">Food Pairings</h3>
-                  {currentTastingInfo.food_pairing_options.map((pairing, index) => (
-                    <div key={index + 1} className="mb-4 p-4 border border-gray-200 rounded-lg">
-                      <p className="mb-2">
-                        <strong>{pairing.name}</strong>
-                      </p>
-                      <p className="text-lg font-semibold text-wine-primary">
-                        {pairing.price === 0 ? 'Free' : `$${pairing.price.toFixed(2)}`}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
+                {/* Food Pairings Section - Only show if pairings exist */}
+                {currentTastingInfo?.food_pairing_options && currentTastingInfo.food_pairing_options.length > 0 && (
+                  <div>
+                    <h3 className="font-serif text-xl mb-4">Food Pairings</h3>
+                    {currentTastingInfo.food_pairing_options.map((pairing, index) => (
+                      <div key={index + 1} className="mb-4 p-4 border border-gray-200 rounded-lg">
+                        <p className="mb-2">
+                          <strong>{pairing.name}</strong>
+                        </p>
+                        <p className="text-lg font-semibold text-wine-primary">
+                          {pairing.price === 0 ? 'Free' : `$${pairing.price.toFixed(2)}`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Tasting Experience Section */}
         <div className="bg-white rounded-xl p-8 shadow-lg">
@@ -381,7 +389,7 @@ const WineryDetail = () => {
         {/* Book a Tasting Section */}
         <div className="bg-white rounded-lg p-8 shadow-lg">
           <h2 className="font-serif text-3xl mb-6 text-wine-primary">Book a Tasting</h2>
-          
+
           {/* External Booking - Direct Flow */}
           {hasExternalBooking ? (
             <div className="space-y-6">
@@ -408,7 +416,7 @@ const WineryDetail = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Direct External Booking Button */}
               <Button
                 className="bg-wine-primary hover:bg-wine-primary/90 text-white w-full py-8 text-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
@@ -421,7 +429,7 @@ const WineryDetail = () => {
                   </svg>
                 </span>
               </Button>
-              
+
               {/* Additional Info */}
               <p className="text-center text-gray-500 text-sm">
                 You will be redirected to {winery.name}'s booking system in a new window
@@ -477,30 +485,30 @@ const WineryDetail = () => {
         </div>
 
         {/* Amenities Section - Only show if any amenity is enabled */}
-        {(winery?.amenities?.virtual_sommelier || 
-          winery?.amenities?.augmented_reality_tours || 
+        {(winery?.amenities?.virtual_sommelier ||
+          winery?.amenities?.augmented_reality_tours ||
           winery?.amenities?.handicap_accessible) && (
-          <div className="bg-white rounded-xl p-8 shadow-lg">
-            <h2 className="font-serif text-3xl mb-6 text-wine-primary">Amenities</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {winery.amenities.virtual_sommelier && (
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <p className="text-gray-800">✅ Virtual Sommelier</p>
-                </div>
-              )}
-              {winery.amenities.augmented_reality_tours && (
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <p className="text-gray-800">✅ Augmented Reality Tours</p>
-                </div>
-              )}
-              {winery.amenities.handicap_accessible && (
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <p className="text-gray-800">♿ Handicap Accessible</p>
-                </div>
-              )}
+            <div className="bg-white rounded-xl p-8 shadow-lg">
+              <h2 className="font-serif text-3xl mb-6 text-wine-primary">Amenities</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {winery.amenities.virtual_sommelier && (
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <p className="text-gray-800">✅ Virtual Sommelier</p>
+                  </div>
+                )}
+                {winery.amenities.augmented_reality_tours && (
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <p className="text-gray-800">✅ Augmented Reality Tours</p>
+                  </div>
+                )}
+                {winery.amenities.handicap_accessible && (
+                  <div className="p-4 border border-gray-200 rounded-lg">
+                    <p className="text-gray-800">♿ Handicap Accessible</p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Reviews Section - Only show if reviews exist */}
         {winery?.user_reviews && winery.user_reviews.length > 0 && (
@@ -533,7 +541,7 @@ const WineryDetail = () => {
         {/* Contact & Directions Section */}
         <div className="bg-white rounded-xl p-8 shadow-lg">
           <h2 className="font-serif text-3xl mb-8 text-wine-primary">Contact & Directions</h2>
-          
+
           {/* Hours of Operation */}
           <div className="mb-8">
             <h3 className="font-serif text-2xl mb-4 text-wine-primary">Hours of Operation</h3>

@@ -102,8 +102,17 @@ const WinerySchema = new mongoose.Schema({
     lyft_availability: { type: Boolean, default: false },
     distance_from_user: { type: Number, min: 0 },
   },
+  payment_method: {
+    type: { type: String, enum: ['pay_winery', 'pay_stripe', 'external_booking'], default: 'pay_winery' },
+    external_booking_link: { type: String },
+  },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 });
+
+// Add indexes for performance
+WinerySchema.index({ name: 1 });
+WinerySchema.index({ "location.address": 1 });
+WinerySchema.index({ owner: 1 });
 
 // Check if the model is already defined
 const Winery = mongoose.models.Winery || mongoose.model("Winery", WinerySchema);
