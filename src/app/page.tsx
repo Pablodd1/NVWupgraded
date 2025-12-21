@@ -14,6 +14,7 @@ import dynamic from "next/dynamic";
 import { type NLPResult } from "@/lib/ai-nlp";
 import { useFilterStore } from "@/hooks/useFilterStore";
 import { useUIStore } from "@/store/uiStore";
+import DevModePanel from "@/components/DevModePanel";
 
 // Lazy‑load the heavy voice‑search panel to improve initial bundle size
 const VoiceSearchPanel = dynamic(() => import("@/components/voice-search/VoiceSearchPanel"), {
@@ -82,14 +83,15 @@ export default function Home() {
     toast.success("AI filters applied!");
   };
 
-  useEffect(() => {
-    if (!authLoading) {
-      const config = SessionStorageService.getConfig();
-      if (config && config.isGuest) return setShowPopup(false);
-      if (user) return setShowPopup(false);
-      setShowPopup(true);
-    }
-  }, [authLoading, user]);
+  // Dev Mode: Disabled mandatory login popup for testing
+  // useEffect(() => {
+  //   if (!authLoading) {
+  //     const config = SessionStorageService.getConfig();
+  //     if (config && config.isGuest) return setShowPopup(false);
+  //     if (user) return setShowPopup(false);
+  //     setShowPopup(true);
+  //   }
+  // }, [authLoading, user]);
 
   return (
     <div className="min-h-screen relative md:top-20 top-[50px] bg-gray-100">
@@ -167,6 +169,9 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* Dev Mode Panel for Quick Login */}
+      <DevModePanel />
     </div>
   );
 }
