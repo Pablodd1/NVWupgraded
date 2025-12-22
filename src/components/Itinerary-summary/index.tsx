@@ -14,59 +14,31 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
   useEffect(() => {
     const calculateTotalPrice = () => {
       return wineries.reduce((total, winery) => {
-
         let wineryCost = 0;
         const bookingDetails = winery.bookingDetails;
         const selectedTastingIndex = bookingDetails?.selectedTastingIndex || 0;
         const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
 
-        // Only calculate cost for wineries that require payment through the app
-        if (winery.payment_method?.type === "pay_stripe") {
-          // Add tasting price for the selected tasting
-          if (currentTastingInfo?.tasting_price) {
-            wineryCost += currentTastingInfo.tasting_price;
-          }
-
-          // Add food pairing prices if selected
-          if (bookingDetails?.foodPairings) {
-            wineryCost += bookingDetails.foodPairings.reduce((sum, pairing) => sum + pairing.price, 0);
-          }
-
-          // Add tour prices if selected
-          if (bookingDetails?.tours) {
-            wineryCost += bookingDetails.tours.reduce((sum, tour) => sum + tour.price, 0);
-          }
-
-          // Add other features prices if selected
-          if (bookingDetails?.otherFeature) {
-            wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + feature.price, 0);
-          }
-        } else if (!winery.payment_method || typeof winery.payment_method === 'string') {
-          // Fallback for wineries without proper payment method structure
-          // Assume they use pay_stripe if no payment method is set
-
-
-          // Add tasting price for the selected tasting
-          if (currentTastingInfo?.tasting_price) {
-            wineryCost += currentTastingInfo.tasting_price;
-          }
-
-          // Add food pairing prices if selected
-          if (bookingDetails?.foodPairings) {
-            wineryCost += bookingDetails.foodPairings.reduce((sum, pairing) => sum + pairing.price, 0);
-          }
-
-          // Add tour prices if selected
-          if (bookingDetails?.tours) {
-            wineryCost += bookingDetails.tours.reduce((sum, tour) => sum + tour.price, 0);
-          }
-
-          // Add other features prices if selected
-          if (bookingDetails?.otherFeature) {
-            wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + feature.price, 0);
-          }
+        // Always calculate the total cost for display purposes
+        // Add tasting price for the selected tasting
+        if (currentTastingInfo?.tasting_price) {
+          wineryCost += currentTastingInfo.tasting_price;
         }
-        // For external booking and pay at winery, cost is 0 (handled externally)
+
+        // Add food pairing prices if selected
+        if (bookingDetails?.foodPairings) {
+          wineryCost += bookingDetails.foodPairings.reduce((sum, pairing) => sum + (pairing.price || 0), 0);
+        }
+
+        // Add tour prices if selected
+        if (bookingDetails?.tours) {
+          wineryCost += bookingDetails.tours.reduce((sum, tour) => sum + (tour.price || 0), 0);
+        }
+
+        // Add other features prices if selected
+        if (bookingDetails?.otherFeature) {
+          wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + (feature.price || 0), 0);
+        }
 
         return total + wineryCost;
       }, 0);
@@ -115,12 +87,35 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
               const selectedTastingIndex = bookingDetails?.selectedTastingIndex || 0;
               const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
 
+              // Calculate winery subtotal
+              let winerySubtotal = 0;
+              if (currentTastingInfo?.tasting_price) {
+                winerySubtotal += currentTastingInfo.tasting_price;
+              }
+              if (bookingDetails?.foodPairings) {
+                winerySubtotal += bookingDetails.foodPairings.reduce((sum, p) => sum + p.price, 0);
+              }
+              if (bookingDetails?.tours) {
+                winerySubtotal += bookingDetails.tours.reduce((sum, t) => sum + t.price, 0);
+              }
+              if (bookingDetails?.otherFeature) {
+                winerySubtotal += bookingDetails.otherFeature.reduce((sum, f) => sum + f.price, 0);
+              }
+
               return (
-                <li key={winery._id || winery.name} className="mt-2">
-                  <span className="font-medium">{winery.name}</span>
+                <li key={winery._id || winery.name} className="mt-2 border-b pb-2 last:border-b-0">
+                  <div className="flex justify-between items-start">
+                    <span className="font-medium">{winery.name}</span>
+                    <span className="font-semibold text-primary">${winerySubtotal.toFixed(2)}</span>
+                  </div>
                   {currentTastingInfo && (
                     <div className="ml-4 text-xs text-gray-500">
                       {currentTastingInfo.tasting_title}
+                    </div>
+                  )}
+                  {bookingDetails?.selectedDate && bookingDetails?.selectedTime && (
+                    <div className="ml-4 text-xs text-green-600">
+                      📅 {new Date(bookingDetails.selectedTime).toLocaleDateString()} at {new Date(bookingDetails.selectedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
                   )}
                   {bookingDetails &&
@@ -128,7 +123,7 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                       bookingDetails.foodPairings?.length > 0 ||
                       bookingDetails.tours?.length > 0 ||
                       bookingDetails.otherFeature?.length > 0) ? (
-                    <ul className="ml-4 list-disc">
+                    <ul className="ml-4 list-disc text-xs">
                       {currentTastingInfo?.tasting_price && (
                         <li>Tasting: ${currentTastingInfo.tasting_price.toFixed(2)}</li>
                       )}
@@ -149,7 +144,7 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                       ))}
                     </ul>
                   ) : (
-                    <p className="ml-4 text-gray-500">No options selected</p>
+                    <p className="ml-4 text-gray-500 text-xs">No options selected</p>
                   )}
                 </li>
               );
@@ -157,6 +152,19 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
           </ul>
         )}
       </div>
+
+      {/* Grand Total Section */}
+      {wineries.length > 0 && (
+        <div className="mt-4 pt-4 border-t-2 border-gray-300">
+          <div className="flex justify-between items-center">
+            <span className="text-lg font-bold text-gray-800">Grand Total</span>
+            <span className="text-2xl font-bold text-green-600">${totalPrice.toFixed(2)}</span>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {getPaymentMethodSummary()}
+          </p>
+        </div>
+      )}
 
       <div className="mt-6">
         <button
