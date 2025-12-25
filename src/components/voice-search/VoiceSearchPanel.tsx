@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import VoiceSearchButton from "./VoiceSearchButton";
-import { processNaturalLanguage, type NLPResult } from "@/lib/ai-nlp";
+import { processNaturalLanguageAI, type NLPResult } from "@/lib/ai-nlp";
 import { FaLightbulb, FaCheck, FaTimes } from "react-icons/fa";
 
 interface VoiceSearchPanelProps {
@@ -21,10 +21,15 @@ export default function VoiceSearchPanel({
     setTranscript(newTranscript);
     setIsProcessing(true);
 
-    // Process with NLP
-    const result = processNaturalLanguage(newTranscript);
-    setNlpResult(result);
-    setIsProcessing(false);
+    try {
+      // Process with OpenAI-powered NLP
+      const result = await processNaturalLanguageAI(newTranscript);
+      setNlpResult(result);
+    } catch (error) {
+      console.error("Voice search processing error:", error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleApplyFilters = () => {
@@ -101,19 +106,19 @@ export default function VoiceSearchPanel({
                 <div className="flex-1 bg-gray-200 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full transition-all ${nlpResult.confidence >= 0.7
-                        ? 'bg-green-500'
-                        : nlpResult.confidence >= 0.4
-                          ? 'bg-yellow-500'
-                          : 'bg-red-500'
+                      ? 'bg-green-500'
+                      : nlpResult.confidence >= 0.4
+                        ? 'bg-yellow-500'
+                        : 'bg-red-500'
                       }`}
                     style={{ width: `${nlpResult.confidence * 100}%` }}
                   />
                 </div>
                 <span className={`text-sm font-semibold ${nlpResult.confidence >= 0.7
-                    ? 'text-green-600'
-                    : nlpResult.confidence >= 0.4
-                      ? 'text-yellow-600'
-                      : 'text-red-600'
+                  ? 'text-green-600'
+                  : nlpResult.confidence >= 0.4
+                    ? 'text-yellow-600'
+                    : 'text-red-600'
                   }`}>
                   {(nlpResult.confidence * 100).toFixed(0)}%
                 </span>

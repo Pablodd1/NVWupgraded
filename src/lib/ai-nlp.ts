@@ -110,7 +110,8 @@ const PRICE_KEYWORDS: { [key: string]: { min?: number; max?: number } } = {
 };
 
 /**
- * Process natural language query and extract filters
+ * Process natural language query and extract filters using traditional keyword matching.
+ * This serves as a fallback if AI processing is unavailable or fails.
  */
 export function processNaturalLanguage(query: string): NLPResult {
   const lowerQuery = query.toLowerCase();
@@ -212,19 +213,19 @@ export function processNaturalLanguage(query: string): NLPResult {
     const cleanWord = word.replace(/[^\w]/g, '');
     if (cleanWord.length > 3 && !commonWords.has(cleanWord)) {
       // Check if it's not already captured by other filters
-      const isAlreadyCaptured = 
+      const isAlreadyCaptured =
         Object.keys(WINE_TYPE_KEYWORDS).includes(cleanWord) ||
         Object.keys(AVA_KEYWORDS).includes(cleanWord) ||
         Object.keys(FEATURE_KEYWORDS).includes(cleanWord) ||
         Object.keys(TIME_KEYWORDS).includes(cleanWord) ||
         Object.keys(PRICE_KEYWORDS).includes(cleanWord);
-      
+
       if (!isAlreadyCaptured) {
         keywords.push(cleanWord);
       }
     }
   }
-  
+
   if (keywords.length > 0) {
     filters.keywords = keywords;
   }
@@ -317,7 +318,7 @@ export function generateWineryRecommendations(
     // Score based on wine types
     if (filters.wineTypes && filters.wineTypes.length > 0) {
       const wineryWineTypes = winery.tasting_info?.wine_types || [];
-      const matchingTypes = filters.wineTypes.filter(type => 
+      const matchingTypes = filters.wineTypes.filter(type =>
         wineryWineTypes.includes(type)
       );
       if (matchingTypes.length > 0) {
@@ -351,11 +352,11 @@ export function generateWineryRecommendations(
     if (filters.priceRange) {
       const wineryPrice = winery.tasting_info?.tasting_price || 0;
       const { min, max } = filters.priceRange;
-      
+
       let priceMatch = true;
       if (min && wineryPrice < min) priceMatch = false;
       if (max && wineryPrice > max) priceMatch = false;
-      
+
       if (priceMatch) {
         score += 25;
         reasons.push(`Price: $${wineryPrice}`);
@@ -407,7 +408,43 @@ export function generateWineryRecommendations(
   return recommendations;
 }
 
+export async function processNaturalLanguageAI(query: string): Promise<NLPResult> {
+  try {
+    const response = await fetch('/api/ai-search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`AI Search API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // Map the API response back to the NLPResult format
+    return {
+      filters: {
+        ava: data.filters.ava,
+        wineTypes: data.filters.wineTypes,
+        priceRange: data.filters.priceRange,
+        features: data.filters.features,
+      },
+      confidence: 0.95, // AI provided this
+      originalQuery: query,
+      interpretation: data.filters.interpretation,
+      suggestions: data.count === 0 ? ["Try widening your search area or price range."] : undefined
+    };
+  } catch (error) {
+    console.error("AI NLP processing failed, falling back to keywords:", error);
+    return processNaturalLanguage(query);
+  }
+}
+
 export default {
   processNaturalLanguage,
+  processNaturalLanguageAI,
   generateWineryRecommendations
 };
