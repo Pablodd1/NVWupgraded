@@ -61,7 +61,7 @@ export async function POST(req: Request) {
     const demoCreds = [
       { email: "admin@napawineries.com", pass: "admin123", role: "admin", name: "System Admin" },
       { email: "owner@napawineries.com", pass: "owner123", role: "winery", name: "Winery Owner", wineryId: "657999acac9c9c0012345671" },
-      { email: "customer@example.com", pass: "customer123", role: "customer", name: "John Customer" }
+      { email: "customer@test.com", pass: "customer123", role: "customer", name: "Test Customer" }
     ];
 
     try {

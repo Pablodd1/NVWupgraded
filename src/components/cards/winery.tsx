@@ -200,7 +200,24 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
             Remove
           </button>
         </div>
-        <p className="text-xs text-gray-500 mb-4">{winery.location?.address ?? "Address not available"}</p>
+        <p className="text-xs text-gray-500 mb-2">{winery.location?.address ?? "Address not available"}</p>
+
+        {/* External Booking Notice */}
+        {winery.payment_method?.type === "external_booking" && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+            <p className="text-xs text-orange-800 font-semibold mb-2">
+              ℹ️ This winery requires booking on their official website.
+            </p>
+            <a
+              href={winery.payment_method.external_booking_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-xs btn-warning w-full"
+            >
+              Go to Booking Site →
+            </a>
+          </div>
+        )}
 
         {/* Multiple Tasting Selection */}
         {winery.tasting_info && winery.tasting_info.length > 1 && (
@@ -260,11 +277,10 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
                 min={minDate}
                 max={maxDate}
                 className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
-                disabled={!hasAvailableSlots}
                 required
               />
               {!hasAvailableSlots && (
-                <p className="text-xs text-red-500 mt-1">No available dates for this tasting</p>
+                <p className="text-xs text-blue-500 mt-1">Please select the date you plan to visit.</p>
               )}
             </div>
 
@@ -277,13 +293,12 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
                 className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
                 value={selectedTime}
                 onChange={handleTimeChange}
-                disabled={!selectedDate || !hasAvailableTimes}
                 required
               >
                 <option value="" disabled>
-                  {!selectedDate ? "Select a date first" : "Select a time"}
+                  Select a time
                 </option>
-                {availableTimes.map((time, idx) => {
+                {hasAvailableTimes ? availableTimes.map((time, idx) => {
                   const date = new Date(time);
                   const timeString = !isNaN(date.getTime())
                     ? date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -293,7 +308,17 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
                       {timeString}
                     </option>
                   );
-                })}
+                }) : (
+                  <>
+                    <option value={`${selectedDate}T10:00:00Z`}>10:00 AM</option>
+                    <option value={`${selectedDate}T11:00:00Z`}>11:00 AM</option>
+                    <option value={`${selectedDate}T12:00:00Z`}>12:00 PM</option>
+                    <option value={`${selectedDate}T13:00:00Z`}>1:00 PM</option>
+                    <option value={`${selectedDate}T14:00:00Z`}>2:00 PM</option>
+                    <option value={`${selectedDate}T15:00:00Z`}>3:00 PM</option>
+                    <option value={`${selectedDate}T16:00:00Z`}>4:00 PM</option>
+                  </>
+                )}
               </select>
               {selectedDate && !hasAvailableTimes && (
                 <p className="text-xs text-red-500 mt-1">No available times for selected date</p>

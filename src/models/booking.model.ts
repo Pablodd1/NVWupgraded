@@ -5,13 +5,6 @@ interface FoodPairing {
   price: number;
 }
 
-interface WineryBooking {
-  wineryId: mongoose.Types.ObjectId;
-  datetime: Date;
-  tasting: number | null;
-  tour: number | null;
-  foodPairings: FoodPairing[];
-}
 const foodPairingSchema = new Schema<FoodPairing>(
   {
     name: { type: String, required: true },
@@ -20,13 +13,25 @@ const foodPairingSchema = new Schema<FoodPairing>(
   { _id: false }
 );
 
+interface WineryBooking {
+  wineryId: mongoose.Types.ObjectId;
+  datetime: Date;
+  tasting: number | null;
+  tours: any[]; // Support detailed tour info
+  foodPairings: FoodPairing[];
+  otherFeatures: any[]; // Support detailed feature info
+  numberOfGuests: number;
+}
+
 const wineryBookingSchema = new Schema<WineryBooking>(
   {
     wineryId: { type: Schema.Types.ObjectId, required: true, ref: "Winery" },
     datetime: { type: Date, required: true },
     tasting: { type: Number, default: null },
-    tour: { type: Number, default: null },
+    tours: { type: [Object], default: [] },
     foodPairings: { type: [foodPairingSchema], default: [] },
+    otherFeatures: { type: [Object], default: [] },
+    numberOfGuests: { type: Number, default: 1, min: 1 },
   },
   { _id: false }
 );
@@ -37,7 +42,6 @@ interface Booking {
   specialRequests?: string;
   status?: "pending" | "confirmed" | "cancelled";
   payment_method: string;
-
 }
 
 const bookingSchema = new Schema<Booking>(

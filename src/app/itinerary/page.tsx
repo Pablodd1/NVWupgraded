@@ -6,7 +6,7 @@ import AuthModal from "@/components/modal/AuthModal";
 import { Car, Loader2, Wine } from "lucide-react";
 import { Button } from "@/components/buttons/button";
 import Modal from "@/components/modal";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import WineryBookingCard from "@/components/cards/winery";
 import axios from "axios";
 import { useAuthStore } from "@/store/authStore";
@@ -29,6 +29,24 @@ export default function ItineraryPage() {
   const [showDateOfBirthModal, setShowDateOfBirthModal] = useState(false);
   const { user } = useAuthStore();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Listen for Stripe success or cancel
+  useEffect(() => {
+    const success = searchParams.get("success");
+    if (success === "true") {
+      setShowRideModal(true);
+      toast.success("Payment successful! Your itinerary is confirmed.");
+      // The session creator already saved the booking to the DB
+      // We just need to clear the local itinerary
+      // We'll let the RideModal close handler do it, or do it here
+    }
+
+    const cancel = searchParams.get("cancel");
+    if (cancel === "true") {
+      toast.error("Payment cancelled. You can try booking again.");
+    }
+  }, [searchParams]);
 
   const handleUpdate = (id: string, data: BookingData) => {
     const updatedItinerary = itinerary.map((winery) => {
@@ -113,80 +131,54 @@ export default function ItineraryPage() {
         dateTime: winery.bookingDetails?.selectedTime,
         numberOfGuests: winery.bookingDetails?.numberOfGuests || 1,
         tastingIndex: selectedTastingIndex,
-        tasting: winery.bookingDetails?.tasting && currentTastingInfo?.tasting_price ? currentTastingInfo.tasting_price : null,
+        tasting: winery.bookingDetails?.tasting ? (currentTastingInfo?.tasting_price ?? 0) : null,
         foodPairings: winery.bookingDetails?.foodPairings || [],
         tours: winery.bookingDetails?.tours || [],
-        otherFeature: winery.bookingDetails?.otherFeature || [],
+        otherFeatures: winery.bookingDetails?.otherFeature || [],
         payment_method: winery.payment_method,
       };
     });
 
     try {
-
-
-      const requiresStripe = itinerary.some((winery) => winery?.payment_method?.type === "pay_stripe");
-      const hasExternalBooking = itinerary.some((winery) => winery?.payment_method?.type === "external_booking");
-
-
+      const stripeWineries = itinerary.filter((winery) => winery?.payment_method?.type === "pay_stripe");
+      const requiresStripe = stripeWineries.length > 0;
 
       if (requiresStripe) {
         setLoadingPayment(true);
-        const lineItems = itinerary
-          .filter((winery) => winery?.payment_method?.type === "pay_stripe")
-          .map((winery) => {
-            let totalCost = 0;
-            const items = [];
-            const selectedTastingIndex = winery.bookingDetails?.selectedTastingIndex || 0;
-            const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
+        const lineItems: any[] = [];
 
-            // Add tasting price if selected
-            if (currentTastingInfo?.tasting_price) {
-              totalCost += currentTastingInfo.tasting_price;
-            }
+        stripeWineries.forEach((winery) => {
+          let wineryTotal = 0;
+          const selectedTastingIndex = winery.bookingDetails?.selectedTastingIndex || 0;
+          const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
 
-            // Add food pairing prices
-            if (winery.bookingDetails?.foodPairings?.length) {
-              totalCost += winery.bookingDetails.foodPairings.reduce((sum, foodItem) => {
-                return foodItem.price ? sum + foodItem.price : sum;
-              }, 0);
-            }
+          if (currentTastingInfo?.tasting_price) wineryTotal += currentTastingInfo.tasting_price;
 
-            // Add tour prices
-            if (winery.bookingDetails?.tours?.length) {
-              totalCost += winery.bookingDetails.tours.reduce((sum, tour) => {
-                return tour.price ? sum + tour.price : sum;
-              }, 0);
-            }
+          winery.bookingDetails?.foodPairings?.forEach(p => wineryTotal += (p.price || 0));
+          winery.bookingDetails?.tours?.forEach(t => wineryTotal += (t.price || 0));
+          winery.bookingDetails?.otherFeature?.forEach(f => wineryTotal += (Number(f.price) || 0));
 
-            // Add other features prices
-            if (winery.bookingDetails?.otherFeature?.length) {
-              totalCost += winery.bookingDetails.otherFeature.reduce((sum, feature) => {
-                return feature.price ? sum + feature.price : sum;
-              }, 0);
-            }
-
-            // Create a single line item if there's a cost
-            if (totalCost > 0) {
-              items.push({
-                price_data: {
-                  currency: "usd",
-                  product_data: {
-                    name: `${winery.name} - ${currentTastingInfo?.tasting_title || 'Booking'} (Tasting & Food Pairings)`,
-                  },
-                  unit_amount: Math.round(totalCost * 100), // Convert to cents
+          if (wineryTotal > 0) {
+            lineItems.push({
+              price_data: {
+                currency: "usd",
+                product_data: {
+                  name: `${winery.name} - ${currentTastingInfo?.tasting_title || 'Tasting Package'}`,
                 },
-                quantity: 1,
-              });
-            }
+                unit_amount: Math.round(wineryTotal * 100),
+              },
+              quantity: 1,
+            });
+          }
+        });
 
-            return items;
-          })
-          .flat();
-
-        // Validate lineItems
-        if (!lineItems.length) {
-          console.error("No valid line items for Stripe checkout. Itinerary:", itinerary);
-          throw new Error("No items selected for payment. Please add a tasting or food pairing.");
+        // If total Stripe cost is $0, skip Stripe and treat as regular booking
+        if (lineItems.length === 0) {
+          const response = await axios.post("/api/itinerary/book", { data });
+          if (response.status === 201) {
+            setShowRideModal(true);
+          }
+          return;
         }
 
         const response = await axios.post("/api/stripe/create-checkout-session", {
@@ -236,14 +228,21 @@ export default function ItineraryPage() {
       }
     } catch (error: any) {
       console.error("Booking error:", error);
-      if (error.response?.status === 404) {
-        alert("Payment processing is currently unavailable. Please try again later or contact support.");
-      } else if (error.message.includes("Stripe")) {
-        alert("Failed to initialize payment. Please check your connection and try again.");
-      } else if (error.message.includes("No items selected")) {
-        alert(error.message);
+      // Show specific error from API if available
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.response?.data?.errors?.length > 0) {
+        toast.error(error.response.data.errors.join(', '));
+      } else if (error.response?.status === 400) {
+        toast.error("Booking failed: Selected time slot may not be available. Please try a different time.");
+      } else if (error.response?.status === 404) {
+        toast.error("Payment processing is currently unavailable. Please try again later.");
+      } else if (error.message?.includes("Stripe")) {
+        toast.error("Failed to initialize payment. Please check your connection and try again.");
+      } else if (error.message?.includes("No items selected")) {
+        toast.error(error.message);
       } else {
-        alert("Failed to process booking. Please try again later.");
+        toast.error("Failed to process booking. Please try again later.");
       }
     } finally {
       setLoadingPayment(false);

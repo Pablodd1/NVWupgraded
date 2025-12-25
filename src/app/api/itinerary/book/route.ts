@@ -44,20 +44,43 @@ export async function POST(req: NextRequest) {
 
       // Determine time slot from booking time
       const hour = bookingDate.getHours();
-      let timeSlot = "Afternoon (12:00 PM - 3:00 PM)";
-      if (hour >= 10 && hour < 12) {
+      let timeSlot = "Afternoon (1:00 PM - 3:00 PM)";
+      if (hour >= 10 && hour < 13) {
         timeSlot = "Morning (10:00 AM - 12:00 PM)";
-      } else if (hour >= 15 && hour < 18) {
-        timeSlot = "Evening (3:00 PM - 6:00 PM)";
+      } else if (hour >= 15) {
+        timeSlot = "Evening (4:00 PM - 6:00 PM)";
       }
 
       // Check if slot exists and has availability
-      const slot = await SlotInventory.findOne({
+      let slot = await SlotInventory.findOne({
         wineryId,
         date,
         timeSlot,
-        isBlocked: false
+        status: { $ne: "blocked" }
       });
+
+      // Auto-create slot if none exists (fallback for unseeded database)
+      if (!slot) {
+        try {
+          slot = await SlotInventory.create({
+            wineryId,
+            date,
+            timeSlot,
+            totalCapacity: 20, // Default capacity
+            bookedCapacity: 0,
+            availableCapacity: 20,
+            status: "available"
+          });
+        } catch (createError: any) {
+          // Handle duplicate key error (slot was created by concurrent request)
+          if (createError.code === 11000) {
+            slot = await SlotInventory.findOne({ wineryId, date, timeSlot });
+          } else {
+            reservationErrors.push(`Failed to create slot for ${timeSlot} on ${date}`);
+            continue;
+          }
+        }
+      }
 
       if (!slot) {
         reservationErrors.push(`No availability found for ${timeSlot} on ${date}`);
@@ -108,15 +131,17 @@ export async function POST(req: NextRequest) {
 
     // All slots successfully reserved - create booking
     const firstWinery = data[0];
-    const paymentMethod = firstWinery?.payment_method || "pay_winery";
+    const paymentMethod = firstWinery?.payment_method?.type || "pay_winery";
 
     const booking = new BookingModel({ userId, payment_method: paymentMethod });
     booking.wineries = data.map((winery) => ({
       wineryId: winery.wineryId,
       datetime: winery.dateTime,
       tasting: winery.tasting,
-      tour: winery.tour,
-      foodPairings: winery.foodPairings,
+      tours: winery.tours || [],
+      foodPairings: winery.foodPairings || [],
+      otherFeatures: winery.otherFeature || [],
+      numberOfGuests: winery.numberOfGuests || 1
     }));
     await booking.save();
 
