@@ -40,6 +40,7 @@
     "leaflet-routing-machine": "^3.2.12",
     "lucide-react": "^0.471.0",
     "mapbox-gl": "^3.9.2",
+    "mongodb": "^7.0.0",
     "mongoose": "^8.10.0",
     "next": "^15.5.9",
     "nodemailer": "^7.0.3",
