@@ -37,7 +37,16 @@ export async function POST(req: Request) {
         }
 
         if (filters.features && filters.features.length > 0) {
-            mongoQuery['tasting_info.special_features'] = { $in: filters.features };
+            const specialFeatures = filters.features.filter((f: string) => f !== "Handicap Accessible");
+            const hasHandicapFilter = filters.features.includes("Handicap Accessible");
+
+            if (specialFeatures.length > 0) {
+                mongoQuery['tasting_info.special_features'] = { $in: specialFeatures };
+            }
+
+            if (hasHandicapFilter) {
+                mongoQuery['amenities.handicap_accessible'] = true;
+            }
         }
 
         // 3. Search Wineries

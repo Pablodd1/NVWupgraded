@@ -102,44 +102,40 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
   const currentHour = currentTime.getHours();
 
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-wine-primary/20">
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-gray-100">
       {/* Header */}
-      <div className="bg-gradient-to-r from-wine-primary to-wine-secondary p-6">
-        <div className="flex items-center justify-between text-white">
+      <div className="bg-white p-6 border-b border-gray-100">
+        <div className="flex items-center justify-between text-black">
           <div>
             <h3 className="text-2xl font-serif font-bold mb-1">Available Now</h3>
-            <p className="text-wine-primary/80 text-sm">
+            <p className="text-gray-500 text-sm">
               Updated: {currentTime.toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit'
               })}
             </p>
           </div>
-          <div className="text-right">
-            <div className="text-4xl font-bold">{summary.thisWeekSlots}</div>
-            <div className="text-sm text-wine-primary/80">Slots This Week</div>
-          </div>
         </div>
       </div>
 
       {/* Earliest Available Slot - Highlighted */}
       {earliestAvailable && (
-        <div className="bg-green-50 border-b-2 border-green-200 p-4">
+        <div className="bg-gray-50 border-b-2 border-gray-100 p-4">
           <div className="flex items-center gap-3">
-            <div className="bg-green-500 text-white p-3 rounded-full">
+            <div className="bg-black text-white p-3 rounded-full">
               <FaClock className="h-5 w-5" />
             </div>
             <div className="flex-grow">
-              <div className="text-sm font-medium text-green-800">Next Available</div>
-              <div className="text-lg font-bold text-green-900">
+              <div className="text-sm font-medium text-gray-800">Next Available</div>
+              <div className="text-lg font-bold text-black">
                 {new Date(earliestAvailable.date).toLocaleDateString('en-US', {
                   weekday: 'long',
                   month: 'short',
                   day: 'numeric'
                 })}
               </div>
-              <div className="text-sm text-green-700">
-                {earliestAvailable.timeSlot} • {earliestAvailable.availableCapacity} spots left
+              <div className="text-sm text-gray-600">
+                {earliestAvailable.timeSlot} • {earliestAvailable.availableCapacity} available
               </div>
             </div>
           </div>
@@ -150,12 +146,12 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
       {today.slotsAvailable > 0 && (
         <div className="p-6 border-b-2 border-gray-100">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-xl font-serif font-bold text-wine-primary flex items-center gap-2">
-              <FaCalendarAlt className="text-wine-secondary" />
+            <h4 className="text-xl font-serif font-bold text-black flex items-center gap-2">
+              <FaCalendarAlt className="text-gray-400" />
               Today's Availability
             </h4>
-            <span className="bg-wine-primary text-white text-xs font-bold px-3 py-1 rounded-full">
-              {today.slotsAvailable} Slots
+            <span className="bg-black text-white text-xs font-bold px-3 py-1 rounded-full">
+              {today.slotsAvailable} available
             </span>
           </div>
 
@@ -171,16 +167,16 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
               return (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-wine-primary/5 transition-colors"
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <FaClock className="text-wine-primary" />
+                    <FaClock className="text-gray-600" />
                     <span className="font-medium">{slot.timeSlot}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <FaUsers className="text-gray-400 text-sm" />
-                    <span className="text-sm font-medium text-green-600">
-                      {slot.availableCapacity} / {slot.totalCapacity} available
+                    <span className="text-sm font-medium text-black">
+                      {slot.availableCapacity} available
                     </span>
                   </div>
                 </div>
@@ -194,9 +190,9 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
       <div className="p-6">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="w-full flex items-center justify-between mb-4 hover:text-wine-primary transition-colors"
+          className="w-full flex items-center justify-between mb-4 hover:text-black transition-colors"
         >
-          <h4 className="text-lg font-serif font-bold text-wine-primary">
+          <h4 className="text-lg font-serif font-bold text-black">
             Next 7 Days
           </h4>
           {expanded ? <FaChevronUp /> : <FaChevronDown />}
@@ -209,10 +205,10 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
               <div
                 key={index}
                 className={`text-center p-2 rounded-lg transition-all ${day.isToday
-                    ? 'bg-wine-primary text-white'
-                    : day.slotsAvailable > 0
-                      ? 'bg-green-50 hover:bg-green-100 cursor-pointer'
-                      : 'bg-gray-100'
+                  ? 'bg-black text-white'
+                  : day.slotsAvailable > 0
+                    ? 'bg-gray-100 hover:bg-gray-200 cursor-pointer'
+                    : 'bg-gray-50 text-gray-300'
                   }`}
                 title={`${day.dayOfWeekLong}, ${day.month} ${day.day}`}
               >
@@ -221,10 +217,9 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
                 {day.slotsAvailable > 0 ? (
                   <div className="text-xs mt-1">
                     <div className="font-medium">{day.slotsAvailable}</div>
-                    <div className="text-[10px] opacity-75">slots</div>
                   </div>
                 ) : (
-                  <div className="text-xs text-gray-400 mt-1">Full</div>
+                  <div className="text-[10px] mt-1">Full</div>
                 )}
               </div>
             ))}
@@ -236,24 +231,24 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
               <div
                 key={index}
                 className={`p-4 rounded-lg border-2 ${day.isToday
-                    ? 'border-wine-primary bg-wine-primary/5'
-                    : day.slotsAvailable > 0
-                      ? 'border-green-200 bg-green-50/50'
-                      : 'border-gray-200 bg-gray-50'
+                  ? 'border-black bg-gray-50'
+                  : day.slotsAvailable > 0
+                    ? 'border-gray-200 bg-white'
+                    : 'border-gray-100 bg-gray-50/50'
                   }`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <div>
                     <div className="font-bold text-lg">
                       {day.dayOfWeekLong}, {day.month} {day.day}
-                      {day.isToday && <span className="ml-2 text-sm text-wine-primary">(Today)</span>}
+                      {day.isToday && <span className="ml-2 text-sm text-gray-500">(Today)</span>}
                     </div>
                   </div>
                   <div className="text-right">
                     {day.slotsAvailable > 0 ? (
                       <>
-                        <div className="text-2xl font-bold text-green-600">{day.slotsAvailable}</div>
-                        <div className="text-xs text-gray-600">slots • {day.totalCapacity} spots</div>
+                        <div className="text-2xl font-bold text-black">{day.slotsAvailable}</div>
+                        <div className="text-xs text-gray-600">available</div>
                       </>
                     ) : (
                       <div className="text-sm text-gray-500 font-medium">Fully Booked</div>
@@ -266,10 +261,10 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
                     {day.slots.map((slot, slotIndex) => (
                       <div
                         key={slotIndex}
-                        className="flex items-center justify-between text-sm p-2 bg-white rounded"
+                        className="flex items-center justify-between text-sm p-2 bg-white border border-gray-100 rounded"
                       >
-                        <span className="font-medium">{slot.timeSlot}</span>
-                        <span className="text-green-600">
+                        <span className="font-medium text-gray-700">{slot.timeSlot}</span>
+                        <span className="text-black font-bold">
                           {slot.availableCapacity} available
                         </span>
                       </div>
@@ -282,19 +277,6 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
         )}
       </div>
 
-      {/* Footer Stats */}
-      <div className="bg-gray-50 p-4 border-t-2 border-gray-100">
-        <div className="grid grid-cols-2 gap-4 text-center">
-          <div>
-            <div className="text-2xl font-bold text-wine-primary">{summary.totalSlotsAvailable}</div>
-            <div className="text-xs text-gray-600">Total Slots (30 Days)</div>
-          </div>
-          <div>
-            <div className="text-2xl font-bold text-wine-primary">{summary.totalCapacity}</div>
-            <div className="text-xs text-gray-600">Total Capacity</div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

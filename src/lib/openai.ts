@@ -19,7 +19,7 @@ export async function getAISearchFilters(query: string) {
   - AVA: "Calistoga", "St. Helena", "Rutherford", "Oakville", "Yountville", "Stags Leap District", "Howell Mountain", "Pritchard Hill", "Diamond Mountain", "Spring Mountain", "Mount Veeder", "Coombsville", "Carneros", "Chiles Valley", "Pope Valley", "Atlas Peak", "Wild Horse Valley"
   - Wine Types: "Red", "White", "Rosé", "Sparkling", "Dessert"
   - Price Range: { min: number, max: number }
-  - Features: "Outdoor Seating", "Modern Architecture", "Cave Tour", "Hidden Gem", "Historic", "Food Pairing", "Great Views", "Dog Friendly", "Kid Friendly", "Walk-ins Welcome"
+  - Features: "Outdoor Seating", "Modern Architecture", "Cave Tour", "Hidden Gem", "Historic", "Food Pairing", "Great Views", "Dog Friendly", "Kid Friendly", "Walk-ins Welcome", "Handicap Accessible"
 
   Return ONLY a JSON object:
   {

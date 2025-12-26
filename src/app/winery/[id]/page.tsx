@@ -366,19 +366,28 @@ const WineryDetail = () => {
                 </p>
                 <p className="flex items-center gap-2">
                   <FaUsers className="text-wine-primary" />
-                  <span>Group size: {currentTastingInfo?.booking_info?.number_of_people?.join('-') || "N/A"} people</span>
+                  <span>Max: {currentTastingInfo?.booking_info?.max_guests_per_slot || (currentTastingInfo?.booking_info?.number_of_people?.length ? Math.max(...currentTastingInfo.booking_info.number_of_people) : "N/A")} people</span>
                 </p>
                 <div>
                   <h4 className="font-medium mb-3">Special Features:</h4>
                   <div className="flex flex-wrap gap-2">
+                    {/* Combine winery-level handicap access with tasting-level features */}
+                    {winery.amenities.handicap_accessible && (
+                      <span className="bg-blue-50 text-blue-700 border border-blue-100 px-4 py-2 rounded-full text-sm font-medium flex items-center gap-1">
+                        ♿ Handicap Accessible
+                      </span>
+                    )}
                     {currentTastingInfo?.special_features?.map((feature, index) => (
                       <span
                         key={index}
-                        className="bg-wine-primary/10 text-wine-primary px-4 py-2 rounded-full text-sm font-medium"
+                        className="bg-gray-100 text-gray-800 border border-gray-200 px-4 py-2 rounded-full text-sm font-medium"
                       >
                         {feature}
                       </span>
-                    )) || <span className="text-gray-500">No special features</span>}
+                    ))}
+                    {!winery.amenities.handicap_accessible && (!currentTastingInfo?.special_features || currentTastingInfo.special_features.length === 0) && (
+                      <span className="text-gray-500">No special features listed</span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -406,7 +415,7 @@ const WineryDetail = () => {
                       External Booking System
                     </h3>
                     <p className="text-blue-800 mb-3">
-                      This winery uses their own booking system. When you click the button below, you'll be redirected to <strong>{winery.name}'s</strong> official booking platform to complete your reservation.
+                      This winery uses their own booking system. When you click the button below, you'll be redirected to <strong>{winery.name}</strong> official booking platform to complete your reservation.
                     </p>
                     <p className="text-sm text-blue-700">
                       ✓ Secure booking process<br />
@@ -477,38 +486,9 @@ const WineryDetail = () => {
                   className="input input-bordered w-full mt-2 text-sm"
                 />
               </div>
-
-              {/* Note: Available slots are now shown in the AvailableSlotsWidget above */}
-              {/* BookingCalendar removed to avoid showing huge list of dates */}
             </div>
           )}
         </div>
-
-        {/* Amenities Section - Only show if any amenity is enabled */}
-        {(winery?.amenities?.virtual_sommelier ||
-          winery?.amenities?.augmented_reality_tours ||
-          winery?.amenities?.handicap_accessible) && (
-            <div className="bg-white rounded-xl p-8 shadow-lg">
-              <h2 className="font-serif text-3xl mb-6 text-wine-primary">Amenities</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {winery.amenities.virtual_sommelier && (
-                  <div className="p-4 border border-gray-200 rounded-lg">
-                    <p className="text-gray-800">✅ Virtual Sommelier</p>
-                  </div>
-                )}
-                {winery.amenities.augmented_reality_tours && (
-                  <div className="p-4 border border-gray-200 rounded-lg">
-                    <p className="text-gray-800">✅ Augmented Reality Tours</p>
-                  </div>
-                )}
-                {winery.amenities.handicap_accessible && (
-                  <div className="p-4 border border-gray-200 rounded-lg">
-                    <p className="text-gray-800">♿ Handicap Accessible</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
         {/* Reviews Section - Only show if reviews exist */}
         {winery?.user_reviews && winery.user_reviews.length > 0 && (

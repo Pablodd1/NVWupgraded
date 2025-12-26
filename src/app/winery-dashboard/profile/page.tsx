@@ -290,7 +290,7 @@ export default function WineryProfile() {
                 </button>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-8">
                 {profile.tasting_info.map((tasting, idx) => (
                   <div key={idx} className="border border-gray-200 rounded-xl p-6 relative bg-gray-50/50">
                     <button
@@ -310,7 +310,7 @@ export default function WineryProfile() {
                         />
                       </div>
                       <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Price ($)</label>
+                        <label className="label text-xs font-bold uppercase text-gray-500">Price per Tasting ($)</label>
                         <input
                           type="number" value={tasting.tasting_price}
                           onChange={(e) => handleTastingChange(idx, 'tasting_price', Number(e.target.value))}
@@ -320,21 +320,41 @@ export default function WineryProfile() {
                     </div>
 
                     <div className="form-control mb-4">
-                      <label className="label text-xs font-bold uppercase text-gray-500">Wine Types (Comma Separated - Crucial for Filtration)</label>
-                      <input
-                        type="text" value={tasting.wine_types?.join(', ') || ''}
-                        onChange={(e) => handleTastingChange(idx, 'wine_types', e.target.value.split(',').map(s => s.trim()))}
-                        className="input input-bordered input-sm"
-                        placeholder="Cabernet, Chardonnay, Pinot Noir..."
+                      <label className="label text-xs font-bold uppercase text-gray-500">Description</label>
+                      <textarea
+                        value={tasting.tasting_description}
+                        onChange={(e) => handleTastingChange(idx, 'tasting_description', e.target.value)}
+                        className="textarea textarea-bordered textarea-sm h-20"
+                        placeholder="What should guests expect?"
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Wines Count</label>
+                        <label className="label text-xs font-bold uppercase text-gray-500">Wine Types (e.g. Cabernet, Rose)</label>
                         <input
-                          type="number" value={tasting.number_of_wines_per_tasting}
-                          onChange={(e) => handleTastingChange(idx, 'number_of_wines_per_tasting', Number(e.target.value))}
+                          type="text" value={tasting.wine_types?.join(', ') || ''}
+                          onChange={(e) => handleTastingChange(idx, 'wine_types', e.target.value.split(',').map(s => s.trim()))}
+                          className="input input-bordered input-sm"
+                        />
+                      </div>
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Max Guests</label>
+                        <input
+                          type="number" value={tasting.booking_info?.max_guests_per_slot || ''}
+                          onChange={(e) => handleTastingChange(idx, 'booking_info.max_guests_per_slot', parseInt(e.target.value))}
+                          className="input input-bordered input-sm"
+                          placeholder="e.g. 8"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Special Features (e.g. Organic, Sustainable)</label>
+                        <input
+                          type="text" value={tasting.special_features?.join(', ') || ''}
+                          onChange={(e) => handleTastingChange(idx, 'special_features', e.target.value.split(',').map(s => s.trim()))}
                           className="input input-bordered input-sm"
                         />
                       </div>
@@ -346,6 +366,27 @@ export default function WineryProfile() {
                           className="input input-bordered input-sm"
                         />
                       </div>
+                    </div>
+
+                    <div className="flex items-center gap-6 p-3 bg-white rounded-lg border border-gray-100">
+                      <label className="flex items-center gap-2 cursor-pointer font-bold text-xs uppercase text-gray-500">
+                        <input
+                          type="checkbox" checked={tasting.tours?.available}
+                          onChange={(e) => handleTastingChange(idx, 'tours.available', e.target.checked)}
+                          className="checkbox checkbox-xs"
+                        />
+                        Tour Included?
+                      </label>
+                      {tasting.tours?.available && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold uppercase text-gray-500">Tour Price ($)</span>
+                          <input
+                            type="number" value={tasting.tours.tour_price}
+                            onChange={(e) => handleTastingChange(idx, 'tours.tour_price', Number(e.target.value))}
+                            className="input input-bordered input-xs w-20"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -400,29 +441,13 @@ export default function WineryProfile() {
               </div>
             </section>
 
-            {/* 4. Amenities (Filtration & UX) */}
+            {/* 4. Special Features (Filtration & UX) */}
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaPlus className="text-wine-secondary" />
-                Experience Amenities
+                Special Features
               </h2>
               <div className="space-y-4">
-                <label className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
-                  <span className="font-semibold text-gray-700">Virtual Sommelier</span>
-                  <input
-                    type="checkbox" checked={profile.amenities.virtual_sommelier}
-                    onChange={(e) => handleInputChange('amenities.virtual_sommelier', e.target.checked)}
-                    className="toggle toggle-primary"
-                  />
-                </label>
-                <label className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
-                  <span className="font-semibold text-gray-700">AR Tours Enabled</span>
-                  <input
-                    type="checkbox" checked={profile.amenities.augmented_reality_tours}
-                    onChange={(e) => handleInputChange('amenities.augmented_reality_tours', e.target.checked)}
-                    className="toggle toggle-primary"
-                  />
-                </label>
                 <label className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl cursor-pointer">
                   <span className="font-semibold text-gray-700">Handicap Accessible</span>
                   <input
@@ -433,6 +458,7 @@ export default function WineryProfile() {
                 </label>
               </div>
             </section>
+
 
             {/* 5. Transportation (Directions & Booking) */}
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
