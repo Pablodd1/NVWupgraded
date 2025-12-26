@@ -1,8 +1,10 @@
 "use client";
 import { useState } from "react";
-import { useAuthStore } from "@/store/authStore";
-import { toast } from "react-toastify";
 import axios from "axios";
+import { isUser21OrOlder } from "@/lib/ageVerification";
+import { useAuthStore } from "@/store/authStore";
+import { loadStripe } from "@stripe/stripe-js";
+import { toast } from "react-toastify";
 
 interface DateOfBirthModalProps {
   isOpen: boolean;
@@ -17,37 +19,47 @@ export default function DateOfBirthModal({ isOpen, onClose, onSuccess }: DateOfB
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!dateOfBirth) {
       toast.error("Please enter your date of birth");
       return;
     }
 
     // Check if user is 21 or older
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    
-    if (age < 21) {
+    if (!isUser21OrOlder(new Date(dateOfBirth))) {
       toast.error("You must be 21 or older to book wine tastings");
       return;
     }
 
     setLoading(true);
     try {
-      await axios.put("/api/user/profile", { dateOfBirth });
-      await fetchUser(); // Refresh user data
-      toast.success("Date of birth updated successfully!");
-      onSuccess();
-      onClose();
+      // HANDLE DEMO MODE: If user ID starts with "demo_", skip API and update local store only
+      if ((user as any)?._id?.toString().startsWith("demo_")) {
+        console.log("Demo Mode detected: Skipping API update for Date of Birth");
+        // Manual store update for demo user
+        useAuthStore.setState((state) => ({
+          user: state.user ? { ...state.user, dateOfBirth: new Date(dateOfBirth) } : null
+        }));
+
+        toast.success("Date of birth updated locally (Demo Mode)");
+        onSuccess();
+        onClose();
+        return;
+      }
+
+      const response = await axios.put("/api/user/profile", { dateOfBirth });
+      if (response.status === 200) {
+        await fetchUser(); // Refresh user data
+        toast.success("Date of birth updated successfully!");
+        onSuccess();
+        onClose();
+      } else {
+        throw new Error("Unexpected response status: " + response.status);
+      }
     } catch (error: any) {
       console.error("Error updating date of birth:", error);
-      toast.error("Failed to update date of birth. Please try again.");
+      const errorMsg = error.response?.data?.error || error.message || "Please try again.";
+      toast.error(`Update failed: ${errorMsg}`);
     } finally {
       setLoading(false);
     }
@@ -62,7 +74,7 @@ export default function DateOfBirthModal({ isOpen, onClose, onSuccess }: DateOfB
         <p className="text-gray-600 mb-4">
           To book wine tastings, we need to verify that you are 21 or older. Please enter your date of birth.
         </p>
-        
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -76,7 +88,7 @@ export default function DateOfBirthModal({ isOpen, onClose, onSuccess }: DateOfB
               required
             />
           </div>
-          
+
           <div className="flex gap-3">
             <button
               type="button"

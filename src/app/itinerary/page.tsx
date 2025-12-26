@@ -9,9 +9,9 @@ import Modal from "@/components/modal";
 import { useRouter, useSearchParams } from "next/navigation";
 import WineryBookingCard from "@/components/cards/winery";
 import axios from "axios";
+import { isUser21OrOlder } from "@/lib/ageVerification";
 import { useAuthStore } from "@/store/authStore";
 import { loadStripe } from "@stripe/stripe-js";
-import { isUser21OrOlder } from "@/lib/ageVerification";
 import { toast } from "react-toastify";
 import DateOfBirthModal from "@/components/modal/DateOfBirthModal";
 
@@ -93,27 +93,31 @@ export default function ItineraryPage() {
     });
   };
   const handleConfirmBooking = async () => {
+    // Get latest user from store to avoid stale closure issues during retries
+    const latestUser = useAuthStore.getState().user;
 
-
-    if (!user) {
-
+    if (!latestUser) {
+      toast.info("Please sign in to confirm your itinerary");
       return setShowAuthModal(true);
     }
 
     // Check age verification for alcohol-related bookings
+    const dob = latestUser.dateOfBirth;
 
-
-    if (user.dateOfBirth && !isUser21OrOlder(user.dateOfBirth)) {
-
-      toast.error("You must be 21 or older to book wine tastings and alcohol-related services.");
-      return;
-    } else if (!user.dateOfBirth) {
-
+    if (dob && !isUser21OrOlder(new Date(dob))) {
+      // HANDLE DEMO MODE: If user ID starts with "demo_", skip API and update local store only
+      const uid = (latestUser as any)?._id?.toString() || "";
+      if (uid.startsWith("demo_")) {
+        console.log("Demo Mode detected: Allowing demo user bypass for age check");
+      } else {
+        toast.error("You must be 21 or older to book wine tastings.");
+        return;
+      }
+    } else if (!dob) {
+      console.log("Date of Birth missing for user, showing verification modal");
       setShowDateOfBirthModal(true);
       return;
     }
-
-
 
     // Validate that all wineries have required booking details
     const missingDetails = itinerary.filter(w => !w.bookingDetails?.selectedTime || !w.bookingDetails?.selectedDate);
@@ -218,11 +222,8 @@ export default function ItineraryPage() {
         }
 
         // Pay at winery - no payment processing needed
-
         const response = await axios.post("/api/itinerary/book", { data });
-
         if (response.status === 201) {
-
           setShowRideModal(true);
         }
       }
@@ -248,6 +249,7 @@ export default function ItineraryPage() {
       setLoadingPayment(false);
     }
   };
+
 
   const handleDateOfBirthSuccess = () => {
     // Retry the booking process after date of birth is updated

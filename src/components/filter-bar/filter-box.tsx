@@ -65,13 +65,16 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     filtered = filtered.filter((winery) => {
       if (!winery.tasting_info || !Array.isArray(winery.tasting_info) || winery.tasting_info.length === 0) return false;
 
-      // Check if any tasting has the required number of people
+      // Check if any tasting matches the required number of people
       return winery.tasting_info.some(tasting => {
-        if (!tasting || !tasting.booking_info?.number_of_people || !Array.isArray(tasting.booking_info.number_of_people)) {
-          return false;
+        // If number_of_people is not defined, we'll assume it doesn't filter out unless explicitly requested
+        const peopleList = tasting?.booking_info?.number_of_people;
+        if (!peopleList || !Array.isArray(peopleList)) {
+          // If no list is provided, only include it if the filter is at default [1, 20]
+          return filters.numberOfPeople[0] <= 1 && filters.numberOfPeople[1] >= 20;
         }
 
-        return tasting.booking_info.number_of_people.some(people => {
+        return peopleList.some(people => {
           const numPeople = people || 1;
           return numPeople >= filters.numberOfPeople[0] && numPeople <= filters.numberOfPeople[1];
         });
