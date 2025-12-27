@@ -1,66 +1,62 @@
-import React, { useEffect, useRef } from 'react';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import React, { useState, useEffect } from 'react';
+import { APIProvider, Map as GoogleMap, AdvancedMarker, Pin, InfoWindow } from '@vis.gl/react-google-maps';
 
 interface MapProps {
   userLocation: GeolocationCoordinates;
   wineryLocation: {
     latitude: number;
     longitude: number;
+    address?: string;
   };
 }
 
 const Map = ({ userLocation, wineryLocation }: MapProps) => {
-  const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
+  const [openWin, setOpenWin] = useState<boolean>(true);
 
-  useEffect(() => {
-    if (!mapContainer.current) return;
+  // Center logic
+  const center = {
+    lat: wineryLocation.latitude,
+    lng: wineryLocation.longitude
+  };
 
-    // Initialize map
-    // Note: Replace with your Mapbox token
-    mapboxgl.accessToken = 'YOUR_MAPBOX_PUBLIC_TOKEN';
-    
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [wineryLocation.longitude, wineryLocation.latitude],
-      zoom: 12
-    });
-
-    // Add navigation controls
-    map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
-
-    // Add markers
-    new mapboxgl.Marker({ color: '#722F37' })
-      .setLngLat([wineryLocation.longitude, wineryLocation.latitude])
-      .setPopup(new mapboxgl.Popup().setHTML('<h3>Winery Location</h3>'))
-      .addTo(map.current);
-
-    if (userLocation) {
-      new mapboxgl.Marker({ color: '#1E382A' })
-        .setLngLat([userLocation.longitude, userLocation.latitude])
-        .setPopup(new mapboxgl.Popup().setHTML('<h3>Your Location</h3>'))
-        .addTo(map.current);
-
-      // Fit bounds to include both markers
-      const bounds = new mapboxgl.LngLatBounds()
-        .extend([wineryLocation.longitude, wineryLocation.latitude])
-        .extend([userLocation.longitude, userLocation.latitude]);
-
-      map.current.fitBounds(bounds, {
-        padding: 50
-      });
-    }
-
-    return () => {
-      map.current?.remove();
-    };
-  }, [userLocation, wineryLocation]);
+  // Convert user location if available
+  const userPos = userLocation ? { lat: userLocation.latitude, lng: userLocation.longitude } : null;
 
   return (
     <div className="relative w-full h-[400px] rounded-lg overflow-hidden mt-4">
-      <div ref={mapContainer} className="absolute inset-0" />
+      {/* 
+        APIProvider handles the loading of the Google Maps script.
+        Ensure NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is set in your .env.local
+      */}
+      <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+        <GoogleMap
+          defaultCenter={center}
+          defaultZoom={12}
+          mapId="DEMO_MAP_ID" // Required for AdvancedMarker, can be replaced with a real Map ID from Google Console
+          className="w-full h-full"
+        >
+          {/* Winery Marker */}
+          <AdvancedMarker position={center} onClick={() => setOpenWin(true)}>
+            <Pin background={'#722F37'} borderColor={'#4a1e23'} glyphColor={'white'} />
+          </AdvancedMarker>
+
+          {openWin && (
+            <InfoWindow position={center} onCloseClick={() => setOpenWin(false)}>
+              <div className="text-black p-2">
+                <h3 className="font-bold text-sm">Winery Location</h3>
+                {wineryLocation.address && <p className="text-xs">{wineryLocation.address}</p>}
+              </div>
+            </InfoWindow>
+          )}
+
+          {/* User Location Marker */}
+          {userPos && (
+            <AdvancedMarker position={userPos}>
+              <Pin background={'#1E382A'} borderColor={'#0d1a12'} glyphColor={'white'} />
+            </AdvancedMarker>
+          )}
+        </GoogleMap>
+      </APIProvider>
     </div>
   );
 };

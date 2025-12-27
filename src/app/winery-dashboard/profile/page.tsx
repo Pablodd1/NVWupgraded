@@ -61,7 +61,7 @@ export default function WineryProfile() {
           }
 
           if (!winery.contact_info) winery.contact_info = { phone: "", email: "", website: "" };
-          if (!winery.amenities) winery.amenities = { virtual_sommelier: false, augmented_reality_tours: false, handicap_accessible: false };
+          if (!winery.amenities) winery.amenities = { handicap_accessible: false };
           if (!winery.transportation) winery.transportation = { uber_availability: false, lyft_availability: false, distance_from_user: 0 };
           if (!winery.payment_method) winery.payment_method = { type: 'pay_winery' };
           if (!winery.tasting_info) winery.tasting_info = [];

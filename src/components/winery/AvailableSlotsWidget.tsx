@@ -107,7 +107,7 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
       <div className="bg-white p-6 border-b border-gray-100">
         <div className="flex items-center justify-between text-black">
           <div>
-            <h3 className="text-2xl font-serif font-bold mb-1">Available Now</h3>
+            <h3 className="text-2xl font-serif font-bold mb-1 text-black">Available Now</h3>
             <p className="text-gray-500 text-sm">
               Updated: {currentTime.toLocaleTimeString('en-US', {
                 hour: '2-digit',

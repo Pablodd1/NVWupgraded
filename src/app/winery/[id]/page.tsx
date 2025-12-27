@@ -366,7 +366,7 @@ const WineryDetail = () => {
                 </p>
                 <p className="flex items-center gap-2">
                   <FaUsers className="text-wine-primary" />
-                  <span>Max: {currentTastingInfo?.booking_info?.max_guests_per_slot || (currentTastingInfo?.booking_info?.number_of_people?.length ? Math.max(...currentTastingInfo.booking_info.number_of_people) : "N/A")} people</span>
+                  <span>Size: {currentTastingInfo?.booking_info?.max_guests_per_slot || "Waitlist"} people per slot</span>
                 </p>
                 <div>
                   <h4 className="font-medium mb-3">Special Features:</h4>
@@ -564,16 +564,61 @@ const WineryDetail = () => {
                 </a>
               )}
             </div>
-            <div className="flex flex-col justify-center">
+            <div className="flex flex-col justify-center gap-4">
               <Button
-                onClick={handleLocationPermission}
-                className="bg-wine-primary hover:bg-wine-primary/90 text-white w-full py-6 text-lg"
+                onClick={() => {
+                  if (!userLocation) {
+                    handleLocationPermission();
+                    // We can't open immediately after asking permission due to browser security/async, 
+                    // but we can prompt them to click again or use a useEffect to trigger it.
+                    // For now, simpler is better: ask for location, then they click again.
+                    return;
+                  }
+                  const url = `https://www.google.com/maps/dir/?api=1&origin=${userLocation.latitude},${userLocation.longitude}&destination=${winery.location.latitude},${winery.location.longitude}`;
+                  window.open(url, '_blank');
+                }}
+                className="bg-wine-primary hover:bg-wine-primary/90 text-white w-full py-4 text-lg flex items-center justify-center gap-2"
               >
-                Get Directions
+                <FaMapMarkerAlt /> Get Directions
               </Button>
+
+              {winery.transportation.uber_availability && (
+                <Button
+                  onClick={() => {
+                    if (!userLocation) {
+                      handleLocationPermission();
+                      return;
+                    }
+                    // Uber Universal Link
+                    const url = `https://m.uber.com/ul/?client_id=YOUR_UBER_CLIENT_ID&action=setPickup&pickup[latitude]=${userLocation.latitude}&pickup[longitude]=${userLocation.longitude}&dropoff[latitude]=${winery.location.latitude}&dropoff[longitude]=${winery.location.longitude}&dropoff[nickname]=${encodeURIComponent(winery.name)}`;
+                    window.open(url, '_blank');
+                  }}
+                  className="bg-black hover:bg-gray-800 text-white w-full py-4 text-lg flex items-center justify-center gap-2"
+                >
+                  <FaCar /> Ride with Uber
+                </Button>
+              )}
+
+              {winery.transportation.lyft_availability && (
+                <Button
+                  onClick={() => {
+                    if (!userLocation) {
+                      handleLocationPermission();
+                      return;
+                    }
+                    // Lyft Universal Link
+                    const url = `https://lyft.com/ride?id=lyft&pickup[latitude]=${userLocation.latitude}&pickup[longitude]=${userLocation.longitude}&destination[latitude]=${winery.location.latitude}&destination[longitude]=${winery.location.longitude}`;
+                    window.open(url, '_blank');
+                  }}
+                  className="bg-[#FF00BF] hover:bg-[#D400A0] text-white w-full py-4 text-lg flex items-center justify-center gap-2"
+                >
+                  <FaCar /> Ride with Lyft
+                </Button>
+              )}
+
               {userLocation && (
-                <p className="text-center mt-4 text-gray-600">
-                  {winery?.transportation.distance_from_user.toFixed(1)} miles away
+                <p className="text-center mt-2 text-gray-600 text-sm">
+                  Distance: {winery?.transportation.distance_from_user?.toFixed(1) || 'Calculating...'} miles
                 </p>
               )}
             </div>

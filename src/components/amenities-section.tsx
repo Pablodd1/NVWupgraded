@@ -21,19 +21,21 @@ const AmenitiesSection = ({ amenities }: AmenitiesProps) => {
     <Card className="p-6">
       <h3 className="font-serif text-xl mb-4">Amenities</h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {amenityList.map((amenity) => (
-          <div
-            key={amenity.name}
-            className="flex items-center gap-2 p-2 rounded-lg bg-gray-50"
-          >
-            {amenity.value ? (
-              <Check className="h-5 w-5 text-green-500" />
-            ) : (
-              <X className="h-5 w-5 text-red-500" />
-            )}
-            <span>{amenity.name}</span>
-          </div>
-        ))}
+        {amenityList
+          .filter(amenity => amenity.name === 'Handicap Accessible')
+          .map((amenity) => (
+            <div
+              key={amenity.name}
+              className="flex items-center gap-2 p-2 rounded-lg bg-gray-50"
+            >
+              {amenity.value ? (
+                <Check className="h-5 w-5 text-green-500" />
+              ) : (
+                <X className="h-5 w-5 text-red-500" />
+              )}
+              <span>{amenity.name}</span>
+            </div>
+          ))}
       </div>
     </Card>
   );
