@@ -37,23 +37,50 @@ const wineryBookingSchema = new Schema<WineryBooking>(
 );
 
 interface Booking {
-  userId: mongoose.Types.ObjectId;
+  userId?: mongoose.Types.ObjectId; // Optional for external bookings
   wineries: WineryBooking[];
   specialRequests?: string;
   status?: "pending" | "confirmed" | "cancelled";
   payment_method: string;
   totalPrice?: number;
+
+  // External booking fields
+  wineryId?: mongoose.Types.ObjectId;
+  tastingTitle?: string;
+  bookingDate?: Date;
+  numberOfGuests?: number;
+  customerFirstName?: string;
+  customerLastName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  paymentStatus?: "pending" | "paid" | "external" | "failed";
+  paymentMethod?: "stripe" | "pay_winery" | "external_booking";
+  totalAmount?: number;
+  externalBookingReference?: string;
 }
 
 const bookingSchema = new Schema<Booking>(
   {
-    userId: { type: Schema.Types.ObjectId, required: true, ref: "User" },
+    userId: { type: Schema.Types.ObjectId, required: false, ref: "User" }, // Optional for external bookings
     wineries: { type: [wineryBookingSchema], required: true },
     specialRequests: { type: String },
     status: { type: String, default: "pending", enum: ["pending", "confirmed", "cancelled"] },
     payment_method: { type: String, default: "pay_winery" },
-    totalPrice: { type: Number, default: 0 }
+    totalPrice: { type: Number, default: 0 },
 
+    // External booking fields
+    wineryId: { type: Schema.Types.ObjectId, ref: "Winery" },
+    tastingTitle: { type: String },
+    bookingDate: { type: Date },
+    numberOfGuests: { type: Number },
+    customerFirstName: { type: String },
+    customerLastName: { type: String },
+    customerEmail: { type: String },
+    customerPhone: { type: String },
+    paymentStatus: { type: String, enum: ["pending", "paid", "external", "failed"], default: "pending" },
+    paymentMethod: { type: String, enum: ["stripe", "pay_winery", "external_booking"], default: "pay_winery" },
+    totalAmount: { type: Number, default: 0 },
+    externalBookingReference: { type: String }, // Reference from external booking system
   },
   { timestamps: true }
 );

@@ -32,6 +32,7 @@
     "class-variance-authority": "^0.7.1",
     "cookie": "^1.0.2",
     "daisyui": "^4.12.23",
+    "dotenv": "^17.2.3",
     "firebase": "^11.1.0",
     "firebase-admin": "^13.0.2",
     "framer-motion": "^11.14.4",
