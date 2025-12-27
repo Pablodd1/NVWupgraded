@@ -103,33 +103,55 @@ export default function Home() {
 
         <div className="col-span-3 space-y-6 lg:ml-10 mb-20">
           {/* Voice Search Toggle Header */}
-          <div className="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm mb-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 mb-8 gap-4">
             <div>
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                🍷 {nlpQuery ? "AI Filtered Experience" : "Explore Wineries"}
+              <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
+                🍷 {nlpQuery ? "AI Selections" : "Napa Valley Collection"}
               </h2>
-              <p className="text-sm text-gray-500">
-                {nlpQuery ? "Showing results based on your AI search" : "Use filters or voice search to find your perfect winery"}
+              <p className="text-sm text-gray-500 font-medium mt-1">
+                {nlpQuery ? "Curated by your AI Sommelier" : "Discover 150+ world-class vineyard experiences"}
               </p>
             </div>
-            {/* Added a clear/reset AI button if active */}
-            {nlpQuery && (
+
+            <div className="flex gap-2 w-full md:w-auto">
               <button
-                onClick={() => {
-                  setNlpQuery(null);
-                  setFilters({
-                    priceRange: [0, 1000],
-                    wineType: { red: false, rosé: false, white: false, sparkling: false, dessert: false },
-                    ava: [],
-                    time: "",
-                    specialFeatures: [],
-                  } as any);
+                onClick={async () => {
+                  setIsLoading(true);
+                  try {
+                    const res = await axios.get("/api/ai-search/surprise");
+                    if (res.data.winery) {
+                      setFilteredWineries([res.data.winery]);
+                      toast.info(`Sommelier's Pick: "${res.data.reason}"`, { autoClose: 8000 });
+                    }
+                  } catch (e) {
+                    toast.error("Sommelier is busy, try again later.");
+                  } finally {
+                    setIsLoading(false);
+                  }
                 }}
-                className="btn btn-sm btn-ghost text-red-500"
+                className="flex-1 md:flex-none px-6 py-3 bg-gradient-to-r from-berry-600 to-primary text-white font-bold rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
               >
-                Clear AI Filters
+                🪄 Surprise Me
               </button>
-            )}
+
+              {nlpQuery && (
+                <button
+                  onClick={() => {
+                    setNlpQuery(null);
+                    setFilters({
+                      priceRange: [0, 1000],
+                      wineType: { red: false, rosé: false, white: false, sparkling: false, dessert: false },
+                      ava: [],
+                      time: "",
+                      specialFeatures: [],
+                    } as any);
+                  }}
+                  className="px-6 py-3 border border-red-200 text-red-600 font-bold rounded-2xl hover:bg-red-50 transition-all"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Voice Search Panel – lazy loaded */}

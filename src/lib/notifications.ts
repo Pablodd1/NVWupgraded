@@ -599,7 +599,15 @@ export async function sendHourReminder(customer: any, wineryName: string, time: 
   const content = `
     <h2 style="color:#6B1E23;">See you soon!</h2>
     <p>Hi ${customer.firstName}, just a friendly reminder that your tasting at <strong>${wineryName}</strong> begins in approximately one hour at ${time}.</p>
-    <p>Safe travels!</p>
+    
+    <div style="margin: 20px 0; text-align: center;">
+      <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(wineryName)}+Napa+Valley" 
+         style="background: #000; color: #FFF; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: bold; display: inline-block;">
+         Tap for Directions / Uber
+      </a>
+    </div>
+
+    <p style="font-size: 13px; color: #888;">Safe travels! Please drink responsibly.</p>
   `;
 
   const transport = await getTransporter();
@@ -610,8 +618,9 @@ export async function sendHourReminder(customer: any, wineryName: string, time: 
     html: EmailTemplate({ content, subject })
   });
 
-  if (customer.phone) {
-    await sendSMS(customer.phone, `Reminder: Your tasting at ${wineryName} is in 1 hour (${time}). Reply STOP to unsubscribe.`);
+  if (customer.phone && customer.smsConsent) {
+    const navLink = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(wineryName)}+Napa+Valley`;
+    await sendSMS(customer.phone, `Reminder: Your tasting at ${wineryName} is in 1 hour (${time}). View location/Ride: ${navLink}`);
   }
 }
 

@@ -57,6 +57,11 @@ const bookingSchema = new Schema<Booking>(
   },
   { timestamps: true }
 );
+// Performance Indexes
+bookingSchema.index({ userId: 1 });
+bookingSchema.index({ status: 1 });
+bookingSchema.index({ 'wineries.wineryId': 1 });
+bookingSchema.index({ createdAt: -1 });
 
 const BookingModel = models.Booking || model<Booking>("Booking", bookingSchema);
 

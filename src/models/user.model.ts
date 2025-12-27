@@ -14,6 +14,7 @@ export interface IUser {
   isActive: boolean;
   marketingConsent: boolean;
   smsConsent: boolean;
+  visitedWineries: string[]; // Digital Passport Stamps
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
