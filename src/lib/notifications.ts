@@ -11,24 +11,21 @@ let transporter: nodemailer.Transporter;
 async function getTransporter() {
   if (transporter) return transporter;
 
-  // Check if SMTP credentials are configured
-  const hasConfig = process.env.MAILTRAP_HOST &&
-    process.env.MAILTRAP_USER &&
-    process.env.MAILTRAP_PASS;
+  // Gmail SMTP Configuration
+  const emailUser = process.env.GMAIL_USER;
+  const emailPass = process.env.GMAIL_APP_PASSWORD; // Must be App Password
 
-  if (hasConfig) {
-    // Use configured SMTP
+  if (emailUser && emailPass) {
     transporter = nodemailer.createTransport({
-      host: process.env.MAILTRAP_HOST,
-      port: parseInt(process.env.MAILTRAP_PORT || "587", 10),
-      secure: false,
+      service: "gmail",
       auth: {
-        user: process.env.MAILTRAP_USER,
-        pass: process.env.MAILTRAP_PASS,
+        user: emailUser,
+        pass: emailPass,
       },
-    } as nodemailer.TransportOptions);
+    });
   } else {
-    // Create test account using Ethereal Email
+    // Fallback to Ethereal for dev
+    console.warn("Gmail credentials not set. Falling back to test account.");
     const testAccount = await nodemailer.createTestAccount();
     transporter = nodemailer.createTransport({
       host: "smtp.ethereal.email",
@@ -446,6 +443,126 @@ export interface SendBookingNotificationsParams {
   specialRequests?: string;
 }
 
+// ========================================
+// ACCOUNT WELCOME NOTIFICATIONS
+// ========================================
+
+export async function sendWelcomeNotification(user: any, isWinery: boolean = false) {
+  const subject = isWinery ? "Welcome to NVW Winery Partner Program! 🍷" : "Welcome to Napa Valley Wineries! ✨";
+  const content = `
+    <h2 style="color:#6B1E23; margin-bottom:24px;">Welcome, ${user.firstName}!</h2>
+    <p>We're thrilled to have you join our community of wine enthusiasts.</p>
+    <p>${isWinery
+      ? "As a winery partner, you can now manage your profile, list your tasting experiences, and track bookings through your professional dashboard."
+      : "You can now explore the best wineries in Napa, curate your own itineraries, and book tasting experiences directly."}</p>
+    <div style="margin:24px 0;">
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/${isWinery ? 'winery-dashboard' : 'wineries'}" class="button">Access My Account</a>
+    </div>
+  `;
+
+  const transport = await getTransporter();
+  await transport.sendMail({
+    from: process.env.GMAIL_USER || "notifications@napawineries.com",
+    to: user.email,
+    subject,
+    html: EmailTemplate({ content, subject })
+  });
+}
+
+// ========================================
+// FINAL CONFIRMATION / DECLINE NOTIFICATIONS
+// ========================================
+
+export async function sendFinalBookingDecision(booking: any, winery: any, customer: any, status: 'confirmed' | 'declined', reason?: string) {
+  const isConfirmed = status === 'confirmed';
+  const subject = isConfirmed ? `Final Confirmation: Your visit to ${winery.name} is set!` : `Update regarding your booking at ${winery.name}`;
+
+  const content = `
+    <h2 style="color:${isConfirmed ? '#2E7D32' : '#C62828'}; margin-bottom:24px;">
+      ${isConfirmed ? 'Booking Officially Confirmed! 🎉' : 'Booking Could Not Be Completed'}
+    </h2>
+    <p>Hi ${customer.firstName},</p>
+    <p>${isConfirmed
+      ? `Good news! <strong>${winery.name}</strong> has reviewed and confirmed your wine tasting request.`
+      : `Unfortunately, <strong>${winery.name}</strong> is unable to host your requested slot at this time.`}</p>
+    
+    ${!isConfirmed && reason ? `<p style="padding: 10px; background: #FFF5F5; border-left: 4px solid #C62828;"><strong>Reason from Winery:</strong> ${reason}</p>` : ''}
+
+    <div style="background-color:#F9F9F9; padding:20px; border-radius:8px; margin:24px 0;">
+      <h3 style="color:#6B1E23; margin-top:0;">Visit Details:</h3>
+      <p><strong>Winery:</strong> ${winery.name}</p>
+      <p><strong>Date:</strong> ${new Date(booking.datetime).toLocaleDateString()}</p>
+      <p><strong>Time:</strong> ${new Date(booking.datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+    </div>
+
+    ${isConfirmed ? `
+      <p><strong>Travel Tip:</strong> We recommend arriving 10 minutes prior to your slot to settle in.</p>
+      <div style="margin:24px 0;">
+        <a href="${process.env.NEXT_PUBLIC_APP_URL}/bookings" class="button">View My Itinerary</a>
+      </div>
+    ` : ''}
+  `;
+
+  const transport = await getTransporter();
+  await transport.sendMail({
+    from: process.env.GMAIL_USER || "notifications@napawineries.com",
+    to: customer.email,
+    subject,
+    html: EmailTemplate({ content, subject })
+  });
+
+  // SMS Final Decision
+  if (customer.phone) {
+    const smsMsg = isConfirmed
+      ? `Great news! ${winery.name} has confirmed your booking for ${new Date(booking.datetime).toLocaleDateString()}. See you then!`
+      : `Sorry, ${winery.name} was unable to confirm your booking request. Check the app for other available slots.`;
+    await sendSMS(customer.phone, smsMsg);
+  }
+}
+
+// ========================================
+// 1-HOUR REMINDERS (Framework)
+// ========================================
+
+export async function sendHourReminder(customer: any, wineryName: string, time: string) {
+  const subject = "Tasting Reminder: See you in 1 hour! 🍷";
+  const content = `
+    <h2 style="color:#6B1E23;">See you soon!</h2>
+    <p>Hi ${customer.firstName}, just a friendly reminder that your tasting at <strong>${wineryName}</strong> begins in approximately one hour at ${time}.</p>
+    <p>Safe travels!</p>
+  `;
+
+  const transport = await getTransporter();
+  await transport.sendMail({
+    from: process.env.GMAIL_USER || "notifications@napawineries.com",
+    to: customer.email,
+    subject,
+    html: EmailTemplate({ content, subject })
+  });
+
+  if (customer.phone) {
+    await sendSMS(customer.phone, `Reminder: Your tasting at ${wineryName} is in 1 hour (${time}). Cheers!`);
+  }
+}
+
+// ========================================
+// SEND INITIAL BOOKING NOTIFICATIONS
+// ========================================
+
+export interface SendBookingNotificationsParams {
+  bookingId: string;
+  customerFirstName: string;
+  customerLastName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  wineryName: string;
+  wineryEmail: string;
+  wineryPhone?: string;
+  bookingDateTime: string; // ISO string
+  numberOfGuests?: number;
+  specialRequests?: string;
+}
+
 export async function sendBookingNotifications(params: SendBookingNotificationsParams) {
   const results = {
     emails: [] as any[],
@@ -477,118 +594,42 @@ export async function sendBookingNotifications(params: SendBookingNotificationsP
       specialRequests: params.specialRequests
     };
 
-    // Get transporter
     const transport = await getTransporter();
-    const from = process.env.EMAIL_FROM || "notifications@napawineries.com";
+    const from = process.env.GMAIL_USER || "notifications@napawineries.com";
 
-    // Send customer email
+    // 1. Initial Email to Customer
     try {
-      const customerEmail = await transport.sendMail({
+      await transport.sendMail({
         from,
         to: data.customerEmail,
-        subject: `Booking Confirmed at ${data.wineryName}`,
+        subject: `Request Received: ${data.wineryName}`,
         html: getCustomerBookingConfirmationEmail(data)
       });
+      results.emails.push({ to: data.customerEmail, status: "success" });
+    } catch (e: any) { results.emails.push({ to: data.customerEmail, status: "error", error: e.message }); }
 
-      results.emails.push({
-        to: data.customerEmail,
-        status: "success",
-        messageId: customerEmail.messageId,
-        previewUrl: nodemailer.getTestMessageUrl(customerEmail)
-      });
-
-      console.log("📧 Customer email sent:", nodemailer.getTestMessageUrl(customerEmail));
-    } catch (error: any) {
-      results.emails.push({
-        to: data.customerEmail,
-        status: "error",
-        error: error.message
-      });
-    }
-
-    // Send winery email
+    // 2. Email to Winery Owner
     try {
-      const wineryEmail = await transport.sendMail({
+      await transport.sendMail({
         from,
         to: data.wineryEmail,
-        subject: `New Booking - ${data.customerFirstName} ${data.customerLastName}`,
+        subject: `New Booking Request - ${data.customerFirstName}`,
         html: getWineryBookingNotificationEmail(data)
       });
+      results.emails.push({ to: data.wineryEmail, status: "success" });
+    } catch (e: any) { results.emails.push({ to: data.wineryEmail, status: "error", error: e.message }); }
 
-      results.emails.push({
-        to: data.wineryEmail,
-        status: "success",
-        messageId: wineryEmail.messageId,
-        previewUrl: nodemailer.getTestMessageUrl(wineryEmail)
-      });
-
-      console.log("📧 Winery email sent:", nodemailer.getTestMessageUrl(wineryEmail));
-    } catch (error: any) {
-      results.emails.push({
-        to: data.wineryEmail,
-        status: "error",
-        error: error.message
-      });
-    }
-
-    // Send admin emails
-    const adminUsers = await UserModel.find({ role: "admin" }).select("email");
-    for (const admin of adminUsers) {
-      try {
-        const adminEmail = await transport.sendMail({
-          from,
-          to: admin.email,
-          subject: `New Booking - ${data.bookingId}`,
-          html: getAdminBookingNotificationEmail(data)
-        });
-
-        results.emails.push({
-          to: admin.email,
-          status: "success",
-          messageId: adminEmail.messageId,
-          previewUrl: nodemailer.getTestMessageUrl(adminEmail)
-        });
-      } catch (error: any) {
-        results.emails.push({
-          to: admin.email,
-          status: "error",
-          error: error.message
-        });
-      }
-    }
-
-    // Send SMS notifications (if enabled)
-    if (data.customerPhone) {
-      const customerSMS = await sendSMS(
-        data.customerPhone,
-        `Hi ${data.customerFirstName}! Your booking at ${data.wineryName} for ${data.bookingDate} at ${data.bookingTime} is confirmed. Booking ID: ${data.bookingId}`
-      );
-      results.sms.push({ to: data.customerPhone, ...customerSMS });
-    }
-
-    if (data.wineryPhone) {
-      const winerySMS = await sendSMS(
-        data.wineryPhone,
-        `New booking: ${data.customerFirstName} ${data.customerLastName} for ${data.bookingDate} at ${data.bookingTime}. ${data.numberOfGuests} guests. ID: ${data.bookingId}`
-      );
-      results.sms.push({ to: data.wineryPhone, ...winerySMS });
-    }
-
-    return {
-      success: true,
-      results
-    };
+    return { success: true, results };
   } catch (error: any) {
-    console.error("Error sending booking notifications:", error);
-    return {
-      success: false,
-      error: error.message,
-      results
-    };
+    console.error("Booking Notification Error:", error);
+    return { success: false, error: error.message };
   }
 }
 
 export default {
   sendBookingNotifications,
+  sendFinalBookingDecision,
+  sendWelcomeNotification,
+  sendHourReminder,
   getTransporter
 };
