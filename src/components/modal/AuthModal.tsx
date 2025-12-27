@@ -19,6 +19,8 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
     password: "",
     phone: "",
     dateOfBirth: "",
+    marketingConsent: false,
+    smsConsent: false,
   });
   const [showPassword, setShowPassword] = useState(false);
   const { login, register, error, loading: isSubmitting } = useAuthStore();
@@ -65,6 +67,8 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
         phone: formData.phone,
         password: formData.password,
         dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined,
+        marketingConsent: formData.marketingConsent,
+        smsConsent: formData.smsConsent,
       });
       if (response.success) {
         setShowPopup(false);
@@ -209,6 +213,34 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
                     {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
                   </span>
                 </div>
+
+                {!isLoginMode && (
+                  <div className="flex flex-col gap-2 mt-2">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={formData.marketingConsent}
+                        onChange={(e) => setFormData({ ...formData, marketingConsent: e.target.checked })}
+                        className="checkbox checkbox-primary checkbox-sm rounded-md"
+                      />
+                      <span className="text-xs text-neutral group-hover:text-primary transition-colors">
+                        I agree to receive email notifications and promotional offers.
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <input
+                        type="checkbox"
+                        checked={formData.smsConsent}
+                        onChange={(e) => setFormData({ ...formData, smsConsent: e.target.checked })}
+                        className="checkbox checkbox-primary checkbox-sm rounded-md"
+                      />
+                      <span className="text-xs text-neutral group-hover:text-primary transition-colors">
+                        I agree to receive SMS/text alerts about my bookings.
+                        <br /><span className="text-[10px] opacity-70">Reply STOP to unsubscribe at any time. Msg & data rates may apply.</span>
+                      </span>
+                    </label>
+                  </div>
+                )}
 
                 <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6">
                   <button

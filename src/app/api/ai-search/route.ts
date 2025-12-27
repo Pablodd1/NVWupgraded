@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAISearchFilters } from '@/lib/openai';
+import { getAISearchFilters } from '@/lib/gemini';
 import Winery from '@/models/winery.model';
 import { dbConnect } from '@/lib/dbConnect';
 

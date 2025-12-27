@@ -12,6 +12,8 @@ export interface IUser {
   role: "customer" | "winery" | "admin";
   wineryId?: Schema.Types.ObjectId;
   isActive: boolean;
+  marketingConsent: boolean;
+  smsConsent: boolean;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -31,6 +33,8 @@ const UserSchema = new Schema<IUser>(
     },
     wineryId: { type: Schema.Types.ObjectId, ref: "Winery" },
     isActive: { type: Boolean, default: true },
+    marketingConsent: { type: Boolean, default: false },
+    smsConsent: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

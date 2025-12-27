@@ -1,13 +1,18 @@
-import OpenAI from 'openai';
+import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 
-const apiKey = process.env.OPENAI_API_KEY;
+const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
 
 if (!apiKey) {
-    console.warn('OPENAI_API_KEY is not set. AI features will be disabled.');
+    console.warn('GEMINI_API_KEY is not set. AI features will be disabled.');
 }
 
-export const openai = new OpenAI({
-    apiKey: apiKey || 'dummy_key',
+const genAI = new GoogleGenerativeAI(apiKey || 'dummy_key');
+
+export const geminiModel = genAI.getGenerativeModel({
+    model: "gemini-1.5-flash",
+    generationConfig: {
+        responseMimeType: "application/json",
+    }
 });
 
 export async function getAISearchFilters(query: string) {
@@ -21,7 +26,7 @@ export async function getAISearchFilters(query: string) {
   - Price Range: { min: number, max: number }
   - Features: "Outdoor Seating", "Modern Architecture", "Cave Tour", "Hidden Gem", "Historic", "Food Pairing", "Great Views", "Dog Friendly", "Kid Friendly", "Walk-ins Welcome", "Handicap Accessible"
 
-  Return ONLY a JSON object:
+  Return ONLY a JSON object that strictly follows this structure:
   {
     "ava": string[],
     "wineTypes": string[],
@@ -30,14 +35,19 @@ export async function getAISearchFilters(query: string) {
     "interpretation": "A brief sentence explaining what the user is looking for."
   }`;
 
-    const response = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages: [
-            { role: "system", content: "You are a professional sommelier assistant." },
-            { role: "user", content: prompt }
-        ],
-        response_format: { type: "json_object" }
-    });
-
-    return JSON.parse(response.choices[0].message.content || '{}');
+    try {
+        const result = await geminiModel.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+        return JSON.parse(text || '{}');
+    } catch (error) {
+        console.error("Gemini AI Search Error:", error);
+        return {
+            ava: [],
+            wineTypes: [],
+            priceRange: { min: 0, max: 500 },
+            features: [],
+            interpretation: "Unable to process query with AI."
+        };
+    }
 }

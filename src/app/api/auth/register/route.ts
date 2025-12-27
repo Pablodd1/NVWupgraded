@@ -6,8 +6,8 @@ import { createToken, setTokenCookie } from "@/lib/auth";
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    const { firstName, lastName, email, phone, password, dateOfBirth, role } = await req.json();
-    
+    const { firstName, lastName, email, phone, password, dateOfBirth, role, marketingConsent, smsConsent } = await req.json();
+
     // Validation
     if (!firstName || !lastName || !email || !phone || !password) {
       return NextResponse.json(
@@ -23,9 +23,9 @@ export async function POST(req: Request) {
       const age = today.getFullYear() - birthDate.getFullYear();
       const monthDiff = today.getMonth() - birthDate.getMonth();
       const dayDiff = today.getDate() - birthDate.getDate();
-      
+
       const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-      
+
       if (actualAge < 21) {
         return NextResponse.json(
           { error: "You must be 21 years or older to register" },
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
 
     // Create new user (default role is "customer" unless specified)
     const userRole = role || "customer";
-    
+
     const newUser = await User.create({
       firstName,
       lastName,
@@ -58,6 +58,8 @@ export async function POST(req: Request) {
       dateOfBirth,
       role: userRole,
       isActive: true,
+      marketingConsent: marketingConsent || false,
+      smsConsent: smsConsent || false,
     });
 
     // Create JWT token with user info
@@ -82,6 +84,8 @@ export async function POST(req: Request) {
       dateOfBirth: newUser.dateOfBirth,
       role: newUser.role,
       isActive: newUser.isActive,
+      marketingConsent: newUser.marketingConsent,
+      smsConsent: newUser.smsConsent,
     };
 
     return NextResponse.json({ success: true, user: userResponse }, { status: 201 });

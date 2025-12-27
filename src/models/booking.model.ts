@@ -42,6 +42,7 @@ interface Booking {
   specialRequests?: string;
   status?: "pending" | "confirmed" | "cancelled";
   payment_method: string;
+  totalPrice?: number;
 }
 
 const bookingSchema = new Schema<Booking>(
@@ -50,7 +51,8 @@ const bookingSchema = new Schema<Booking>(
     wineries: { type: [wineryBookingSchema], required: true },
     specialRequests: { type: String },
     status: { type: String, default: "pending", enum: ["pending", "confirmed", "cancelled"] },
-    payment_method: { type: String, default: "pay_winery" }
+    payment_method: { type: String, default: "pay_winery" },
+    totalPrice: { type: Number, default: 0 }
 
   },
   { timestamps: true }

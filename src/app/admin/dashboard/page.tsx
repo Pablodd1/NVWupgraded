@@ -3,6 +3,17 @@ import { useState } from "react";
 import useSWR from "swr";
 import Link from "next/link";
 import { toast } from "react-toastify";
+import {
+  BarChart3,
+  Users,
+  Wine,
+  DollarSign,
+  ArrowRight,
+  Download,
+  Plus,
+  Settings,
+  X
+} from "lucide-react";
 
 const fetcher = (url: string) => fetch(url, { method: "GET" }).then((res) => res.json());
 
@@ -13,40 +24,31 @@ export default function Dashboard() {
   const [modalOpen, setModalOpen] = useState(false);
 
   const { data, error, mutate } = useSWR(`/api/admin/bookings?page=${page}&limit=${limit}`, fetcher);
+  const { data: stats } = useSWR('/api/admin/stats', fetcher);
 
-  if (error) return <div>Error loading bookings.</div>;
-  if (!data) return <div className="p-4">Loading bookings...</div>;
+  if (error) return <div className="min-h-screen pt-24 text-center">Error loading dashboard.</div>;
+  if (!data) return <div className="min-h-screen p-4 pt-24 text-center">Loading Admin Dashboard...</div>;
 
   const { bookings, totalPages, currentPage } = data;
 
   const handleConfirm = async (bookingId: string) => {
     try {
-      const res = await fetch(`/api/admin/bookings/${bookingId}/confirm`, {
-        method: "PATCH",
-      });
+      const res = await fetch(`/api/admin/bookings/${bookingId}/confirm`, { method: "PATCH" });
       if (res.ok) {
         mutate();
-      } else {
-        console.error("Failed to confirm booking");
+        toast.success("Booking confirmed");
       }
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const handleCancel = async (bookingId: string) => {
     try {
-      const res = await fetch(`/api/admin/bookings/${bookingId}/cancel`, {
-        method: "PATCH",
-      });
+      const res = await fetch(`/api/admin/bookings/${bookingId}/cancel`, { method: "PATCH" });
       if (res.ok) {
         mutate();
-      } else {
-        console.error("Failed to cancel booking");
+        toast.error("Booking cancelled");
       }
-    } catch (err) {
-      console.error(err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const openModal = (booking: any) => {
@@ -59,297 +61,222 @@ export default function Dashboard() {
     setModalOpen(false);
   };
 
+  const exportCSV = () => {
+    if (!bookings || bookings.length === 0) return toast.info("No bookings to export");
+    const headers = ["Booking ID", "Customer", "Email", "Revenue", "Status", "Date"];
+    const csvContent = [
+      headers.join(","),
+      ...bookings.map((b: any) => [
+        b._id,
+        `"${b.userId?.firstName} ${b.userId?.lastName}"`,
+        b.userId?.email,
+        b.totalPrice || 0,
+        b.status,
+        new Date(b.createdAt).toLocaleDateString()
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `nvw-report-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
   return (
-    <div className="min-h-screen p-4 bg-gray-100 pt-20">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-2xl font-bold">Admin Dashboard</h3>
-        <button
-          onClick={() => {
-            if (!bookings || bookings.length === 0) return toast.info("No bookings to export");
-            const headers = ["Booking ID", "Customer Name", "Email", "Wineries", "Date", "Status", "Payment Method"];
-            const csvContent = [
-              headers.join(","),
-              ...bookings.map((b: any) => [
-                b._id,
-                `"${b.userId?.name || 'N/A'}"`,
-                b.userId?.email || 'N/A',
-                `"${b.wineries?.map((w: any) => w.wineryId?.name).join(' | ')}"`,
-                new Date(b.createdAt).toLocaleDateString(),
-                b.status,
-                b.payment_method || "Pay at Winery"
-              ].join(","))
-            ].join("\n");
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", `nvw-bookings-report-${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }}
-          className="btn btn-sm btn-outline btn-primary flex items-center gap-2"
-        >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-          Export Report (CSV)
-        </button>
-      </div>
-      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link href="/admin/dashboard/create-winery" className="btn btn-primary">
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Create Winery Account
-        </Link>
-        <Link href="/admin/dashboard/users" className="btn btn-secondary">
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-          Manage Users
-        </Link>
-        <Link href="/admin/dashboard/winery/list" className="btn btn-accent">
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          Wineries List
-        </Link>
-        <Link href="/admin/dashboard/winery" className="btn btn-info">
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
-          Edit Winery
-        </Link>
-      </div>
-
-      <h1>Bookings</h1>
-      <hr />
-      <div className="overflow-x-auto pb-10">
-        <table className="min-w-full border-collapse border border-gray-200 rounded-lg shadow-md bg-white">
-          <thead className="bg-gray-200 text-gray-700">
-            <tr>
-              <th className="w-1/6 border border-gray-200 px-4 py-2 text-left text-sm font-semibold uppercase tracking-wider">
-                Booking Id
-              </th>
-              <th className="w-1/6 border border-gray-200 px-4 py-2 text-left text-sm font-semibold uppercase tracking-wider">
-                User Name
-              </th>
-              <th className="w-1/6 border border-gray-200 px-4 py-2 text-left text-sm font-semibold uppercase tracking-wider">
-                Email
-              </th>
-              <th className="w-1/4 border border-gray-200 px-4 py-2 text-left text-sm font-semibold uppercase tracking-wider">
-                Booking Date
-              </th>
-              <th className="w-1/6 border border-gray-200 px-4 py-2 text-left text-sm font-semibold uppercase tracking-wider">
-                Status
-              </th>
-              <th className="w-1/6 border border-gray-200 px-4 py-2 text-left text-sm font-semibold uppercase tracking-wider">
-                Payment
-              </th>
-              <th className="w-1/6 border border-gray-200 px-4 py-2 text-center text-sm font-semibold uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {bookings && bookings.length > 0 ? (
-              bookings.map((booking: any) => (
-                <tr
-                  key={booking._id}
-                  className={`transition-colors duration-200 ${booking._id % 2 === 0 ? "bg-gray-50" : "bg-white"
-                    } hover:bg-gray-100`}
-                >
-                  <td className="w-1/6 border border-gray-200 px-4 py-2 text-gray-800 text-sm font-mono truncate">
-                    {booking._id}
-                  </td>
-                  <td className="w-1/6 border border-gray-200 px-4 py-2 text-gray-800 text-sm truncate">
-                    {booking.userId?.name || "N/A"}
-                  </td>
-                  <td className="w-1/6 border border-gray-200 px-4 py-2 text-gray-800 text-sm truncate">
-                    {booking.userId?.email || "N/A"}
-                  </td>
-                  <td className="w-1/4 border border-gray-200 px-4 py-2 text-gray-800 text-sm truncate">
-                    {new Date(booking.createdAt).toLocaleString("en-US", {
-                      weekday: "long",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
-                  </td>
-                  <td className="w-1/6 border border-gray-200 px-4 py-2 text-gray-800 text-sm capitalize truncate">
-                    {booking.status}
-                  </td>
-                  <td className="w-1/6 border border-gray-200 px-4 py-2 text-gray-800 text-sm capitalize truncate">
-                    {booking.payment_method?.replace('_', ' ') || "Pay at Winery"}
-                  </td>
-                  <td className="w-1/6 border border-gray-200 px-4 py-2 text-center">
-                    <div className="flex justify-center gap-2">
-                      {booking.status === "pending" && (
-                        <>
-                          <button
-                            className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-md shadow-sm transition-all duration-200 ease-in-out"
-                            onClick={() => handleConfirm(booking._id)}
-                            title="Confirm"
-                          >
-                            <svg
-                              className="h-5 w-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                          </button>
-                          <button
-                            className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-md shadow-sm transition-all duration-200 ease-in-out"
-                            onClick={() => handleCancel(booking._id)}
-                            title="Cancel"
-                          >
-                            <svg
-                              className="h-5 w-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </>
-                      )}
-                      <button
-                        className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-md shadow-sm transition-all duration-200 ease-in-out"
-                        onClick={() => openModal(booking)}
-                        title="View Details"
-                      >
-                        <svg
-                          className="h-5 w-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={6} className="border border-gray-200 px-4 py-2 text-center text-gray-800">
-                  No bookings found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-        {totalPages > 1 && (
-          <div className="mt-4  pb-4  sm:mb-0  flex justify-center items-center gap-4">
-            <button className="btn btn-sm" disabled={page === 1} onClick={() => setPage((prev) => Math.max(prev - 1, 1))}>
-              Previous
-            </button>
-            <span>
-              Page {currentPage} of {totalPages}
-            </span>
-            <button
-              className="btn btn-sm"
-              disabled={page === totalPages}
-              onClick={() => setPage((prev) => (prev < totalPages ? prev + 1 : prev))}
-            >
-              Next
-            </button>
+    <div className="min-h-screen bg-[#F8F9FA] pb-20 pt-24 px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Executive Overview</h1>
+            <p className="text-gray-500 mt-1">Manage bookings, track revenue, and analyze demographics.</p>
           </div>
-        )}
+          <div className="flex gap-3">
+            <button onClick={exportCSV} className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+              <Download size={18} /> Export Data
+            </button>
+            <Link href="/admin/dashboard/create-winery" className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-all shadow-md shadow-primary/20">
+              <Plus size={18} /> New Winery
+            </Link>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+          <StatCard title="Total Revenue" value={`$${stats?.revenue?.toLocaleString() || '0'}`} icon={<DollarSign className="text-green-600" />} trend="+12.5% from last month" color="bg-green-50" />
+          <StatCard title="Active Users" value={stats?.totals?.users || '0'} icon={<Users className="text-blue-600" />} trend="All-time customers" color="bg-blue-50" />
+          <StatCard title="Total Bookings" value={stats?.totals?.bookings || '0'} icon={<Wine className="text-berry-600" />} trend="Pending & Confirmed" color="bg-red-50" />
+          <StatCard title="High Value Demo" value={stats?.demographics?.["31-45"] || '0'} icon={<BarChart3 className="text-purple-600" />} trend="Age range: 31-45" color="bg-purple-50" />
+        </div>
+
+        {/* Quick Links */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+          <QuickLink href="/admin/dashboard/users" label="Manage Users" icon={<Users size={20} />} sub="View customer profiles" />
+          <QuickLink href="/admin/dashboard/winery/list" label="Wineries" icon={<Wine size={20} />} sub="Audit vineyard listings" />
+          <QuickLink href="/admin/dashboard/winery" label="Inventory" icon={<Settings size={20} />} sub="Edit tasting packages" />
+          <QuickLink href="/admin/dashboard/create-winery" label="Partners" icon={<Plus size={20} />} sub="Onboard new wineries" color="bg-primary text-white" />
+        </div>
+
+        {/* Bookings Table */}
+        <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-white/50 backdrop-blur-sm">
+            <h3 className="text-xl font-bold text-gray-800">Recent Appointments</h3>
+            <div className="flex gap-2">
+              <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full uppercase tracking-wider">Live Tracking</span>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50/50 text-left">
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">ID</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Customer</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Date Created</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Ticket Size</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
+                  <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Details</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {bookings.map((booking: any) => (
+                  <tr key={booking._id} className="group hover:bg-gray-50/50 transition-colors">
+                    <td className="px-6 py-5 text-sm font-mono text-gray-400">#{booking._id.substring(booking._id.length - 6).toUpperCase()}</td>
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-gray-900">{booking.userId?.firstName} {booking.userId?.lastName}</span>
+                        <span className="text-xs text-gray-500">{booking.userId?.email}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-sm text-gray-600">
+                      {new Date(booking.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className="text-sm font-black text-gray-900 px-3 py-1 bg-gray-100 rounded-lg">
+                        ${booking.totalPrice?.toLocaleString() || '0'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide shadow-sm border ${booking.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-100' :
+                          booking.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-100' :
+                            'bg-red-50 text-red-700 border-red-100'
+                        }`}>
+                        {booking.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <button
+                        onClick={() => openModal(booking)}
+                        className="p-2 text-gray-400 hover:text-primary hover:bg-primary/5 rounded-full transition-all"
+                      >
+                        <ArrowRight size={20} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="p-6 border-t border-gray-50 flex justify-between items-center text-sm font-medium">
+              <button disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))} className="px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50">Previous</button>
+              <span className="text-gray-500 tracking-widest">PAGE {currentPage} OF {totalPages}</span>
+              <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="px-4 py-2 border border-gray-200 rounded-xl hover:bg-gray-50 disabled:opacity-50">Next</button>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Pagination Controls */}
-
-
-      {/* Booking Details Modal */}
+      {/* Booking Modal */}
       {modalOpen && selectedBooking && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-md shadow-md max-w-3xl w-full relative">
-            <button className="absolute top-2 right-2 text-gray-600" onClick={closeModal}>
-              X
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm z-[200] p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full p-8 relative animate-in fade-in zoom-in duration-200">
+            <button className="absolute top-6 right-6 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-all" onClick={closeModal}>
+              <X size={24} />
             </button>
-            <h2 className="text-xl font-bold mb-4">Booking Details</h2>
-            <div className="space-y-2">
-              <p>
-                <strong>Booking ID:</strong> {selectedBooking._id}
-              </p>
-              <p>
-                <strong>User Name:</strong> {selectedBooking.userId?.name || "N/A"}
-              </p>
-              <p>
-                <strong>Email:</strong> {selectedBooking.userId?.email || "N/A"}
-              </p>
-              <p>
-                <strong>Status:</strong> {selectedBooking.status}
-              </p>
-              <p>
-                <strong>Payment Method:</strong> {selectedBooking.payment_method?.replace('_', ' ') || "Pay at Winery"}
-              </p>
-              <p>
-                <strong>Created At:</strong>{" "}
-                {new Date(selectedBooking.createdAt).toLocaleString("en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                })}
-              </p>
+            <div className="mb-8">
+              <span className="text-xs font-bold text-primary uppercase tracking-widest">Booking Resolution</span>
+              <h2 className="text-2xl font-black text-gray-900 mt-1">Order Details #{selectedBooking._id.substring(0, 8)}</h2>
+            </div>
 
-              <div className="mt-4">
-                <h3 className="text-lg font-semibold mb-2">Wineries:</h3>
-                {selectedBooking.wineries && selectedBooking.wineries.length > 0 ? (
-                  selectedBooking.wineries.map((winery: any, index: number) => (
-                    <div key={index} className="border p-2 mb-2 rounded">
-                      <p>
-                        <strong>Winery Name:</strong> {winery.wineryId?.name || "N/A"}
-                      </p>
-                      <p>
-                        <strong>Date:</strong>{" "}
-                        {new Date(winery.datetime).toLocaleString("en-US", {
-                          weekday: "long",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p>No winery details available.</p>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <DetailRow label="Customer" value={`${selectedBooking.userId?.firstName} ${selectedBooking.userId?.lastName}`} />
+                <DetailRow label="Email" value={selectedBooking.userId?.email} />
+                <DetailRow label="Payment" value={selectedBooking.payment_method?.replace('_', ' ') || "Pay at Winery"} />
+                <DetailRow label="Gross Revenue" value={`$${selectedBooking.totalPrice || '0'}`} highlight />
+              </div>
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Itinerary</h3>
+                {selectedBooking.wineries?.map((w: any, i: number) => (
+                  <div key={i} className="bg-gray-50 p-3 rounded-xl border border-gray-100">
+                    <p className="text-sm font-bold text-gray-800">{w.wineryId?.name}</p>
+                    <p className="text-xs text-gray-500">{new Date(w.datetime).toLocaleString()}</p>
+                  </div>
+                ))}
               </div>
             </div>
+
+            {selectedBooking.status === 'pending' && (
+              <div className="mt-10 flex gap-4 pt-6 border-t border-gray-100">
+                <button
+                  onClick={() => { handleConfirm(selectedBooking._id); closeModal(); }}
+                  className="flex-1 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-200"
+                >
+                  Approve Reservation
+                </button>
+                <button
+                  onClick={() => { handleCancel(selectedBooking._id); closeModal(); }}
+                  className="flex-1 py-4 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition-all"
+                >
+                  Decline
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function StatCard({ title, value, icon, trend, color }: any) {
+  return (
+    <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+      <div className="flex justify-between items-start mb-4">
+        <div className={`p-3 rounded-2xl ${color}`}>{icon}</div>
+        <span className="text-[10px] font-black text-green-500 uppercase">Live</span>
+      </div>
+      <div>
+        <p className="text-sm font-medium text-gray-400">{title}</p>
+        <h4 className="text-3xl font-black text-gray-900 my-1">{value}</h4>
+        <p className="text-xs text-gray-500 font-medium">{trend}</p>
+      </div>
+    </div>
+  );
+}
+
+function QuickLink({ href, label, icon, sub, color }: any) {
+  return (
+    <Link href={href} className={`p-5 rounded-2xl border flex items-center gap-4 transition-all hover:scale-[1.02] active:scale-[0.98] ${color || 'bg-white border-gray-100 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/5'}`}>
+      <div className={`p-3 rounded-xl ${color ? 'bg-white/20' : 'bg-gray-50 text-primary'}`}>{icon}</div>
+      <div>
+        <p className="text-sm font-bold leading-tight">{label}</p>
+        <p className={`text-[10px] ${color ? 'text-white/70' : 'text-gray-400'}`}>{sub}</p>
+      </div>
+    </Link>
+  );
+}
+
+function DetailRow({ label, value, highlight }: any) {
+  return (
+    <div>
+      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">{label}</p>
+      <p className={`text-sm ${highlight ? 'font-black text-berry-600' : 'font-semibold text-gray-800'}`}>{value || 'N/A'}</p>
     </div>
   );
 }

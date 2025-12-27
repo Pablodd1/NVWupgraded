@@ -355,15 +355,14 @@ export default function ItineraryPage() {
 
           {isLottieLoaded && (
             <>
-              <h2 className="lg:text-2xl text-xl font-bold text-gray-900 mt-4 text-center">Your Wine Tour is Confirmed! 🍷</h2>
-              <p className="text-gray-600 mt-2 text-center">
-                You’ve successfully planned your winery itinerary. Get ready to explore amazing wineries and enjoy premium
-                tastings!
+              <h2 className="lg:text-2xl text-xl font-bold text-gray-900 mt-4 text-center">Your Itinerary has been Sent! 🍇</h2>
+              <p className="text-gray-600 mt-2 text-center text-sm md:text-base">
+                We've delivered your requests to each winery. They will review and confirm your slots shortly.
+                Get ready for a premium Napa Valley experience!
               </p>
 
-              <p className="text-gray-500 text-sm mt-4 text-center">
-                A confirmation email has been sent to <strong>{user?.email || "your email"}</strong> with all your booking
-                details. Be sure to check your schedule and arrive on time for your reservations.
+              <p className="text-gray-500 text-sm mt-4 text-center italic">
+                A summary has been sent to <strong>{user?.email || "your email"}</strong>. You will receive individual confirmation emails as each winery approves your request.
               </p>
 
               <div className="border-t w-full my-4"></div>

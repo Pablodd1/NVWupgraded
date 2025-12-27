@@ -129,11 +129,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // All slots successfully reserved - create booking
+    // All slots successfully reserved - calculate total price and create booking
     const firstWinery = data[0];
     const paymentMethod = firstWinery?.payment_method?.type || "pay_winery";
 
-    const booking = new BookingModel({ userId, payment_method: paymentMethod });
+    // Calculate total price accurately
+    const totalPrice = data.reduce((acc: number, item: any) => {
+      let wineryTotal = 0;
+      const guests = item.numberOfGuests || 1;
+
+      // Tasting price per guest
+      if (item.tasting) wineryTotal += item.tasting * guests;
+
+      // Features, food, tours (assuming these are per guest or set prices)
+      item.foodPairings?.forEach((fp: any) => wineryTotal += (fp.price || 0) * guests);
+      item.tours?.forEach((t: any) => wineryTotal += (t.price || 0) * guests);
+      item.otherFeatures?.forEach((of: any) => wineryTotal += (Number(of.price) || 0) * guests);
+
+      return acc + wineryTotal;
+    }, 0);
+
+    const booking = new BookingModel({
+      userId,
+      payment_method: paymentMethod,
+      totalPrice: totalPrice
+    });
+
     booking.wineries = data.map((winery) => ({
       wineryId: winery.wineryId,
       datetime: winery.dateTime,
@@ -145,7 +166,17 @@ export async function POST(req: NextRequest) {
     }));
     await booking.save();
 
-    // Send email/SMS notifications for each winery in the booking
+    // 1. Send ONE Master Itinerary Email to Customer
+    try {
+      await (await import("@/lib/notifications")).sendMasterItineraryNotification(
+        await BookingModel.findById(booking._id).populate("wineries.wineryId"),
+        user
+      );
+    } catch (e) {
+      console.error("Failed to send Master Itinerary:", e);
+    }
+
+    // 2. Send individual notifications to each Winery Owner
     const notificationResults = [];
     for (const winery of data) {
       const wineryDetails = await WineryModel.findById(winery.wineryId)

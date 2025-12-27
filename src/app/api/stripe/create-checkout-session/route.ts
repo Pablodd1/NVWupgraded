@@ -144,7 +144,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Booking failed: Capacity issues", errors: reservationErrors }, { status: 400 });
     }
 
-    const booking = new BookingModel({ userId, payment_method: "pay_stripe" });
+    // Calculate total price accurately
+    const totalPrice = bookData.reduce((acc: number, item: any) => {
+      let wineryTotal = 0;
+      const guests = item.numberOfGuests || 1;
+      if (item.tasting) wineryTotal += item.tasting * guests;
+      item.foodPairings?.forEach((fp: any) => wineryTotal += (fp.price || 0) * guests);
+      item.tours?.forEach((t: any) => wineryTotal += (t.price || 0) * guests);
+      item.otherFeatures?.forEach((of: any) => wineryTotal += (Number(of.price) || 0) * guests);
+      return acc + wineryTotal;
+    }, 0);
+
+    const booking = new BookingModel({
+      userId,
+      payment_method: "pay_stripe",
+      totalPrice: totalPrice
+    });
+
     booking.wineries = bookData.map((winery) => ({
       wineryId: winery.wineryId,
       datetime: winery.dateTime,
@@ -156,6 +172,15 @@ export async function POST(req: Request) {
     }));
     await booking.save();
 
+    // 1. Send ONE Master Itinerary Email to Customer
+    try {
+      const fullBooking = await BookingModel.findById(booking._id).populate("wineries.wineryId");
+      await (await import("@/lib/notifications")).sendMasterItineraryNotification(fullBooking, user);
+    } catch (e) {
+      console.error("Failed to send Master Itinerary (Stripe):", e);
+    }
+
+    // 2. Send individual notifications to Each Winery
     for (const winery of bookData) {
       const wineryDetails = await WineryModel.findById(winery.wineryId).select("name contact_info.email contact_info.phone");
       if (wineryDetails) {

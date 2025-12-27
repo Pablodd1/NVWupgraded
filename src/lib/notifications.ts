@@ -162,13 +162,16 @@ const EmailFooter = () => `
               <tr>
                 <td style="font-family: 'Helvetica', Arial, sans-serif; font-size:12px; color:#999999; text-align:center;">
                   <p style="margin: 10px 0;">© ${new Date().getFullYear()} Napa Valley Wineries. All rights reserved.</p>
+                  <p style="margin: 10px 0; font-size: 10px; color: #BBB;">Napa Valley, California, USA</p>
                   <p style="margin: 10px 0;">
                     <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}" style="color:#6B1E23; text-decoration:none;">Visit our website</a>
                     &nbsp;|&nbsp;
                     <a href="mailto:support@napawineries.com" style="color:#6B1E23; text-decoration:none;">Contact Support</a>
                   </p>
                   <p style="margin: 10px 0; font-size:11px;">
-                    This email was sent because you have an active booking with Napa Valley Wineries.
+                    This email was sent because you opted in at Napa Valley Wineries. 
+                    <br/>
+                    <a href="${process.env.NEXT_PUBLIC_APP_URL}/unsubscribe" style="color: #6B1E23; text-decoration: underline;">Unsubscribe</a> or manage your preferences in your dashboard.
                   </p>
                 </td>
               </tr>
@@ -425,9 +428,76 @@ function getAdminBookingNotificationEmail(data: BookingNotificationData) {
   });
 }
 
-// ========================================
-// SEND BOOKING NOTIFICATIONS
-// ========================================
+function getMasterItineraryEmail(data: {
+  customerName: string;
+  bookingId: string;
+  wineries: any[];
+}) {
+  const wineriesList = data.wineries.map(w => `
+    <div style="margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 8px; border-left: 4px solid #6B1E23;">
+      <h3 style="margin: 0; color: #6B1E23;">${w.wineryName}</h3>
+      <p style="margin: 5px 0; font-size: 14px;">
+        <strong>Date & Time:</strong> ${new Date(w.datetime).toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+      </p>
+      <p style="margin: 5px 0; font-size: 14px;">
+        <strong>Guests:</strong> ${w.numberOfGuests}
+      </p>
+    </div>
+  `).join('');
+
+  const content = `
+    <h2 style="color:#6B1E23;">Your Napa Day-Trip Itinerary 🍇</h2>
+    <p>Hi ${data.customerName}, your itinerary has been received! Our partner wineries have been notified and will confirm your slots shortly.</p>
+    
+    <div style="margin: 30px 0;">
+      <h3 style="border-bottom: 2px solid #EEE; padding-bottom: 10px;">The Plan:</h3>
+      ${wineriesList}
+    </div>
+
+    <p style="font-size: 14px; color: #666;">
+      <strong>Note:</strong> Each winery manages its own bookings. You will receive a separate confirmation once each winery approves your request. 
+    </p>
+    
+    <div style="margin-top: 30px; text-align: center;">
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="button">Track Your Requests</a>
+    </div>
+  `;
+
+  return EmailTemplate({ content, subject: "Your Napa Valley Itinerary - Request Received" });
+}
+
+export async function sendMasterItineraryNotification(booking: any, customer: any) {
+  try {
+    const transport = await getTransporter();
+    const from = process.env.GMAIL_USER || "notifications@napawineries.com";
+
+    const winerySummaries = booking.wineries.map((w: any) => ({
+      wineryName: w.wineryId?.name || "Premium Winery",
+      datetime: w.datetime,
+      numberOfGuests: w.numberOfGuests
+    }));
+
+    await transport.sendMail({
+      from,
+      to: customer.email,
+      subject: "Your Napa Valley Itinerary Summary 🍷",
+      html: getMasterItineraryEmail({
+        customerName: customer.firstName,
+        bookingId: booking._id.toString(),
+        wineries: winerySummaries
+      })
+    });
+
+    if (customer.phone && customer.smsConsent) {
+      await sendSMS(customer.phone, `Itinerary Received! We've sent your requests to the wineries. Track your status here: ${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Master Itinerary Error:", error);
+    return { success: false, error: error.message };
+  }
+}
 
 export interface SendBookingNotificationsParams {
   bookingId: string;
@@ -515,7 +585,7 @@ export async function sendFinalBookingDecision(booking: any, winery: any, custom
   if (customer.phone) {
     const smsMsg = isConfirmed
       ? `Great news! ${winery.name} has confirmed your booking for ${new Date(booking.datetime).toLocaleDateString()}. See you then!`
-      : `Sorry, ${winery.name} was unable to confirm your booking request. Check the app for other available slots.`;
+      : `Sorry, ${winery.name} was unable to confirm your booking request. Check the app for other available slots. Reply STOP to unsubscribe.`;
     await sendSMS(customer.phone, smsMsg);
   }
 }
@@ -541,7 +611,7 @@ export async function sendHourReminder(customer: any, wineryName: string, time: 
   });
 
   if (customer.phone) {
-    await sendSMS(customer.phone, `Reminder: Your tasting at ${wineryName} is in 1 hour (${time}). Cheers!`);
+    await sendSMS(customer.phone, `Reminder: Your tasting at ${wineryName} is in 1 hour (${time}). Reply STOP to unsubscribe.`);
   }
 }
 
@@ -563,12 +633,7 @@ export interface SendBookingNotificationsParams {
   specialRequests?: string;
 }
 
-export async function sendBookingNotifications(params: SendBookingNotificationsParams) {
-  const results = {
-    emails: [] as any[],
-    sms: [] as any[]
-  };
-
+export async function sendWineryNotification(params: SendBookingNotificationsParams) {
   try {
     const bookingDate = new Date(params.bookingDateTime);
     const data: BookingNotificationData = {
@@ -597,37 +662,34 @@ export async function sendBookingNotifications(params: SendBookingNotificationsP
     const transport = await getTransporter();
     const from = process.env.GMAIL_USER || "notifications@napawineries.com";
 
-    // 1. Initial Email to Customer
-    try {
-      await transport.sendMail({
-        from,
-        to: data.customerEmail,
-        subject: `Request Received: ${data.wineryName}`,
-        html: getCustomerBookingConfirmationEmail(data)
-      });
-      results.emails.push({ to: data.customerEmail, status: "success" });
-    } catch (e: any) { results.emails.push({ to: data.customerEmail, status: "error", error: e.message }); }
+    // Only Notify Winery Owner
+    await transport.sendMail({
+      from,
+      to: data.wineryEmail,
+      subject: `New Booking Request - ${data.customerFirstName}`,
+      html: getWineryBookingNotificationEmail(data)
+    });
 
-    // 2. Email to Winery Owner
-    try {
-      await transport.sendMail({
-        from,
-        to: data.wineryEmail,
-        subject: `New Booking Request - ${data.customerFirstName}`,
-        html: getWineryBookingNotificationEmail(data)
-      });
-      results.emails.push({ to: data.wineryEmail, status: "success" });
-    } catch (e: any) { results.emails.push({ to: data.wineryEmail, status: "error", error: e.message }); }
-
-    return { success: true, results };
+    return { success: true };
   } catch (error: any) {
-    console.error("Booking Notification Error:", error);
+    console.error("Winery Notification Error:", error);
     return { success: false, error: error.message };
   }
 }
 
+/** 
+ * Legacy function wrapper to avoid breaking other parts of the app immediately. 
+ * Note: It is better to use sendMasterItineraryNotification + sendWineryNotification separately.
+ */
+export async function sendBookingNotifications(params: SendBookingNotificationsParams) {
+  // Just route to winery notification
+  return sendWineryNotification(params);
+}
+
 export default {
   sendBookingNotifications,
+  sendWineryNotification,
+  sendMasterItineraryNotification,
   sendFinalBookingDecision,
   sendWelcomeNotification,
   sendHourReminder,
