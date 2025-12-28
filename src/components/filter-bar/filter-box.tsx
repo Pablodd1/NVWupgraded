@@ -136,13 +136,22 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
     // Filter by special features
     if (filters.specialFeatures.length > 0) {
       filtered = filtered.filter((winery) => {
+        const specialFeatures = filters.specialFeatures.filter(f => f !== "Handicap Accessible");
+        const hasHandicapFilter = filters.specialFeatures.includes("Handicap Accessible");
+
+        // If handicap filter is on, the winery MUST be handicap accessible
+        if (hasHandicapFilter && !winery.amenities?.handicap_accessible) {
+          return false;
+        }
+
+        // If other features are selected, check if any tasting matches all of them
+        if (specialFeatures.length === 0) return true;
+
         if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
 
-        // Check if any tasting has all the required special features
         return winery.tasting_info.some(tasting => {
           if (!tasting.special_features || !Array.isArray(tasting.special_features)) return false;
-
-          return filters.specialFeatures.every((feature) => tasting.special_features.includes(feature));
+          return specialFeatures.every((feature) => tasting.special_features.includes(feature));
         });
       });
     }

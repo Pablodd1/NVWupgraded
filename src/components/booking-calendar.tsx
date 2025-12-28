@@ -41,7 +41,7 @@ const BookingCalendar = ({ slots, maxGuests, weekendMultiplier }: BookingCalenda
         ))}
       </div>
       <div className="mt-4 text-sm text-gray-600">
-        <p>Maximum {maxGuests} guests per session</p>
+        <p>Size: {maxGuests} people per slot</p>
         <p>Weekend pricing: {(weekendMultiplier * 100 - 100).toFixed(0)}% premium</p>
       </div>
     </Card>
