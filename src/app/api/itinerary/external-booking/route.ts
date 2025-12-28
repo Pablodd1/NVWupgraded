@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import dbConnect from "@/lib/dbConnect";
+import { dbConnect } from "@/lib/dbConnect";
 import Booking from "@/models/booking.model";
 import SlotInventory from "@/models/slotInventory.model";
 import Winery from "@/models/winery.model";

@@ -13,6 +13,7 @@ import {
   FaGlassCheers,
   FaWhatsapp,
   FaUsers,
+  FaCar,
 } from "react-icons/fa";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/buttons/button";
