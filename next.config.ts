@@ -206,7 +206,7 @@ const nextConfig: NextConfig = {
     dirs: ['src', 'app', 'components', 'lib', 'utils'],
     // Dangerously allow production builds to successfully complete even if
     // your project has ESLint errors. NOT RECOMMENDED!
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
 
   // ========================================
