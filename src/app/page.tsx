@@ -1,4 +1,5 @@
 "use client";
+// Build trigger: 2025-12-28 13:20
 import { useState, useEffect } from "react";
 import AuthModal from "@/components/modal/AuthModal";
 import { toast } from "react-toastify";
