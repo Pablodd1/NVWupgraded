@@ -80,9 +80,17 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
             <p className="truncate">{winery.location.address.split(',')[0]}</p>
           </div>
 
+
           <div className="flex items-center space-x-2">
             <FaDollarSign className="text-primary/60" />
             <p>{priceDisplay}</p>
+            {winery.payment_method?.type === 'external_booking' ? (
+              <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">Direct Book</span>
+            ) : winery.payment_method?.type === 'pay_winery' ? (
+              <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">Pay at Winery</span>
+            ) : (
+              <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">In-App</span>
+            )}
           </div>
 
           <div className="flex items-center space-x-2 capitalize">
@@ -97,16 +105,12 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
-          <button
-            disabled={!!isAdded}
-            className={`py-3 px-6 rounded-xl font-bold transition-all duration-300 flex-1 sm:flex-none ${!!isAdded
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-gray-900 text-white hover:bg-primary shadow-lg shadow-gray-200 hover:shadow-primary/20"
-              }`}
-            onClick={() => addToItinerary(winery)}
+          <Link
+            href={`/winery/${winery._id}`}
+            className="py-3 px-6 rounded-xl font-bold transition-all duration-300 flex-1 sm:flex-none bg-gray-900 text-white hover:bg-primary shadow-lg shadow-gray-200 hover:shadow-primary/20 text-center flex items-center justify-center"
           >
-            {!!isAdded ? "Included" : "Add to Day Trip"}
-          </button>
+            View Experience
+          </Link>
 
           {whatsappLink && (
             <a
