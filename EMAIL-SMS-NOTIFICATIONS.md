@@ -316,6 +316,57 @@ npm run dev
 - [ ] **Push Notifications**: In-app notifications
 - [ ] **Delivery Analytics**: Track open rates, click rates
 
+## 🚨 Error Reporting (New)
+
+The system now includes an automatic error reporting feature that notifies the admin team when issues occur.
+
+### Client-Side Integration
+To catch client-side errors, you can use a global error handler or call the API directly:
+
+```typescript
+// Example: Global Error Boundary or try-catch block
+try {
+  // risky code
+} catch (error: any) {
+  // Report to server
+  fetch('/api/log-error', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      error: error.message,
+      stack: error.stack,
+      url: window.location.href,
+      userAgent: navigator.userAgent
+    })
+  });
+}
+```
+
+### Server-Side Integration
+For API routes or Server Actions, import the utility directly:
+
+```typescript
+import { sendErrorNotification } from "@/lib/notifications";
+
+try {
+  // ... database operation
+} catch (error: any) {
+  await sendErrorNotification({
+    error: error.message,
+    source: 'server',
+    stack: error.stack,
+    additionalInfo: { params }
+  });
+}
+```
+
+### Configuration
+Add these to your `.env.local`:
+```bash
+ADMIN_EMAIL=your-admin-email@domain.com
+ADMIN_PHONE=+15555555555 # For critical SMS alerts
+```
+
 ## ✅ Implementation Status
 
 **Phase 5: Email & SMS Notifications** ✅ **COMPLETE**

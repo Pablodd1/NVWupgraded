@@ -625,6 +625,97 @@ export async function sendHourReminder(customer: any, wineryName: string, time: 
 }
 
 // ========================================
+// ERROR NOTIFICATIONS
+// ========================================
+
+export interface ErrorNotificationParams {
+  error: string;
+  source: 'client' | 'server';
+  stack?: string;
+  url?: string;
+  userId?: string;
+  userAgent?: string;
+  additionalInfo?: any;
+}
+
+function getErrorNotificationEmail(data: ErrorNotificationParams) {
+  const content = `
+    <h2 style="color:#C62828; margin-bottom:24px;">⚠️ App Error Alert</h2>
+    
+    <div style="background-color:#FFF5F5; padding:20px; border-radius:8px; border-left: 5px solid #C62828; margin-bottom:24px;">
+      <h3 style="color:#C62828; margin-top:0;">${data.error}</h3>
+      <p style="color:#666;">Source: <strong>${data.source.toUpperCase()}</strong></p>
+    </div>
+
+    <div style="background-color:#F9F9F9; padding:20px; border-radius:8px; margin:24px 0;">
+      <h3 style="color:#6B1E23; margin-top:0;">Context Details:</h3>
+      <table style="width:100%;">
+        <tr>
+          <td style="padding:8px 0; width: 100px;"><strong>URL:</strong></td>
+          <td style="padding:8px 0;">${data.url || 'N/A'}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;"><strong>User ID:</strong></td>
+          <td style="padding:8px 0;">${data.userId || 'Guest'}</td>
+        </tr>
+         <tr>
+          <td style="padding:8px 0;"><strong>Time:</strong></td>
+          <td style="padding:8px 0;">${new Date().toLocaleString()}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;"><strong>Browser:</strong></td>
+          <td style="padding:8px 0; font-size: 12px;">${data.userAgent || 'N/A'}</td>
+        </tr>
+      </table>
+    </div>
+
+    ${data.stack ? `
+    <div style="margin-top:24px;">
+      <h3 style="color:#333;">Stack Trace:</h3>
+      <pre style="background-color:#2d2d2d; color:#f8f8f2; padding:15px; border-radius:5px; overflow-x:auto; font-size:12px; font-family:monospace;">${data.stack}</pre>
+    </div>
+    ` : ''}
+
+    ${data.additionalInfo ? `
+    <div style="margin-top:24px;">
+      <h3 style="color:#333;">Additional Info:</h3>
+      <pre style="background-color:#f1f1f1; padding:15px; border-radius:5px;">${JSON.stringify(data.additionalInfo, null, 2)}</pre>
+    </div>
+    ` : ''}
+  `;
+
+  return EmailTemplate({
+    content,
+    subject: `🚨 Error Alert: ${data.error.substring(0, 50)}...`
+  });
+}
+
+export async function sendErrorNotification(params: ErrorNotificationParams) {
+  try {
+    const transport = await getTransporter();
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || "admin@napawineries.com"; // Fallback
+
+    await transport.sendMail({
+      from: process.env.GMAIL_USER || "notifications@napawineries.com",
+      to: adminEmail,
+      subject: `🚨 [${process.env.NODE_ENV?.toUpperCase() || 'DEV'}] Error: ${params.error.substring(0, 30)}`,
+      html: getErrorNotificationEmail(params)
+    });
+
+    // Optional: Send SMS for critical server errors
+    if (params.source === 'server' && process.env.ADMIN_PHONE && process.env.NEXT_PUBLIC_ENABLE_SMS === 'true') {
+      await sendSMS(process.env.ADMIN_PHONE, `🚨 Critical App Error: ${params.error.substring(0, 50)}. Check email for stack trace.`);
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to send error notification:", error);
+    // Silent fail to avoid loops
+    return { success: false, error: error.message };
+  }
+}
+
+// ========================================
 // SEND INITIAL BOOKING NOTIFICATIONS
 // ========================================
 
@@ -702,5 +793,6 @@ export default {
   sendFinalBookingDecision,
   sendWelcomeNotification,
   sendHourReminder,
+  sendErrorNotification,
   getTransporter
 };
