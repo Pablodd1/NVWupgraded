@@ -15,6 +15,17 @@ export interface IUser {
   marketingConsent: boolean;
   smsConsent: boolean;
   visitedWineries: string[]; // Digital Passport Stamps
+
+  // Age Verification (Twilio Compliance)
+  ageVerified?: boolean;
+  ageVerificationDate?: Date;
+  ageVerificationMethod?: 'dob' | 'id_verification' | 'third_party';
+
+  // SMS Opt-In with Age Confirmation (Twilio Compliance)
+  smsOptIn?: boolean;
+  smsOptInDate?: Date;
+  smsOptInAgeConfirmed?: boolean;
+
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -37,6 +48,20 @@ const UserSchema = new Schema<IUser>(
     marketingConsent: { type: Boolean, default: false },
     smsConsent: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
+
+    // Age Verification (Twilio Compliance)
+    ageVerified: { type: Boolean, default: false },
+    ageVerificationDate: { type: Date },
+    ageVerificationMethod: {
+      type: String,
+      enum: ['dob', 'id_verification', 'third_party'],
+      default: 'dob'
+    },
+
+    // SMS Opt-In with Age Confirmation (Twilio Compliance)
+    smsOptIn: { type: Boolean, default: false },
+    smsOptInDate: { type: Date },
+    smsOptInAgeConfirmed: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

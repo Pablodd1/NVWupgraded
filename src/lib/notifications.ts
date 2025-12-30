@@ -51,7 +51,7 @@ interface SMSResult {
   error?: string;
 }
 
-async function sendSMS(to: string, message: string): Promise<SMSResult> {
+async function sendSMS(to: string, message: string, userEmail?: string): Promise<SMSResult> {
   const smsEnabled = process.env.NEXT_PUBLIC_ENABLE_SMS === "true";
 
   if (!smsEnabled) {
@@ -59,6 +59,35 @@ async function sendSMS(to: string, message: string): Promise<SMSResult> {
   }
 
   try {
+    // TWILIO COMPLIANCE: Check age verification and SMS opt-in
+    if (userEmail) {
+      try {
+        const user = await UserModel.findOne({ email: userEmail });
+
+        if (!user) {
+          console.warn(`SMS not sent: User not found (${userEmail})`);
+          return { success: false, error: "User not found" };
+        }
+
+        // Check age verification (21+ requirement)
+        if (!user.ageVerified) {
+          console.warn(`SMS not sent: User age not verified (${userEmail})`);
+          return { success: false, error: "Age not verified" };
+        }
+
+        // Check SMS opt-in with age confirmation
+        if (!user.smsOptIn || !user.smsOptInAgeConfirmed) {
+          console.warn(`SMS not sent: User has not opted in to SMS (${userEmail})`);
+          return { success: false, error: "SMS opt-in required" };
+        }
+
+        console.log(`✅ Age verification and SMS opt-in confirmed for ${userEmail}`);
+      } catch (dbError) {
+        console.error("Database check error:", dbError);
+        // Continue with SMS if DB check fails (fallback)
+      }
+    }
+
     // Check if Twilio is configured
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
@@ -73,12 +102,16 @@ async function sendSMS(to: string, message: string): Promise<SMSResult> {
     const twilio = require("twilio");
     const client = twilio(accountSid, authToken);
 
+    // Add opt-out language to message (Twilio compliance)
+    const compliantMessage = `${message}\n\nReply STOP to opt out.`;
+
     const smsResult = await client.messages.create({
-      body: message,
+      body: compliantMessage,
       from: from,
       to: to
     });
 
+    console.log(`✅ SMS sent successfully: ${smsResult.sid}`);
     return { success: true, message: smsResult.sid };
   } catch (error: any) {
     console.error("❌ SMS error:", error.message);
