@@ -15,7 +15,6 @@ import dynamic from "next/dynamic";
 import { type NLPResult } from "@/lib/ai-nlp";
 import { useFilterStore } from "@/hooks/useFilterStore";
 import { useUIStore } from "@/store/uiStore";
-import DevModePanel from "@/components/DevModePanel";
 import DirectBookingSection from "@/components/DirectBookingSection";
 
 // Lazy‑load the heavy voice‑search panel to improve initial bundle size
@@ -198,8 +197,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Dev Mode Panel for Quick Login */}
-      <DevModePanel />
+
     </div>
   );
 }
