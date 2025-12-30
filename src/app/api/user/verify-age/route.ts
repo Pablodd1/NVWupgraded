@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '@/lib/mongodb';
+import { dbConnect } from '@/lib/dbConnect';
 import User from '@/models/user.model';
 
 export async function POST(request: NextRequest) {
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         // If email provided, update user in database
         if (email) {
             try {
-                await connectDB();
+                await dbConnect();
 
                 const updateData: any = {
                     dateOfBirth: dob,
