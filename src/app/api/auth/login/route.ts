@@ -8,19 +8,30 @@ export async function POST(req: Request) {
     await dbConnect();
     const { email, password } = await req.json();
 
+    console.log("🔐 LOGIN ATTEMPT:", {
+      email,
+      timestamp: new Date().toISOString()
+    });
+
     const user = await User.findOne({ email }).populate('wineryId');
 
     if (!user) {
+      console.warn("❌ Login failed: User not found", { email });
       return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
     }
 
     // Check if account is active
     if (!user.isActive) {
+      console.warn("❌ Login failed: Account deactivated", {
+        email,
+        userId: user._id.toString()
+      });
       return NextResponse.json({ error: "Account is deactivated. Please contact support." }, { status: 403 });
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.warn("❌ Login failed: Invalid password", { email });
       return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
     }
 
@@ -35,6 +46,18 @@ export async function POST(req: Request) {
     });
 
     await setTokenCookie(token);
+
+    console.log("✅ LOGIN SUCCESSFUL:", {
+      userId: user._id.toString(),
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role,
+      wineryId: user.wineryId?.toString() || "none",
+      ageVerified: user.ageVerified || false,
+      smsOptIn: user.smsOptIn || false,
+      timestamp: new Date().toISOString()
+    });
 
     // Return sanitized user object
     const userResponse = {
@@ -55,7 +78,10 @@ export async function POST(req: Request) {
       user: userResponse
     });
   } catch (error: any) {
-    console.error("Login error (Checking Demo Mode):", error);
+    console.error("❌ LOGIN ERROR (Checking Demo Mode):", {
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
 
     // DEMO MODE FALLBACK: Allow login even if DB is offline
     const demoCreds = [
@@ -69,6 +95,12 @@ export async function POST(req: Request) {
       const demoUser = demoCreds.find(u => u.email === email && u.pass === password);
 
       if (demoUser) {
+        console.log("⚠️ DEMO MODE LOGIN:", {
+          email: demoUser.email,
+          role: demoUser.role,
+          timestamp: new Date().toISOString()
+        });
+
         const token = createToken({
           userId: "demo_" + demoUser.role,
           email: demoUser.email,
@@ -95,9 +127,10 @@ export async function POST(req: Request) {
         });
       }
     } catch (innerError) {
-      console.error("Demo check failed:", innerError);
+      console.error("❌ Demo check failed:", innerError);
     }
 
+    console.error("❌ Login failed: Database offline and invalid demo credentials");
     return NextResponse.json({ error: "Database offline and invalid demo credentials." }, { status: 400 });
   }
 }
