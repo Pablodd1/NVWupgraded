@@ -35,26 +35,7 @@ export async function POST(req: Request) {
     await dbConnect();
     const { bookData, line_items, success_url, cancel_url, metadata }: CheckoutSessionRequest = await req.json();
 
-    const session = await getStripe().checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items,
-      mode: "payment",
-      success_url,
-      cancel_url,
-      metadata,
-    });
-
-    const userId = await getUserIdFromToken();
-    if (!userId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-
-    await dbConnect();
-
-    const user = await UserModel.findById(userId).select("firstName lastName email phone");
-    if (!user) {
-      return NextResponse.json({ message: "User not found" }, { status: 404 });
-    }
-
-    // CRITICAL: Check slot availability and reserve capacity BEFORE creating Stripe session
+    // 1. Check slot availability and reserve capacity
     const reservationErrors = [];
     const reservedSlots = [];
 
@@ -68,8 +49,6 @@ export async function POST(req: Request) {
 
       const bookingDate = new Date(dateTime);
       const date = bookingDate.toISOString().split('T')[0];
-
-      // Determine time slot from booking time
       const hour = bookingDate.getHours();
       let timeSlot = "Afternoon (1:00 PM - 3:00 PM)";
       if (hour >= 10 && hour < 13) {
@@ -85,7 +64,6 @@ export async function POST(req: Request) {
         status: { $ne: "blocked" }
       });
 
-      // Auto-create slot if none exists (fallback for unseeded database)
       if (!slot) {
         try {
           slot = await SlotInventory.create({
@@ -98,28 +76,15 @@ export async function POST(req: Request) {
             status: "available"
           });
         } catch (createError: any) {
-          if (createError.code === 11000) {
-            slot = await SlotInventory.findOne({ wineryId, date, timeSlot });
-          } else {
-            reservationErrors.push(`Failed to create slot for ${timeSlot} on ${date}`);
-            continue;
-          }
+          slot = await SlotInventory.findOne({ wineryId, date, timeSlot });
         }
       }
 
-      if (!slot) {
-        reservationErrors.push(`No availability found for ${timeSlot} on ${date}`);
+      if (!slot || slot.availableCapacity < numberOfGuests) {
+        reservationErrors.push(`Insufficient capacity for ${wineryBooking.wineryId}`);
         continue;
       }
 
-      if (slot.availableCapacity < numberOfGuests) {
-        reservationErrors.push(
-          `Insufficient capacity: ${slot.availableCapacity} available, ${numberOfGuests} requested for ${timeSlot} on ${date}`
-        );
-        continue;
-      }
-
-      // Reserve capacity
       slot.bookedCapacity += numberOfGuests;
       slot.availableCapacity -= numberOfGuests;
       await slot.save();
@@ -131,8 +96,8 @@ export async function POST(req: Request) {
       });
     }
 
-    // If any reservation failed, rollback
     if (reservationErrors.length > 0) {
+      // Rollback
       for (const reserved of reservedSlots) {
         const slot = await SlotInventory.findById(reserved.slotId);
         if (slot) {
@@ -144,7 +109,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Booking failed: Capacity issues", errors: reservationErrors }, { status: 400 });
     }
 
-    // Calculate total price accurately
+    // 2. Prepare Booking Object
+    const userId = await getUserIdFromToken();
+    if (!userId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
     const totalPrice = bookData.reduce((acc: number, item: any) => {
       let wineryTotal = 0;
       const guests = item.numberOfGuests || 1;
@@ -158,51 +126,38 @@ export async function POST(req: Request) {
     const booking = new BookingModel({
       userId,
       payment_method: "pay_stripe",
-      totalPrice: totalPrice
+      paymentStatus: "pending", // Critical: starts as pending
+      status: "pending",
+      totalPrice,
+      totalAmount: totalPrice,
+      wineries: bookData.map((winery: any) => ({
+        wineryId: winery.wineryId,
+        datetime: winery.dateTime,
+        tasting: winery.tasting,
+        tours: winery.tours || [],
+        foodPairings: winery.foodPairings || [],
+        otherFeatures: winery.otherFeature || [],
+        numberOfGuests: winery.numberOfGuests || 1
+      }))
     });
 
-    booking.wineries = bookData.map((winery) => ({
-      wineryId: winery.wineryId,
-      datetime: winery.dateTime,
-      tasting: winery.tasting,
-      tours: winery.tours || [],
-      foodPairings: winery.foodPairings || [],
-      otherFeatures: winery.otherFeature || [],
-      numberOfGuests: winery.numberOfGuests || 1
-    }));
+    // 3. Create Stripe Session with Booking ID in Metadata
+    const session = await getStripe().checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items,
+      mode: "payment",
+      success_url,
+      cancel_url,
+      metadata: {
+        ...metadata,
+        bookingId: booking._id.toString()
+      },
+    });
+
+    // 4. Save Booking
     await booking.save();
 
-    // 1. Send ONE Master Itinerary Email to Customer
-    try {
-      const fullBooking = await BookingModel.findById(booking._id).populate("wineries.wineryId");
-      await (await import("@/lib/notifications")).sendMasterItineraryNotification(fullBooking, user);
-    } catch (e) {
-      console.error("Failed to send Master Itinerary (Stripe):", e);
-    }
-
-    // 2. Send individual notifications to Each Winery
-    for (const winery of bookData) {
-      const wineryDetails = await WineryModel.findById(winery.wineryId).select("name contact_info.email contact_info.phone");
-      if (wineryDetails) {
-        try {
-          await sendBookingNotifications({
-            bookingId: booking._id.toString(),
-            customerFirstName: user.firstName || "Guest",
-            customerLastName: user.lastName || "",
-            customerEmail: user.email,
-            customerPhone: user.phone,
-            wineryName: wineryDetails.name || "Unknown Winery",
-            wineryEmail: wineryDetails.contact_info?.email || "",
-            wineryPhone: wineryDetails.contact_info?.phone,
-            bookingDateTime: winery.dateTime,
-            numberOfGuests: winery.numberOfGuests || 1,
-            specialRequests: booking.specialRequests
-          });
-        } catch (error) {
-          console.error(`Failed to send notification for ${winery.wineryId}:`, error);
-        }
-      }
-    }
+    return NextResponse.json({ message: "success", sessionId: session.id, booking }, { status: 201 });
 
     return NextResponse.json({ message: "success", sessionId: session.id, booking }, { status: 201 });
   } catch (error: any) {

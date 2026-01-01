@@ -2,26 +2,26 @@
 // Build trigger: 2025-12-28 13:20
 import { useState, useEffect } from "react";
 import AuthModal from "@/components/modal/AuthModal";
+import AgeGateSplash from "@/components/AgeGateSplash";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useItinerary } from "@/store/itinerary";
 import { Winery } from "./interfaces";
 import WineryCard from "@/components/cards/winnery-list";
 import Filter from "@/components/filter-bar/filter-box";
-import { SessionStorageService } from "@/lib/localstorage.config";
 import { useAuthStore } from "@/store/authStore";
 import axios from "axios";
 import dynamic from "next/dynamic";
 import { type NLPResult } from "@/lib/ai-nlp";
 import { useFilterStore } from "@/hooks/useFilterStore";
 import { useUIStore } from "@/store/uiStore";
-import DirectBookingSection from "@/components/DirectBookingSection";
 
 // Lazy‑load the heavy voice‑search panel to improve initial bundle size
 const VoiceSearchPanel = dynamic(() => import("@/components/voice-search/VoiceSearchPanel"), {
   ssr: false,
   loading: () => <div className="flex justify-center py-4"><span className="loading loading-spinner loading-lg text-primary"></span></div>,
 });
+
 
 export default function Home() {
   const [showPopup, setShowPopup] = useState(false);
@@ -33,6 +33,15 @@ export default function Home() {
   const [nlpQuery, setNlpQuery] = useState<NLPResult | null>(null);
   const { setFilters } = useFilterStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [isAgeVerified, setIsAgeVerified] = useState(false);
+
+  useEffect(() => {
+    // Check if previously verified to skip splash, but for now we enforce it per session as requested
+    const verified = localStorage.getItem("age_verified");
+    if (verified === "true") {
+      setIsAgeVerified(true);
+    }
+  }, []);
 
   const fetchWineries = async () => {
     setIsLoading(true);
@@ -84,24 +93,12 @@ export default function Home() {
     toast.success("AI filters applied!");
   };
 
-  // Dev Mode: Disabled mandatory login popup for testing
-  // useEffect(() => {
-  //   if (!authLoading) {
-  //     const config = SessionStorageService.getConfig();
-  //     if (config && config.isGuest) return setShowPopup(false);
-  //     if (user) return setShowPopup(false);
-  //     setShowPopup(true);
-  //   }
-  // }, [authLoading, user]);
-
   return (
     <div className="min-h-screen relative md:top-20 top-[50px] bg-gray-100">
-      {showPopup && <AuthModal setShowPopup={setShowPopup} />}
-
-      {/* Direct Booking Section */}
-      <DirectBookingSection />
-
+      <AgeGateSplash onVerify={() => setIsAgeVerified(true)} />
+      {showPopup && isAgeVerified && <AuthModal setShowPopup={setShowPopup} />}
       <div className="grid grid-cols-1 lg:grid-cols-4 p-4 max-w-[1600px] mx-auto">
+
         <div className="lg:col-span-1 sm:col-span-1 mb-10">
           <Filter wineries={wineries} onFilterApply={setFilteredWineries} />
         </div>
@@ -196,8 +193,6 @@ export default function Home() {
           )}
         </div>
       </div>
-
-
-    </div>
+    </div >
   );
 }

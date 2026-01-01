@@ -80,6 +80,7 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
             <p className="truncate">{winery.location.address.split(',')[0]}</p>
           </div>
 
+
           <div className="flex items-center space-x-2">
             <FaDollarSign className="text-primary/60" />
             <p>{priceDisplay}</p>
@@ -97,16 +98,12 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
-          <button
-            disabled={!!isAdded}
-            className={`py-3 px-6 rounded-xl font-bold transition-all duration-300 flex-1 sm:flex-none ${!!isAdded
-                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                : "bg-gray-900 text-white hover:bg-primary shadow-lg shadow-gray-200 hover:shadow-primary/20"
-              }`}
-            onClick={() => addToItinerary(winery)}
+          <Link
+            href={`/winery/${winery._id}`}
+            className="py-3 px-6 rounded-xl font-bold transition-all duration-300 flex-1 sm:flex-none bg-gray-900 text-white hover:bg-primary shadow-lg shadow-gray-200 hover:shadow-primary/20 text-center flex items-center justify-center"
           >
-            {!!isAdded ? "Included" : "Add to Day Trip"}
-          </button>
+            View Experience
+          </Link>
 
           {whatsappLink && (
             <a

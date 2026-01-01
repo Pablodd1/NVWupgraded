@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
-import { FaTiktok, FaInstagram, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaTiktok, FaInstagram, FaEye, FaEyeSlash, FaWineBottle } from "react-icons/fa";
 import { useAuthStore } from "@/store/authStore";
 import { SessionStorageService } from "@/lib/localstorage.config";
+import { toast } from "react-toastify";
 
 interface ModalProps {
   setShowPopup: React.Dispatch<React.SetStateAction<boolean>>;
@@ -10,8 +11,8 @@ interface ModalProps {
 }
 
 const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
-  const [step, setStep] = useState<"age-verification" | "auth">("age-verification");
   const [isLoginMode, setIsLoginMode] = useState(showLoginForm);
+  const [isWineryRegistration, setIsWineryRegistration] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -21,38 +22,27 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
     dateOfBirth: "",
     marketingConsent: false,
     smsConsent: false,
+    isWineryOwner: false, // hidden flag or just assume user signup
   });
   const [showPassword, setShowPassword] = useState(false);
   const { login, register, error, loading: isSubmitting } = useAuthStore();
-  const [ageError, setAgeError] = useState("");
 
   const handleGuestMode = () => {
     SessionStorageService.setConfig({ isGuest: true });
     setShowPopup(false);
   };
 
-  const handleAgeSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const dob = new Date(formData.dateOfBirth);
-    const today = new Date();
-    let age = today.getFullYear() - dob.getFullYear();
-    const monthDiff = today.getMonth() - dob.getMonth();
-
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-      age--;
-    }
-
-    if (age < 21) {
-      setAgeError("You must be 21 or older to enter.");
-      return;
-    }
-
-    setAgeError("");
-    setStep("auth");
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isWineryRegistration) {
+      // Mock submission for Winery Partners
+      setFormData({ ...formData, isWineryOwner: true });
+      await new Promise(resolve => setTimeout(resolve, 1500)); // Fake network delay
+      toast.success("Application Received! A member of our Sommelier Team will reach out to verify your vineyard.");
+      setShowPopup(false);
+      return;
+    }
 
     if (isLoginMode) {
       const response = await login(formData.email, formData.password);
@@ -79,196 +69,195 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 z-[100] overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
-        <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-xl max-w-lg w-full relative max-h-[95vh] overflow-y-auto">
+        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-lg w-full relative max-h-[95vh] overflow-y-auto border border-gray-100">
 
-          {step === "age-verification" ? (
-            // AGE VERIFICATION STEP
-            <div className="text-center">
-              <h2 className="md:text-2xl text-xl font-bold text-primary mb-4">Age Verification</h2>
-              <p className="text-sm text-neutral mb-6">
-                Please confirm your date of birth to continue. You must be 21 or older.
-              </p>
-
-              <form onSubmit={handleAgeSubmit} className="flex flex-col gap-4">
-                <input
-                  type="date"
-                  required
-                  value={formData.dateOfBirth}
-                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                  className="input input-bordered w-full text-neutral focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all py-2 px-4 rounded-xl shadow-md"
-                />
-
-                {ageError && <p className="text-red-600 text-sm font-semibold">{ageError}</p>}
-
-                <button
-                  type="submit"
-                  className="btn btn-primary w-full rounded-xl font-semibold hover:bg-primary-focus transition-all active:scale-95 mt-2"
-                >
-                  Enter Site
-                </button>
-              </form>
+          <div className="flex justify-center mb-4">
+            <div className="bg-primary/10 p-3 rounded-full">
+              <FaWineBottle className="text-primary text-2xl" />
             </div>
-          ) : (
-            // AUTH STEP (Login/Signup)
-            <>
-              <h2 className="text-center md:text-2xl text-xl font-bold text-primary mb-2">
-                {isLoginMode ? "Login to Your Account" : "Join Napa Valley Wineries"}
-              </h2>
-              <p className="text-center text-sm text-neutral mb-4">
-                {isLoginMode
-                  ? "Enter your credentials to login"
-                  : "Sign up to explore Napa Valley’s finest wineries or continue as a guest."}
-              </p>
+          </div>
 
-              <div className="flex gap-4 justify-center md:mb-6 mb-4">
-                <a
-                  href="https://instagram.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-outline flex items-center gap-3 px-4 py-2 rounded-xl border-2 border-[#E4405F] text-[#E4405F] hover:border-[#E4405F] hover:bg-[#E4405F] hover:text-white transition-all transform active:scale-95"
-                >
-                  <FaInstagram size={24} />
-                </a>
+          <h2 className="text-center md:text-3xl text-2xl font-black text-gray-900 mb-2 tracking-tight">
+            {isWineryRegistration ? "Partner Portal" : (isLoginMode ? "Unlock the Cellar" : "Join the Club")}
+          </h2>
+          <p className="text-center text-sm text-gray-500 mb-6 font-medium">
+            {isWineryRegistration
+              ? "Register your vineyard to manage bookings and reach new guests."
+              : (isLoginMode
+                ? "Welcome back to your Napa Valley experience."
+                : "Create your Sommelier Profile to book tastings and curate your journey.")}
+          </p>
 
-                <a
-                  href="https://tiktok.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-outline flex items-center gap-3 px-4 py-2 rounded-xl border-2 border-[#000000] text-[#000000] hover:border-[#000000] hover:bg-[#000000] hover:text-white transition-all transform active:scale-95"
-                >
-                  <FaTiktok size={24} />
-                </a>
-              </div>
+          <div className="flex gap-4 justify-center mb-6">
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-outline border-gray-200 text-gray-600 hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-red-500 hover:to-purple-500 hover:text-white hover:border-transparent transition-all"
+            >
+              <FaInstagram size={20} />
+            </a>
 
-              {error && (!isLoginMode || (!error.toLowerCase().includes("firstname") && !error.toLowerCase().includes("lastname"))) && (
-                <p className="text-red-600 text-sm text-center mb-2">{error}</p>
-              )}
+            <a
+              href="https://tiktok.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-outline border-gray-200 text-gray-600 hover:bg-black hover:text-white hover:border-transparent transition-all"
+            >
+              <FaTiktok size={20} />
+            </a>
+          </div>
 
-              <form className="flex flex-col space-y-3" onSubmit={handleSubmit}>
-                {!isLoginMode && (
-                  <>
-                    <input
-                      type="text"
-                      placeholder="First Name"
-                      name="firstName"
-                      value={formData.firstName}
-                      className="input input-bordered w-full text-neutral focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all py-2 px-3 rounded-xl shadow-md"
-                      required
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Last Name"
-                      name="lastName"
-                      value={formData.lastName}
-                      className="input input-bordered w-full text-neutral focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all py-2 px-3 rounded-xl shadow-md"
-                      required
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    />
-                    <input
-                      type="date"
-                      placeholder="Date of Birth (MM/DD/YYYY)"
-                      name="dateOfBirth"
-                      value={formData.dateOfBirth}
-                      className="input input-bordered w-full text-neutral focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all py-2 px-3 rounded-xl shadow-md"
-                      required
-                      onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-                    />
-                  </>
-                )}
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  className="input input-bordered w-full text-neutral focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all py-2 px-3 rounded-xl shadow-md"
-                  required
-                  name="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-                {!isLoginMode && (
-                  <input
-                    type="tel"
-                    placeholder="Phone Number"
-                    name="phone"
-                    value={formData.phone}
-                    className="input input-bordered w-full text-neutral focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all py-2 px-3 rounded-xl shadow-md"
-                    required
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                )}
-                <div className="relative w-full">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Password"
-                    name="password"
-                    className="input input-bordered w-full text-neutral focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all py-2 px-3 rounded-xl shadow-md"
-                    required
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  />
-                  <span
-                    className="absolute right-4 top-2.5 cursor-pointer text-neutral"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
-                  </span>
-                </div>
-
-                {!isLoginMode && (
-                  <div className="flex flex-col gap-2 mt-2">
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={formData.marketingConsent}
-                        onChange={(e) => setFormData({ ...formData, marketingConsent: e.target.checked })}
-                        className="checkbox checkbox-primary checkbox-sm rounded-md"
-                      />
-                      <span className="text-xs text-neutral group-hover:text-primary transition-colors">
-                        I agree to receive email notifications and promotional offers.
-                      </span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer group">
-                      <input
-                        type="checkbox"
-                        checked={formData.smsConsent}
-                        onChange={(e) => setFormData({ ...formData, smsConsent: e.target.checked })}
-                        className="checkbox checkbox-primary checkbox-sm rounded-md"
-                      />
-                      <span className="text-xs text-neutral group-hover:text-primary transition-colors">
-                        I agree to receive SMS/text alerts about my bookings.
-                        <br /><span className="text-[10px] opacity-70">Reply STOP to unsubscribe at any time. Msg & data rates may apply.</span>
-                      </span>
-                    </label>
-                  </div>
-                )}
-
-                <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6">
-                  <button
-                    type="button"
-                    onClick={handleGuestMode}
-                    className="btn btn-outline w-full sm:w-auto rounded-xl font-semibold hover:bg-base-400 transition-all active:scale-95 py-2 min-h-0 h-auto text-sm"
-                  >
-                    Continue as Guest
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="btn btn-primary w-full sm:w-auto rounded-xl font-semibold hover:bg-primary-focus transition-all active:scale-95 flex items-center justify-center gap-2 py-2 min-h-0 h-auto text-sm"
-                  >
-                    {isSubmitting && <span className="loading loading-spinner loading-xs"></span>}
-                    {isLoginMode ? "Login" : "Create Account"}
-                  </button>
-                </div>
-              </form>
-
-              <p className="text-center mt-4 text-sm">
-                {isLoginMode ? "Don't have an account?" : "Already have an account?"}
-                <button onClick={() => setIsLoginMode(!isLoginMode)} className="text-primary ml-2 font-semibold">
-                  {isLoginMode ? "Sign Up" : "Login"}
-                </button>
-              </p>
-            </>
+          {error && (!isLoginMode || (!error.toLowerCase().includes("firstname") && !error.toLowerCase().includes("lastname"))) && (
+            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm text-center mb-4 font-semibold border border-red-100">
+              {error}
+            </div>
           )}
+
+          <form className="flex flex-col space-y-3" onSubmit={handleSubmit}>
+            {!isLoginMode && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    placeholder={isWineryRegistration ? "Winery Name" : "First Name (Vintage)"}
+                    name="firstName"
+                    value={formData.firstName}
+                    className="input input-bordered w-full bg-gray-50 focus:bg-white transition-all rounded-xl"
+                    required
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  />
+                  <input
+                    type="text"
+                    placeholder={isWineryRegistration ? "Contact Name" : "Last Name"}
+                    name="lastName"
+                    value={formData.lastName}
+                    className="input input-bordered w-full bg-gray-50 focus:bg-white transition-all rounded-xl"
+                    required
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  />
+                </div>
+                {!isWineryRegistration && (
+                  <input
+                    type="date"
+                    placeholder="Date of Birth"
+                    name="dateOfBirth"
+                    value={formData.dateOfBirth}
+                    className="input input-bordered w-full bg-gray-50 focus:bg-white transition-all rounded-xl"
+                    required
+                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                  />
+                )}
+              </>
+            )}
+            <input
+              type="email"
+              placeholder="Email Address"
+              className="input input-bordered w-full bg-gray-50 focus:bg-white transition-all rounded-xl"
+              required
+              name="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+            {(!isLoginMode || isWineryRegistration) && (
+              <input
+                type="tel"
+                placeholder={isWineryRegistration ? "Business Phone" : "Phone (for reservations)"}
+                name="phone"
+                value={formData.phone}
+                className="input input-bordered w-full bg-gray-50 focus:bg-white transition-all rounded-xl"
+                required
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+            )}
+            <div className="relative w-full">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Secret Password"
+                name="password"
+                className="input input-bordered w-full bg-gray-50 focus:bg-white transition-all rounded-xl"
+                required
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              />
+              <span
+                className="absolute right-4 top-3.5 cursor-pointer text-gray-400 hover:text-primary transition-colors"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+              </span>
+            </div>
+
+            {!isLoginMode && (
+              <div className="flex flex-col gap-3 mt-2 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={formData.marketingConsent}
+                    onChange={(e) => setFormData({ ...formData, marketingConsent: e.target.checked })}
+                    className="checkbox checkbox-primary checkbox-sm rounded-md mt-0.5"
+                  />
+                  <span className="text-xs text-gray-600 group-hover:text-primary transition-colors">
+                    Send me exclusive wine drops and event invites.
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={formData.smsConsent}
+                    onChange={(e) => setFormData({ ...formData, smsConsent: e.target.checked })}
+                    className="checkbox checkbox-primary checkbox-sm rounded-md mt-0.5"
+                  />
+                  <span className="text-xs text-gray-600 group-hover:text-primary transition-colors">
+                    Text me booking confirmations.
+                    <br /><span className="text-[10px] opacity-70">Reply STOP to unsubscribe at any time. Msg & data rates may apply. See <a href="/privacy" className="underline" onClick={(e) => e.stopPropagation()}>Privacy Policy</a>.</span>
+                  </span>
+                </label>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row justify-between gap-3 mt-6">
+              {!isWineryRegistration && (
+                <button
+                  type="button"
+                  onClick={handleGuestMode}
+                  className="btn btn-ghost w-full sm:w-auto rounded-xl font-bold text-gray-500 hover:bg-gray-100"
+                >
+                  Just Browsing
+                </button>
+              )}
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn btn-primary w-full sm:w-auto rounded-xl font-bold shadow-lg shadow-primary/30 flex-1"
+              >
+                {isSubmitting && <span className="loading loading-spinner loading-xs"></span>}
+                {isWineryRegistration ? "Request Partner Access" : (isLoginMode ? "Open Cellar" : "Mint Membership")}
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-500">
+              {isLoginMode ? "New to the Valley?" : "Have a pass already?"}
+              <button onClick={() => setIsLoginMode(!isLoginMode)} className="text-primary ml-2 font-bold hover:underline">
+                {isLoginMode ? "Get on the List" : "Login Here"}
+              </button>
+            </p>
+
+            {!isLoginMode && !isWineryRegistration && (
+              <p className="mt-4 text-xs text-gray-400">
+                Are you a Winery Owner? <a href="#" onClick={(e) => { e.preventDefault(); setIsWineryRegistration(true); setIsLoginMode(false); }} className="text-gray-600 underline">Register your Vineyard</a>
+              </p>
+            )}
+
+            {isWineryRegistration && (
+              <p className="mt-4 text-xs text-gray-400">
+                Not a winery? <a href="#" onClick={(e) => { e.preventDefault(); setIsWineryRegistration(false); setIsLoginMode(true); }} className="text-gray-600 underline">Back to Guest Login</a>
+              </p>
+            )}
+          </div>
+
         </div>
       </div>
     </div>
