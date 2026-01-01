@@ -84,13 +84,6 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
           <div className="flex items-center space-x-2">
             <FaDollarSign className="text-primary/60" />
             <p>{priceDisplay}</p>
-            {winery.payment_method?.type === 'external_booking' ? (
-              <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">Direct Book</span>
-            ) : winery.payment_method?.type === 'pay_winery' ? (
-              <span className="text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">Pay at Winery</span>
-            ) : (
-              <span className="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold">In-App</span>
-            )}
           </div>
 
           <div className="flex items-center space-x-2 capitalize">

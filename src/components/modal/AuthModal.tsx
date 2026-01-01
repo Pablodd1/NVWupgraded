@@ -210,7 +210,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
                   />
                   <span className="text-xs text-gray-600 group-hover:text-primary transition-colors">
                     Text me booking confirmations.
-                    <br /><span className="text-[10px] opacity-70">Reply STOP to unsubscribe at any time. Msg & data rates may apply.</span>
+                    <br /><span className="text-[10px] opacity-70">Reply STOP to unsubscribe at any time. Msg & data rates may apply. See <a href="/privacy" className="underline" onClick={(e) => e.stopPropagation()}>Privacy Policy</a>.</span>
                   </span>
                 </label>
               </div>

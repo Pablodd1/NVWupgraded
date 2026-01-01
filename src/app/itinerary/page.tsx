@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import ItinerarySummary from "@/components/Itinerary-summary";
 import { useItinerary, BookingData, ItineraryWinery } from "@/store/itinerary";
 import AuthModal from "@/components/modal/AuthModal";
-import { Car, Loader2, Wine } from "lucide-react";
+import { Car, Loader2, Wine, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/buttons/button";
 import Modal from "@/components/modal";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -34,12 +34,28 @@ export default function ItineraryPage() {
   // Listen for Stripe success or cancel
   useEffect(() => {
     const success = searchParams.get("success");
+    const sessionId = searchParams.get("session_id");
+
     if (success === "true") {
-      setShowRideModal(true);
-      toast.success("Payment successful! Your itinerary is confirmed.");
-      // The session creator already saved the booking to the DB
-      // We just need to clear the local itinerary
-      // We'll let the RideModal close handler do it, or do it here
+      if (sessionId) {
+        // Stripe Payment Flow
+        const verifyPayment = async () => {
+          try {
+            // We use a toast to show progress but don't block the UI with a full loader since the modal will pop up
+            await axios.post("/api/stripe/verify-session", { sessionId });
+            setShowRideModal(true);
+            toast.success("Payment confirmed! Your itinerary is ready.");
+          } catch (error) {
+            console.error("Verification failed", error);
+            toast.error("Could not verify payment. Please check your email for confirmation or contact support.");
+          }
+        };
+        verifyPayment();
+      } else {
+        // Pay at Winery Flow
+        setShowRideModal(true);
+        toast.success("Itinerary confirmed! Pay at the winery.");
+      }
     }
 
     const cancel = searchParams.get("cancel");
@@ -346,45 +362,42 @@ export default function ItineraryPage() {
         }}
       >
         <div className="flex flex-col items-center p-0">
-          {!isLottieLoaded && <Loader2 className="w-8 h-8 text-gray-500 animate-spin mb-4" />}
-          <iframe
-            src="https://lottie.host/embed/303f3d0b-e50a-4592-894a-474164e44c5d/f4rpyUChZF.lottie"
-            className={`transition-opacity duration-300 ${isLottieLoaded ? "opacity-100" : "opacity-0"}`}
-            onLoad={() => setIsLottieLoaded(true)}
-          ></iframe>
+          <div className="flex justify-center mb-6">
+            <CheckCircle2 className="w-24 h-24 text-green-500" />
+          </div>
 
-          {isLottieLoaded && (
-            <>
-              <h2 className="lg:text-2xl text-xl font-bold text-gray-900 mt-4 text-center">Your Itinerary has been Sent! 🍇</h2>
-              <p className="text-gray-600 mt-2 text-center text-sm md:text-base">
-                We've delivered your requests to each winery. They will review and confirm your slots shortly.
-                Get ready for a premium Napa Valley experience!
-              </p>
 
-              <p className="text-gray-500 text-sm mt-4 text-center italic">
-                A summary has been sent to <strong>{user?.email || "your email"}</strong>. You will receive individual confirmation emails as each winery approves your request.
-              </p>
+          <>
+            <h2 className="lg:text-2xl text-xl font-bold text-gray-900 mt-4 text-center">Your Itinerary has been Sent! 🍇</h2>
+            <p className="text-gray-600 mt-2 text-center text-sm md:text-base">
+              We've delivered your requests to each winery. They will review and confirm your slots shortly.
+              Get ready for a premium Napa Valley experience!
+            </p>
 
-              <div className="border-t w-full my-4"></div>
+            <p className="text-gray-500 text-sm mt-4 text-center italic">
+              A summary has been sent to <strong>{user?.email || "your email"}</strong>. You will receive individual confirmation emails as each winery approves your request.
+            </p>
 
-              <h3 className="text-lg font-semibold text-gray-900 text-left w-full">What’s Next?</h3>
-              <ul className="text-gray-600 text-sm mt-2 space-y-2 text-left w-full">
-                <li>📍 Review your itinerary details in your email.</li>
-                <li>🍷 Make sure to bring your ID if required by the wineries.</li>
-                <li>🚗 Need a ride? Book an Uber or Lyft below.</li>
-                <li>📸 Don’t forget to take pictures and share your experience!</li>
-              </ul>
+            <div className="border-t w-full my-4"></div>
 
-              <div className="flex gap-4 mt-6">
-                <Button onClick={() => handleRideClick("uber")} className="bg-black text-white">
-                  🚗 Book an Uber
-                </Button>
-                <Button onClick={() => handleRideClick("lyft")} className="bg-[#FF00BF] text-white">
-                  🚖 Book a Lyft
-                </Button>
-              </div>
-            </>
-          )}
+            <h3 className="text-lg font-semibold text-gray-900 text-left w-full">What’s Next?</h3>
+            <ul className="text-gray-600 text-sm mt-2 space-y-2 text-left w-full">
+              <li>📍 Review your itinerary details in your email.</li>
+              <li>🍷 Make sure to bring your ID if required by the wineries.</li>
+              <li>🚗 Need a ride? Book an Uber or Lyft below.</li>
+              <li>📸 Don’t forget to take pictures and share your experience!</li>
+            </ul>
+
+            <div className="flex gap-4 mt-6">
+              <Button onClick={() => handleRideClick("uber")} className="bg-black text-white">
+                🚗 Book an Uber
+              </Button>
+              <Button onClick={() => handleRideClick("lyft")} className="bg-[#FF00BF] text-white">
+                🚖 Book a Lyft
+              </Button>
+            </div>
+          </>
+
         </div>
       </Modal>
 

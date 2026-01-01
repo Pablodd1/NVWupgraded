@@ -37,7 +37,7 @@ export default function AgeGateSplash({ onVerify }: AgeGateSplashProps) {
                     <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
                         <h3 className="text-xl font-bold mb-2">California Alcohol Regulation Compliance</h3>
                         <p className="text-sm text-gray-400 leading-relaxed">
-                            By entering this site, you acknowledge and agree to our Terms of Service and Privacy Policy.
+                            By entering this site, you acknowledge and agree to our <a href="/terms" className="text-primary hover:underline">Terms of Service</a> and <a href="/privacy" className="text-primary hover:underline">Privacy Policy</a>.
                             You affirm that you are at least 21 years of age. It is illegal to sell or serve alcohol to anyone under the age of 21.
                             Please drink responsibly.
                         </p>
