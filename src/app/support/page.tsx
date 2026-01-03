@@ -24,9 +24,9 @@ const SupportPage = () => {
     }
   ];
 
-  const handleSearchChange = (e: any) => setSearchQuery(e.target.value);
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value);
 
-  const handleInputChange = (e: any) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
       ...prevData,
@@ -34,7 +34,7 @@ const SupportPage = () => {
     }));
   };
 
-  const handleSubmit = (e: any) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     alert("Thank you for your message. We will get back to you soon!");
     setFormData({ name: "", email: "", message: "" });

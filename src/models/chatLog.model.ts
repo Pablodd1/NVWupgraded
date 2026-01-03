@@ -29,4 +29,7 @@ const ChatLogSchema = new Schema<IChatLog>(
     { timestamps: true }
 );
 
+// Auto-delete logs after 30 days (2592000 seconds) to save database space
+ChatLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 2592000 });
+
 export default mongoose.models.ChatLog || mongoose.model<IChatLog>("ChatLog", ChatLogSchema);

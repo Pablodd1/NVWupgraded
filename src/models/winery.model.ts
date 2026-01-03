@@ -113,6 +113,12 @@ const WinerySchema = new mongoose.Schema({
 WinerySchema.index({ name: 1 });
 WinerySchema.index({ "location.address": 1 });
 WinerySchema.index({ owner: 1 });
+// AI Search & Filter Indexes
+WinerySchema.index({ "tasting_info.ava": 1 });
+WinerySchema.index({ "tasting_info.wine_types": 1 });
+WinerySchema.index({ "tasting_info.tasting_price": 1 });
+WinerySchema.index({ "tasting_info.special_features": 1 });
+WinerySchema.index({ "amenities.handicap_accessible": 1 });
 
 // Check if the model is already defined
 const Winery = mongoose.models.Winery || mongoose.model("Winery", WinerySchema);
