@@ -1,11 +1,51 @@
 "use client";
 import { useState } from "react";
+import axios from "axios";
+
+interface ChatMessage {
+  text: string;
+  isUser: boolean;
+}
 
 const SupportPage = () => {
   const [selectedFaq, setSelectedFaq] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [showChat, setShowChat] = useState(false);
+
+  // Chat State
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
+  const handleChatSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    const userMessage = chatInput;
+    setChatMessages(prev => [...prev, { text: userMessage, isUser: true }]);
+    setChatInput("");
+    setIsChatLoading(true);
+
+    try {
+      const response = await axios.post("/api/ai-search", { query: userMessage });
+      const { filters, wineries, count } = response.data;
+
+      let botResponse = "";
+      if (count > 0) {
+        botResponse = `I found ${count} wineries matching your request. Here are a few: ${wineries.slice(0, 3).map((w: any) => w.name).join(", ")}.`;
+      } else {
+        botResponse = "I couldn't find any wineries matching that description. Try asking for 'Red wine in Calistoga' or 'Kid friendly wineries'.";
+      }
+
+      setChatMessages(prev => [...prev, { text: botResponse, isUser: false }]);
+    } catch (error) {
+      console.error("Chat error:", error);
+      setChatMessages(prev => [...prev, { text: "Sorry, I'm having trouble connecting to the Sommelier right now.", isUser: false }]);
+    } finally {
+      setIsChatLoading(false);
+    }
+  };
 
   const faqs = [
     {
@@ -109,10 +149,9 @@ const SupportPage = () => {
           </button>
         </div>
 
-        {/* Live Chat Widget Modal */}
         {showChat && (
-          <div className="fixed bottom-5 right-5 w-80 md:w-96 bg-white rounded-xl shadow-2xl z-50 overflow-hidden border border-gray-200">
-            <div className="bg-primary text-white p-4 flex justify-between items-center">
+          <div className="fixed bottom-5 right-5 w-80 md:w-96 bg-white rounded-xl shadow-2xl z-50 overflow-hidden border border-gray-200 flex flex-col max-h-[500px]">
+            <div className="bg-primary text-white p-4 flex justify-between items-center shrink-0">
               <div>
                 <h3 className="font-bold">NVW Consierge</h3>
                 <p className="text-xs text-white/80">Typically replies in a few minutes</p>
@@ -127,23 +166,39 @@ const SupportPage = () => {
               </button>
             </div>
 
-            <div className="h-80 p-4 overflow-y-auto bg-gray-50 flex flex-col space-y-4">
+            <div className="flex-1 p-4 overflow-y-auto bg-gray-50 flex flex-col space-y-4">
               <div className="flex justify-start">
                 <div className="bg-gray-200 rounded-lg rounded-tl-none p-3 max-w-[80%] text-sm text-gray-800">
-                  <p>Hello! 👋 Welcome to Napa Valley Wineries support. How can I help you plan your trip today?</p>
+                  <p>Hello! 👋 Welcome to Napa Valley Wineries support. I can help find the perfect winery for you. Try asking "Find a kid-friendly winery in Calistoga".</p>
                 </div>
               </div>
+              {chatMessages.map((msg, idx) => (
+                <div key={idx} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`rounded-lg p-3 max-w-[80%] text-sm ${msg.isUser ? 'bg-primary text-white rounded-tr-none' : 'bg-gray-200 text-gray-800 rounded-tl-none'}`}>
+                    <p>{msg.text}</p>
+                  </div>
+                </div>
+              ))}
+              {isChatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-200 rounded-lg rounded-tl-none p-3 text-sm text-gray-800">
+                    <span className="loading loading-dots loading-xs"></span>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="p-3 border-t bg-white">
-              <form onSubmit={(e) => { e.preventDefault(); alert("Message sent! (Demo)"); }} className="flex gap-2">
+            <div className="p-3 border-t bg-white shrink-0">
+              <form onSubmit={handleChatSubmit} className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="Type a message..."
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Ask for recommendations..."
                   className="flex-1 p-2 border rounded-md focus:outline-none focus:border-primary text-sm"
                   autoFocus
                 />
-                <button type="submit" className="bg-primary text-white p-2 rounded-md hover:bg-primary-focus">
+                <button type="submit" disabled={isChatLoading} className="bg-primary text-white p-2 rounded-md hover:bg-primary-focus disabled:opacity-50">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                   </svg>
@@ -186,17 +241,17 @@ const SupportPage = () => {
           <p className="text-gray-600 text-sm md:text-base">Follow us for updates and support on:</p>
           <ul className="flex space-x-4 mt-4 flex-wrap">
             <li>
-              <a href="https://instagram.com/napavalleywineries" target="_blank" className="text-primary hover:text-secondary">
+              <a href="https://www.instagram.com/winesnvw/" target="_blank" className="text-primary hover:text-secondary">
                 Instagram
               </a>
             </li>
             <li>
-              <a href="https://twitter.com/napawineguide" target="_blank" className="text-primary hover:text-secondary">
-                Twitter
+              <a href="https://www.linkedin.com/company/winesnvw/" target="_blank" className="text-primary hover:text-secondary">
+                LinkedIn
               </a>
             </li>
             <li>
-              <a href="https://facebook.com/napavalleywineries" target="_blank" className="text-primary hover:text-secondary">
+              <a href="https://www.facebook.com/people/Wines-Nvw/pfbid02GokGEaA8ZzDCsbwijRW4WYCK4hp63H6W31PwmvPtn4yw69onT6w7gjKpnVWweyysl/" target="_blank" className="text-primary hover:text-secondary">
                 Facebook
               </a>
             </li>

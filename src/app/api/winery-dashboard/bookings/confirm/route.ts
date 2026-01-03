@@ -31,20 +31,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    // Verify this booking includes the winery
-    const hasWinery = booking.wineries.some(
+    // Find the specific winery subdocument
+    const wineryBooking = booking.wineries.find(
       (w: any) => w.wineryId.toString() === winery._id.toString()
     );
 
-    if (!hasWinery) {
+    if (!wineryBooking) {
       return NextResponse.json(
         { error: "This booking is not for your winery" },
         { status: 403 }
       );
     }
 
-    // Update status
-    booking.status = 'confirmed';
+    // Update individual status
+    wineryBooking.status = 'confirmed';
+
+    // Calculate Master Status
+    const allStatuses = booking.wineries.map((w: any) => w.status);
+    if (allStatuses.every((s: string) => s === 'confirmed')) {
+      booking.status = 'confirmed';
+    } else if (allStatuses.some((s: string) => s === 'confirmed')) {
+      booking.status = 'partial'; // Or keep as pending/partial depending on UI logic
+    }
+    // If all declined? -> cancelled. logic can vary.
+
     await booking.save();
 
     // Send confirmation email/SMS to customer

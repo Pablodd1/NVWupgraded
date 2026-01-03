@@ -60,6 +60,7 @@
     "react-select": "^5.9.0",
     "react-toastify": "^11.0.2",
     "regenerator-runtime": "^0.14.1",
+    "resend": "^6.6.0",
     "stripe": "^18.2.1",
     "swr": "^2.3.2",
     "tailwind-merge": "^2.6.0",

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { FaTiktok, FaInstagram, FaEye, FaEyeSlash, FaWineBottle } from "react-icons/fa";
+import { FaInstagram, FaEye, FaEyeSlash, FaWineBottle, FaFacebook, FaLinkedin } from "react-icons/fa";
 import { useAuthStore } from "@/store/authStore";
 import { SessionStorageService } from "@/lib/localstorage.config";
 import { toast } from "react-toastify";
@@ -90,7 +90,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
 
           <div className="flex gap-4 justify-center mb-6">
             <a
-              href="https://instagram.com"
+              href="https://www.instagram.com/winesnvw/"
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-outline border-gray-200 text-gray-600 hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-red-500 hover:to-purple-500 hover:text-white hover:border-transparent transition-all"
@@ -99,12 +99,21 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
             </a>
 
             <a
-              href="https://tiktok.com"
+              href="https://www.facebook.com/people/Wines-Nvw/pfbid02GokGEaA8ZzDCsbwijRW4WYCK4hp63H6W31PwmvPtn4yw69onT6w7gjKpnVWweyysl/"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-outline border-gray-200 text-gray-600 hover:bg-black hover:text-white hover:border-transparent transition-all"
+              className="btn btn-outline border-gray-200 text-gray-600 hover:bg-blue-600 hover:text-white hover:border-transparent transition-all"
             >
-              <FaTiktok size={20} />
+              <FaFacebook size={20} />
+            </a>
+
+            <a
+              href="https://www.linkedin.com/company/winesnvw/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-outline border-gray-200 text-gray-600 hover:bg-blue-700 hover:text-white hover:border-transparent transition-all"
+            >
+              <FaLinkedin size={20} />
             </a>
           </div>
 

@@ -1,45 +1,14 @@
-import nodemailer from "nodemailer";
+import { Resend } from 'resend';
 import UserModel from "@/models/user.model";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ========================================
 // EMAIL CONFIGURATION
 // ========================================
 
-// Create ethereal test account or use configured SMTP
-let transporter: nodemailer.Transporter;
+// No transporter needed for Resend
 
-async function getTransporter() {
-  if (transporter) return transporter;
-
-  // Gmail SMTP Configuration
-  const emailUser = process.env.GMAIL_USER;
-  const emailPass = process.env.GMAIL_APP_PASSWORD; // Must be App Password
-
-  if (emailUser && emailPass) {
-    transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: emailUser,
-        pass: emailPass,
-      },
-    });
-  } else {
-    // Fallback to Ethereal for dev
-    console.warn("Gmail credentials not set. Falling back to test account.");
-    const testAccount = await nodemailer.createTestAccount();
-    transporter = nodemailer.createTransport({
-      host: "smtp.ethereal.email",
-      port: 587,
-      secure: false,
-      auth: {
-        user: testAccount.user,
-        pass: testAccount.pass,
-      },
-    });
-  }
-
-  return transporter;
-}
 
 // ========================================
 // SMS CONFIGURATION (Twilio)
@@ -501,8 +470,7 @@ function getMasterItineraryEmail(data: {
 
 export async function sendMasterItineraryNotification(booking: any, customer: any) {
   try {
-    const transport = await getTransporter();
-    const from = process.env.GMAIL_USER || "notifications@napawineries.com";
+    const from = process.env.EMAIL_FROM || "notifications@napawineries.com";
 
     const winerySummaries = booking.wineries.map((w: any) => ({
       wineryName: w.wineryId?.name || "Premium Winery",
@@ -510,7 +478,7 @@ export async function sendMasterItineraryNotification(booking: any, customer: an
       numberOfGuests: w.numberOfGuests
     }));
 
-    await transport.sendMail({
+    await resend.emails.send({
       from,
       to: customer.email,
       subject: "Your Napa Valley Itinerary Summary 🍷",
@@ -563,9 +531,8 @@ export async function sendWelcomeNotification(user: any, isWinery: boolean = fal
     </div>
   `;
 
-  const transport = await getTransporter();
-  await transport.sendMail({
-    from: process.env.GMAIL_USER || "notifications@napawineries.com",
+  await resend.emails.send({
+    from: process.env.EMAIL_FROM || "notifications@napawineries.com",
     to: user.email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -606,9 +573,8 @@ export async function sendFinalBookingDecision(booking: any, winery: any, custom
     ` : ''}
   `;
 
-  const transport = await getTransporter();
-  await transport.sendMail({
-    from: process.env.GMAIL_USER || "notifications@napawineries.com",
+  await resend.emails.send({
+    from: process.env.EMAIL_FROM || "notifications@napawineries.com",
     to: customer.email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -643,9 +609,8 @@ export async function sendHourReminder(customer: any, wineryName: string, time: 
     <p style="font-size: 13px; color: #888;">Safe travels! Please drink responsibly.</p>
   `;
 
-  const transport = await getTransporter();
-  await transport.sendMail({
-    from: process.env.GMAIL_USER || "notifications@napawineries.com",
+  await resend.emails.send({
+    from: process.env.EMAIL_FROM || "notifications@napawineries.com",
     to: customer.email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -725,11 +690,10 @@ function getErrorNotificationEmail(data: ErrorNotificationParams) {
 
 export async function sendErrorNotification(params: ErrorNotificationParams) {
   try {
-    const transport = await getTransporter();
     const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || "admin@napawineries.com"; // Fallback
 
-    await transport.sendMail({
-      from: process.env.GMAIL_USER || "notifications@napawineries.com",
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM || "notifications@napawineries.com",
       to: adminEmail,
       subject: `🚨 [${process.env.NODE_ENV?.toUpperCase() || 'DEV'}] Error: ${params.error.substring(0, 30)}`,
       html: getErrorNotificationEmail(params)
@@ -792,15 +756,23 @@ export async function sendWineryNotification(params: SendBookingNotificationsPar
       specialRequests: params.specialRequests
     };
 
-    const transport = await getTransporter();
-    const from = process.env.GMAIL_USER || "notifications@napawineries.com";
+    const from = process.env.EMAIL_FROM || "notifications@napawineries.com";
 
-    // Only Notify Winery Owner
-    await transport.sendMail({
+    // 1. Notify Winery Owner
+    await resend.emails.send({
       from,
       to: data.wineryEmail,
       subject: `New Booking Request - ${data.customerFirstName}`,
       html: getWineryBookingNotificationEmail(data)
+    });
+
+    // 2. Notify Admin
+    const adminEmail = process.env.ADMIN_EMAIL || "admin@napawineries.com";
+    await resend.emails.send({
+      from,
+      to: adminEmail,
+      subject: `New Booking Alert - ${data.bookingId}`,
+      html: getAdminBookingNotificationEmail(data)
     });
 
     return { success: true };
@@ -826,6 +798,5 @@ export default {
   sendFinalBookingDecision,
   sendWelcomeNotification,
   sendHourReminder,
-  sendErrorNotification,
-  getTransporter
+  sendErrorNotification
 };

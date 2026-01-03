@@ -1,15 +1,7 @@
-import nodemailer from "nodemailer";
+import { Resend } from 'resend';
 import UserModel from "@/models/user.model";
 
-// Configure Mailtrap SMTP transport
-const transporter = nodemailer.createTransport({
-  host: process.env.MAILTRAP_HOST as string,
-  port: parseInt(process.env.MAILTRAP_PORT as string, 10),
-  auth: {
-    user: process.env.MAILTRAP_USER as string,
-    pass: process.env.MAILTRAP_PASS as string,
-  },
-} as nodemailer.TransportOptions);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Email Header
 const EmailHeader = (subject: string) => `
@@ -54,7 +46,7 @@ const EmailHeader = (subject: string) => `
   </table>
 `;
 
-// Email Content Wrapper (Assumed implementation)
+// Email Content Wrapper
 const EmailContentWrapper = (content: string) => `
   <table style="width:100%;">
     <tbody>
@@ -75,7 +67,7 @@ const EmailContentWrapper = (content: string) => `
   </table>
 `;
 
-// Email Footer (Assumed implementation)
+// Email Footer
 const EmailFooter = () => `
   <table style="width:100%;">
     <tbody>
@@ -219,10 +211,12 @@ export async function sendBookingEmails(booking: any, winery: any, user: any, st
 
     const emailResults = await Promise.all(
       emails.map((email) =>
-        transporter.sendMail({
-          from: process.env.EMAIL_FROM,
-          ...email,
-        }).then((info) => ({ status: "success", to: email.to, messageId: info.messageId }))
+        resend.emails.send({
+          from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+          to: email.to,
+          subject: email.subject,
+          html: email.html,
+        }).then((data) => ({ status: "success", to: email.to, data }))
           .catch((error) => ({ status: "error", to: email.to, error: error.message }))
       )
     );

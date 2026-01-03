@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbConnect";
 import User from "@/models/user.model";
 import { createToken, setTokenCookie } from "@/lib/auth";
+import { sendWelcomeNotification } from "@/lib/notifications";
 
 export async function POST(req: Request) {
   try {
@@ -141,9 +142,17 @@ export async function POST(req: Request) {
     };
 
     console.log("🎉 Registration complete, token set, user logged in:", {
-      userId: newUser._id.toString(),
       email: newUser.email
     });
+
+    // Send welcome email
+    try {
+      await sendWelcomeNotification(newUser, userRole === 'winery');
+      console.log("Welcome email sent to:", newUser.email);
+    } catch (emailError) {
+      console.error("Failed to send welcome email:", emailError);
+      // Don't fail registration if email fails
+    }
 
     return NextResponse.json({ success: true, user: userResponse }, { status: 201 });
   } catch (error: any) {

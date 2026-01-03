@@ -21,6 +21,7 @@ interface WineryBooking {
   foodPairings: FoodPairing[];
   otherFeatures: any[]; // Support detailed feature info
   numberOfGuests: number;
+  status: "pending" | "confirmed" | "declined";
 }
 
 const wineryBookingSchema = new Schema<WineryBooking>(
@@ -32,6 +33,11 @@ const wineryBookingSchema = new Schema<WineryBooking>(
     foodPairings: { type: [foodPairingSchema], default: [] },
     otherFeatures: { type: [Object], default: [] },
     numberOfGuests: { type: Number, default: 1, min: 1 },
+    status: {
+      type: String,
+      enum: ["pending", "confirmed", "declined"],
+      default: "pending"
+    }
   },
   { _id: false }
 );
@@ -40,7 +46,7 @@ interface Booking {
   userId?: mongoose.Types.ObjectId; // Optional for external bookings
   wineries: WineryBooking[];
   specialRequests?: string;
-  status?: "pending" | "confirmed" | "cancelled";
+  status?: "pending" | "confirmed" | "cancelled" | "partial";
   payment_method: string;
   totalPrice?: number;
 
@@ -64,7 +70,7 @@ const bookingSchema = new Schema<Booking>(
     userId: { type: Schema.Types.ObjectId, required: false, ref: "User" }, // Optional for external bookings
     wineries: { type: [wineryBookingSchema], required: true },
     specialRequests: { type: String },
-    status: { type: String, default: "pending", enum: ["pending", "confirmed", "cancelled"] },
+    status: { type: String, default: "pending", enum: ["pending", "confirmed", "cancelled", "partial"] },
     payment_method: { type: String, default: "pay_winery" },
     totalPrice: { type: Number, default: 0 },
 

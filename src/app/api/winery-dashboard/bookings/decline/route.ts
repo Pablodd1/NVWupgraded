@@ -32,12 +32,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
-    // Verify this booking includes the winery
-    const hasWinery = booking.wineries.some(
+    // Find the specific winery subdocument
+    const wineryBooking = booking.wineries.find(
       (w: any) => w.wineryId.toString() === winery._id.toString()
     );
 
-    if (!hasWinery) {
+    if (!wineryBooking) {
       return NextResponse.json(
         { error: "This booking is not for your winery" },
         { status: 403 }
@@ -45,40 +45,51 @@ export async function POST(request: Request) {
     }
 
     // Restore slot capacity for declined booking
-    for (const wineryBooking of booking.wineries) {
-      if (wineryBooking.wineryId.toString() !== winery._id.toString()) continue;
+    const bookingDate = new Date(wineryBooking.datetime);
+    const date = bookingDate.toISOString().split('T')[0];
+    const hour = bookingDate.getHours();
 
-      const bookingDate = new Date(wineryBooking.datetime);
-      const date = bookingDate.toISOString().split('T')[0];
-      const hour = bookingDate.getHours();
+    // Logic from book/route.ts for consistency
+    let timeSlot = "Afternoon (1:00 PM - 3:00 PM)";
+    if (hour >= 10 && hour < 13) {
+      timeSlot = "Morning (10:00 AM - 12:00 PM)";
+    } else if (hour >= 15) {
+      timeSlot = "Evening (4:00 PM - 6:00 PM)";
+    }
 
-      let timeSlot = "Afternoon (12:00 PM - 3:00 PM)";
-      if (hour >= 10 && hour < 12) {
-        timeSlot = "Morning (10:00 AM - 12:00 PM)";
-      } else if (hour >= 15 && hour < 18) {
-        timeSlot = "Evening (3:00 PM - 6:00 PM)";
-      }
-
-      // Restore capacity (default to 1 guest if not specified)
-      const guests = (wineryBooking as any).numberOfGuests || 1;
-      const slot = await SlotInventory.findOne({
+    // Restore capacity atomically
+    const guests = (wineryBooking as any).numberOfGuests || 1;
+    await SlotInventory.findOneAndUpdate(
+      {
         wineryId: winery._id,
         date,
         timeSlot
-      });
-
-      if (slot) {
-        slot.bookedCapacity = Math.max(0, slot.bookedCapacity - guests);
-        slot.availableCapacity = Math.min(
-          slot.totalCapacity,
-          slot.availableCapacity + guests
-        );
-        await slot.save();
+      },
+      {
+        $inc: { bookedCapacity: -guests, availableCapacity: guests }
       }
+    );
+
+    // Update individual status
+    wineryBooking.status = 'declined';
+
+    // Calculate Master Status
+    // If ANY is declined, master could be 'partial' or 'cancelled' depending on preference.
+    // If all are declined -> cancelled.
+    // If some confirmed, some declined -> partial.
+    const allStatuses = booking.wineries.map((w: any) => w.status);
+    const hasConfirmed = allStatuses.includes('confirmed');
+    const hasPending = allStatuses.includes('pending');
+
+    if (allStatuses.every((s: string) => s === 'declined')) {
+      booking.status = 'cancelled';
+    } else if (hasConfirmed || hasPending) {
+      booking.status = 'partial';
+    } else {
+      // Should cover all cases, but fallback
+      booking.status = 'cancelled';
     }
 
-    // Update status
-    booking.status = 'declined';
     await booking.save();
 
     // Send decline email to customer with reason

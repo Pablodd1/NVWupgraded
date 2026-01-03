@@ -6,7 +6,7 @@ import WineryModel from "@/models/winery.model";
 import SlotInventory from "@/models/slotInventory.model";
 import { Types } from "mongoose";
 import { NextRequest, NextResponse } from "next/server";
-import { sendBookingNotifications } from "@/lib/notifications";
+import { sendBookingNotifications, sendMasterItineraryNotification } from "@/lib/notifications";
 
 
 export async function POST(req: NextRequest) {
@@ -26,9 +26,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "User not found" }, { status: 404 });
     }
 
-    // CRITICAL: Check slot availability and reserve capacity BEFORE creating booking
-    const reservationErrors = [];
-    const reservedSlots = [];
+    // CRITICAL: Check slot availability and reserve capacity Atomicly
+    const reservationErrors: string[] = [];
+    const reservedSlots: any[] = [];
 
     for (const wineryBooking of data) {
       const { wineryId, dateTime, numberOfGuests = 1 } = wineryBooking;
@@ -51,73 +51,91 @@ export async function POST(req: NextRequest) {
         timeSlot = "Evening (4:00 PM - 6:00 PM)";
       }
 
-      // Check if slot exists and has availability
-      let slot = await SlotInventory.findOne({
-        wineryId,
-        date,
-        timeSlot,
-        status: { $ne: "blocked" }
-      });
+      // 1. Try to atomically find and update an existing slot with sufficient capacity
+      let slot = await SlotInventory.findOneAndUpdate(
+        {
+          wineryId,
+          date,
+          timeSlot,
+          status: { $ne: "blocked" },
+          availableCapacity: { $gte: numberOfGuests }
+        },
+        {
+          $inc: { bookedCapacity: numberOfGuests, availableCapacity: -numberOfGuests }
+        },
+        { new: true }
+      );
 
-      // Auto-create slot if none exists (fallback for unseeded database)
+      // 2. If no slot found, check why
       if (!slot) {
-        try {
-          slot = await SlotInventory.create({
-            wineryId,
-            date,
-            timeSlot,
-            totalCapacity: 20, // Default capacity
-            bookedCapacity: 0,
-            availableCapacity: 20,
-            status: "available"
-          });
-        } catch (createError: any) {
-          // Handle duplicate key error (slot was created by concurrent request)
-          if (createError.code === 11000) {
-            slot = await SlotInventory.findOne({ wineryId, date, timeSlot });
-          } else {
-            reservationErrors.push(`Failed to create slot for ${timeSlot} on ${date}`);
-            continue;
+        const existingSlot = await SlotInventory.findOne({ wineryId, date, timeSlot });
+
+        if (existingSlot) {
+          // Slot exists but failed the update -> likely insufficient capacity or blocked
+          reservationErrors.push(`Insufficient capacity or blocked slot for ${timeSlot} on ${date}`);
+          continue;
+        } else {
+          // Slot does not exist -> Create it with atomic reservation
+          try {
+            // Create with initial reservation to prevent race condition
+            slot = await SlotInventory.create({
+              wineryId,
+              date,
+              timeSlot,
+              totalCapacity: 20, // Default capacity
+              bookedCapacity: numberOfGuests,
+              availableCapacity: 20 - numberOfGuests,
+              status: "available"
+            });
+          } catch (createError: any) {
+            // Handle race condition: Duplicate key error means someone else created it
+            if (createError.code === 11000) {
+              // Retry reservation on the now-existing slot
+              slot = await SlotInventory.findOneAndUpdate(
+                {
+                  wineryId,
+                  date,
+                  timeSlot,
+                  status: { $ne: "blocked" },
+                  availableCapacity: { $gte: numberOfGuests }
+                },
+                {
+                  $inc: { bookedCapacity: numberOfGuests, availableCapacity: -numberOfGuests }
+                },
+                { new: true }
+              );
+
+              if (!slot) {
+                reservationErrors.push(`Capacity exhausted during race condition for ${timeSlot} on ${date}`);
+                continue;
+              }
+            } else {
+              reservationErrors.push(`Failed to create/reserve slot for ${timeSlot} on ${date}`);
+              continue;
+            }
           }
         }
       }
 
-      if (!slot) {
-        reservationErrors.push(`No availability found for ${timeSlot} on ${date}`);
-        continue;
+      if (slot) {
+        reservedSlots.push({
+          slotId: slot._id,
+          wineryId,
+          date,
+          timeSlot,
+          guestsReserved: numberOfGuests
+        });
       }
-
-      if (slot.availableCapacity < numberOfGuests) {
-        reservationErrors.push(
-          `Insufficient capacity: ${slot.availableCapacity} available, ${numberOfGuests} requested for ${timeSlot} on ${date}`
-        );
-        continue;
-      }
-
-      // Reserve capacity (update inventory)
-      slot.bookedCapacity += numberOfGuests;
-      slot.availableCapacity -= numberOfGuests;
-      await slot.save();
-
-      reservedSlots.push({
-        slotId: slot._id,
-        wineryId,
-        date,
-        timeSlot,
-        guestsReserved: numberOfGuests
-      });
     }
 
     // If any reservation failed, rollback all reserved slots
     if (reservationErrors.length > 0) {
+      console.warn("Booking failed, rolling back reservations:", reservationErrors);
       // Rollback all successfully reserved slots
       for (const reserved of reservedSlots) {
-        const slot = await SlotInventory.findById(reserved.slotId);
-        if (slot) {
-          slot.bookedCapacity -= reserved.guestsReserved;
-          slot.availableCapacity += reserved.guestsReserved;
-          await slot.save();
-        }
+        await SlotInventory.findByIdAndUpdate(reserved.slotId, {
+          $inc: { bookedCapacity: -reserved.guestsReserved, availableCapacity: reserved.guestsReserved }
+        });
       }
 
       return NextResponse.json(
@@ -152,23 +170,25 @@ export async function POST(req: NextRequest) {
     const booking = new BookingModel({
       userId,
       payment_method: paymentMethod,
-      totalPrice: totalPrice
+      totalPrice: totalPrice,
+      status: "pending" // Initial Master Status
     });
 
-    booking.wineries = data.map((winery) => ({
+    booking.wineries = data.map((winery: any) => ({
       wineryId: winery.wineryId,
       datetime: winery.dateTime,
       tasting: winery.tasting,
       tours: winery.tours || [],
       foodPairings: winery.foodPairings || [],
       otherFeatures: winery.otherFeature || [],
-      numberOfGuests: winery.numberOfGuests || 1
+      numberOfGuests: winery.numberOfGuests || 1,
+      status: "pending" // Initial Individual Status
     }));
     await booking.save();
 
     // 1. Send ONE Master Itinerary Email to Customer
     try {
-      await (await import("@/lib/notifications")).sendMasterItineraryNotification(
+      await sendMasterItineraryNotification(
         await BookingModel.findById(booking._id).populate("wineries.wineryId"),
         user
       );
@@ -256,11 +276,11 @@ export async function GET(req: NextRequest) {
           _id: "$_id",
           userId: { $first: "$userId" },
           specialRequests: { $first: "$specialRequests" },
-          status: { $first: "$status" },
+          status: { $first: "$status" }, // This is the MASTER status
           createdAt: { $first: "$createdAt" },
           updatedAt: { $first: "$updatedAt" },
           wineries: { $push: "$wineries" },
-          payment_method: { $first: "$payment_method" }, // Include payment method in the response
+          payment_method: { $first: "$payment_method" },
         },
       },
       { $sort: { createdAt: -1 } },
