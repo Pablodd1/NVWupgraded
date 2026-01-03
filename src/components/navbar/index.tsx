@@ -9,6 +9,7 @@ import { MdExplore, MdOutlineSupportAgent, MdSupport } from "react-icons/md";
 import { VoiceFilter } from "../filter-bar/voice-filter";
 import { useAuthStore } from "@/store/authStore";
 import { IUser } from "@/models/user.model";
+import { useLanguage } from "@/context/LanguageContext";
 import { useRouter } from "next/navigation";
 
 export function Navbar() {
@@ -18,6 +19,7 @@ export function Navbar() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
+  const { t, language, toggleLanguage } = useLanguage();
 
   useEffect(() => {
     if (!user) {
@@ -60,7 +62,7 @@ export function Navbar() {
 
           <Link href="/support" className="absolute right-4 p-0 flex flex-col items-center">
             <MdOutlineSupportAgent className="text-primary hover:text-primary-focus transition-all" size={30} />
-            <span className="text-xs font-semibold text-gray-800">Support</span>
+            <span className="text-xs font-semibold text-gray-800">{t('nav_support')}</span>
           </Link>
         </div>
 
@@ -75,21 +77,28 @@ export function Navbar() {
             </Link>
 
             <nav className="flex space-x-6">
-              <NavbarLink href="/bookings" text="Your Bookings" />
-              <NavbarLink href="/support" text="Support" />
-              <NavbarLink href="#contact" text="Contact" />
-              {user?.role === "admin" && <NavbarLink href="/admin/dashboard" text="Admin Dashboard" />}
+              <NavbarLink href="/bookings" text={t('nav_bookings')} />
+              <NavbarLink href="/support" text={t('nav_support')} />
+              <NavbarLink href="#contact" text={t('nav_contact')} />
+              {user?.role === "admin" && <NavbarLink href="/admin/dashboard" text={t('nav_admin')} />}
               {user?.role === "winery" && <NavbarLink href="/winery-dashboard" text="Winery Dashboard" />}
             </nav>
 
             <div className="flex items-center space-x-6">
+              <button
+                onClick={toggleLanguage}
+                className="text-xs font-bold text-gray-600 hover:text-primary border border-gray-300 rounded px-2 py-1 transition-all"
+              >
+                {language === 'en' ? 'ES' : 'EN'}
+              </button>
+
               <VoiceFilter />
-              <ItineraryButton itineraryCount={itinerary.length} />
+              <ItineraryButton itineraryCount={itinerary.length} label={t('nav_itinerary')} />
               {user ? (
-                <UserProfile user={user} handleLogout={handleLogout} loading={loading} />
+                <UserProfile user={user} handleLogout={handleLogout} loading={loading} t={t} />
               ) : (
                 <button onClick={() => setShowModal(true)} className="text-gray-800 hover:text-primary text-sm font-semibold">
-                  Sign In
+                  {t('sign_in')}
                 </button>
               )}
             </div>
@@ -106,6 +115,7 @@ export function Navbar() {
         isProfileMenuOpen={isProfileMenuOpen}
         toggleProfileMenu={toggleProfileMenu}
         closeProfileMenu={closeProfileMenu}
+        t={t}
       />
 
       {showModal && <AuthModal setShowPopup={setShowModal} />}
@@ -119,14 +129,14 @@ const NavbarLink = ({ href, text }: { href: string; text: string }) => (
   </Link>
 );
 
-const ItineraryButton = ({ itineraryCount }: { itineraryCount: number }) => (
+const ItineraryButton = ({ itineraryCount, label }: { itineraryCount: number; label?: string }) => (
   <div className="relative neumorphism-card p-2">
     <Link
       href="/itinerary"
       className="bg-primary text-white px-4 py-2 rounded-full flex items-center space-x-2 hover:bg-primary-focus transition-all duration-300"
     >
       <FaWineGlassAlt size={16} />
-      <span className="text-sm">Itinerary</span>
+      <span className="text-sm">{label || "Itinerary"}</span>
       {itineraryCount > 0 && (
         <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
           {itineraryCount}
@@ -136,7 +146,7 @@ const ItineraryButton = ({ itineraryCount }: { itineraryCount: number }) => (
   </div>
 );
 
-const UserProfile = ({ user, handleLogout, loading }: { user: IUser; handleLogout: () => void; loading: boolean }) => (
+const UserProfile = ({ user, handleLogout, loading, t }: { user: IUser; handleLogout: () => void; loading: boolean; t: any }) => (
   <div className="relative flex items-center space-x-2 neumorphism-card p-3">
     <FaUserAlt size={28} className="text-gray-800 rounded-full" />
     <div className="flex flex-col">
@@ -147,7 +157,7 @@ const UserProfile = ({ user, handleLogout, loading }: { user: IUser; handleLogou
         disabled={loading}
       >
         <FaSignOutAlt size={14} />
-        <span>{loading ? "Logging Out..." : "Logout"}</span>
+        <span>{loading ? "..." : t('sign_out')}</span>
       </button>
     </div>
   </div>
@@ -162,6 +172,7 @@ const MobileBottomNav = ({
   closeProfileMenu,
   loading = false,
   setShowModal,
+  t
 }: {
   user: any;
   handleLogout: () => void;
@@ -171,6 +182,7 @@ const MobileBottomNav = ({
   closeProfileMenu: () => void;
   loading: boolean;
   setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
+  t: any;
 }) => (
   <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-gray-100 shadow-lg flex justify-center py-1 rounded-t-xl neumorphism-card z-18 border-t-2 border-basic">
     <div className="flex justify-between w-full items-center px-4">
@@ -216,7 +228,7 @@ const MobileBottomNav = ({
               </Link>
             )}
             <button onClick={handleLogout} className="text-red-600 text-sm font-semibold w-full text-center py-2">
-              {loading ? "Logging Out..." : "Logout"}
+              {loading ? "..." : t('sign_out')}
             </button>
           </div>
         </div>

@@ -5,6 +5,8 @@ import { Navbar } from "@/components/navbar";
 import { ItineraryProvider } from "@/store/itinerary";
 import WineLoader from "@/components/loader/wine-loader";
 import AgeGate from "@/components/AgeGate";
+import { LanguageProvider } from "@/context/LanguageContext";
+import ChatWidget from "@/components/chat/ChatWidget";
 
 export default function ClientWrapper({ children }: { children: React.ReactNode }) {
     const [isAppLoading, setAppLoading] = useState(true);
@@ -47,9 +49,12 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
     }
 
     return (
-        <ItineraryProvider>
-            <Navbar />
-            {children}
-        </ItineraryProvider>
+        <LanguageProvider>
+            <ItineraryProvider>
+                <Navbar />
+                {children}
+                <ChatWidget />
+            </ItineraryProvider>
+        </LanguageProvider>
     );
 }
