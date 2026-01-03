@@ -470,7 +470,7 @@ function getMasterItineraryEmail(data: {
 
 export async function sendMasterItineraryNotification(booking: any, customer: any) {
   try {
-    const from = process.env.EMAIL_FROM || "notifications@napawineries.com";
+    const from = process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app";
 
     const winerySummaries = booking.wineries.map((w: any) => ({
       wineryName: w.wineryId?.name || "Premium Winery",
@@ -532,7 +532,7 @@ export async function sendWelcomeNotification(user: any, isWinery: boolean = fal
   `;
 
   await resend.emails.send({
-    from: process.env.EMAIL_FROM || "notifications@napawineries.com",
+    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
     to: user.email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -574,7 +574,7 @@ export async function sendFinalBookingDecision(booking: any, winery: any, custom
   `;
 
   await resend.emails.send({
-    from: process.env.EMAIL_FROM || "notifications@napawineries.com",
+    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
     to: customer.email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -610,7 +610,7 @@ export async function sendHourReminder(customer: any, wineryName: string, time: 
   `;
 
   await resend.emails.send({
-    from: process.env.EMAIL_FROM || "notifications@napawineries.com",
+    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
     to: customer.email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -693,7 +693,7 @@ export async function sendErrorNotification(params: ErrorNotificationParams) {
     const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || "admin@napawineries.com"; // Fallback
 
     await resend.emails.send({
-      from: process.env.EMAIL_FROM || "notifications@napawineries.com",
+      from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
       to: adminEmail,
       subject: `🚨 [${process.env.NODE_ENV?.toUpperCase() || 'DEV'}] Error: ${params.error.substring(0, 30)}`,
       html: getErrorNotificationEmail(params)
@@ -756,7 +756,7 @@ export async function sendWineryNotification(params: SendBookingNotificationsPar
       specialRequests: params.specialRequests
     };
 
-    const from = process.env.EMAIL_FROM || "notifications@napawineries.com";
+    const from = process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app";
 
     // 1. Notify Winery Owner
     await resend.emails.send({
