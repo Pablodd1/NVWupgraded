@@ -5,6 +5,8 @@ import SlotInventory from "@/models/slotInventory.model";
 import Winery from "@/models/winery.model";
 import { sendBookingNotifications } from "@/lib/notifications";
 
+export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/itinerary/external-booking
  * Track external bookings (booked via winery's external link)

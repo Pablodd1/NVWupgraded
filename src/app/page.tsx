@@ -1,19 +1,19 @@
 "use client";
 // Build trigger: 2025-12-28 13:20
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import AuthModal from "@/components/modal/AuthModal";
 import AgeGateSplash from "@/components/AgeGateSplash";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useItinerary } from "@/store/itinerary";
 import { Winery } from "./interfaces";
-import WineryCard from "@/components/cards/winnery-list";
+import WineryCard from "@/components/cards/winery-card";
 import Filter from "@/components/filter-bar/filter-box";
 import { useAuthStore } from "@/store/authStore";
 import axios from "axios";
 import dynamic from "next/dynamic";
 import { type NLPResult } from "@/lib/ai-nlp";
-import { useFilterStore } from "@/hooks/useFilterStore";
+import { Filters, useFilterStore } from "@/hooks/useFilterStore";
 import { useUIStore } from "@/store/uiStore";
 
 // Lazy‑load the heavy voice‑search panel to improve initial bundle size
@@ -35,6 +35,11 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [isAgeVerified, setIsAgeVerified] = useState(false);
 
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isMoreLoading, setIsMoreLoading] = useState(false);
+  const observerTarget = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     // Check if previously verified to skip splash, but for now we enforce it per session as requested
     const verified = localStorage.getItem("age_verified");
@@ -43,34 +48,103 @@ export default function Home() {
     }
   }, []);
 
-  const fetchWineries = async () => {
-    setIsLoading(true);
+  const loadWineries = useCallback(async (pageNum: number, isNewFilter: boolean = false) => {
     try {
-      const response = await axios.get("/api/winery");
-      const wineriesData = response.data.wineries;
+      if (pageNum === 1) setIsLoading(true);
+      else setIsMoreLoading(true);
 
-      setWineries(wineriesData);
-      setFilteredWineries(wineriesData);
+      // Build query string based on filters if needed? 
+      // Currently filters are client-side on the "all" data or we need to move filters to API.
+      // The current Architecture seems to filter CLIENT-SIDE based on `wineries` state.
+      // If we implement pagination, we MUST fetch *filtered* results from API or fetch *all* and filter client side.
+      // The previous implementation fetched ALL (limit=1000).
+      // Optimization Goal context: "Implement pagination... to reduce payload size".
+      // So we must move filtering to API or accept that client-side filtering only works on loaded data.
+      // HYBRID APPROACH for now (to avoid rewriting all filter logic):
+      // 1. Fetch pages. 
+      // 2. Append to `wineries`.
+      // 3. `filteredWineries` is derived from `wineries` + `filters`.
+
+      const limit = 20;
+      const response = await axios.get(`/api/winery?page=${pageNum}&limit=${limit}`);
+      const newWineries = response.data.wineries || [];
+      const total = response.data.total;
+
+      if (isNewFilter) {
+        setWineries(newWineries);
+        setFilteredWineries(newWineries); // Initial filter application happens in effect
+      } else {
+        setWineries(prev => {
+          // Prevent duplicates
+          const existingIds = new Set(prev.map(w => w._id));
+          const uniqueNew = newWineries.filter((w: Winery) => !existingIds.has(w._id));
+          return [...prev, ...uniqueNew];
+        });
+        // We trigger filter re-application via effect dependency
+      }
+
+      setHasMore(newWineries.length === limit); // If we got less than limit, no more data
+
     } catch (err) {
       console.error("Failed to fetch wineries", err);
       toast.error("Unable to load wineries. Please try again later.");
     } finally {
       setIsLoading(false);
+      setIsMoreLoading(false);
     }
-  };
-
-  useEffect(() => {
-    fetchWineries();
   }, []);
 
-  const addToItinerary = (winery: any) => {
+  // Initial load
+  useEffect(() => {
+    loadWineries(1, true);
+  }, [loadWineries]);
+
+  // Infinite Scroll Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      entries => {
+        if (entries[0].isIntersecting && hasMore && !isMoreLoading && !isLoading) {
+          setPage(prev => {
+            const nextPage = prev + 1;
+            loadWineries(nextPage);
+            return nextPage;
+          });
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => {
+      if (observerTarget.current) {
+        observer.unobserve(observerTarget.current);
+      }
+    };
+  }, [hasMore, isMoreLoading, isLoading, loadWineries]);
+
+  // Re-apply filters when `wineries` changes (due to pagination) or `filters` change
+  useEffect(() => {
+    // This logic is already handled by the Filter component's `onFilterApply` or internal effect?
+    // Looking at `Filter` component usage: <Filter wineries={wineries} onFilterApply={setFilteredWineries} />
+    // The Filter component takes `wineries` (all loaded so far) and returns `filteredWineries`.
+    // So when `wineries` updates, Filter component should re-run its logic if it has specific effects or we need to trigger it.
+    // `Filter` component has an effect `useEffect(() => { applyFilters(); }, [filters, applyFilters]);`
+    // And `applyFilters` depends on `wineries`.
+    // So just updating `wineries` should automatically update `filteredWineries` via the Filter component!
+  }, [wineries]); // Redundant comment, just verifying logic.
+
+  const addToItinerary = (winery: Winery) => {
     setItinerary([...itinerary, winery]);
     toast.success(`${winery.name} added to your itinerary!`);
   };
 
   const handleVoiceFilters = (result: NLPResult) => {
     setNlpQuery(result);
-    const newFilters: any = {};
+    // ... existing logic ...
+    const newFilters: Partial<Filters> = {};
     if (result.filters.ava) newFilters.ava = result.filters.ava;
     if (result.filters.wineTypes) {
       const wineTypeMap: any = { red: false, rosé: false, white: false, sparkling: false, dessert: false };
@@ -100,6 +174,7 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-4 p-4 max-w-[1600px] mx-auto">
 
         <div className="lg:col-span-1 sm:col-span-1 mb-10">
+          {/* We pass all loaded wineries to the filter. Client-side filtering applies to "Loaded So Far" */}
           <Filter wineries={wineries} onFilterApply={setFilteredWineries} />
         </div>
 
@@ -161,8 +236,8 @@ export default function Home() {
             <VoiceSearchPanel onFiltersApplied={handleVoiceFilters} className="mb-8 border-2 border-primary/20 animate-in fade-in slide-in-from-top-4 duration-300" />
           )}
 
-          {/* Loading indicator for wineries */}
-          {isLoading ? (
+          {/* Winery List */}
+          {isLoading && page === 1 ? (
             <div className="flex justify-center py-8">
               <span className="loading loading-spinner loading-lg text-primary"></span>
               <p className="ml-3 text-gray-600">Loading wineries…</p>
@@ -172,6 +247,7 @@ export default function Home() {
               <p className="text-lg text-gray-600 mb-4">No wineries match your filters</p>
               <button
                 onClick={() => {
+                  // Reset Logic
                   setFilters({
                     priceRange: [0, 1000],
                     wineType: { red: false, rosé: false, white: false, sparkling: false, dessert: false },
@@ -187,9 +263,16 @@ export default function Home() {
               </button>
             </div>
           ) : (
-            filteredWineries.map((winery, index) => (
-              <WineryCard key={index} winery={winery} addToItinerary={addToItinerary} />
-            ))
+            <>
+              {filteredWineries.map((winery, index) => (
+                <WineryCard key={`${winery._id}-${index}`} winery={winery} addToItinerary={addToItinerary} />
+              ))}
+
+              {/* Loader for Infinite Scroll */}
+              <div ref={observerTarget} className="flex justify-center py-6 h-20">
+                {isMoreLoading && <span className="loading loading-spinner loading-md text-primary"></span>}
+              </div>
+            </>
           )}
         </div>
       </div>

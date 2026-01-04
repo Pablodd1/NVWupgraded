@@ -2,7 +2,7 @@
 import { Winery } from "@/app/interfaces";
 import { useItinerary } from "@/store/itinerary";
 import Link from "next/link";
-import { FC, memo } from "react";
+import { FC, memo, useMemo } from "react";
 import { FaWineBottle, FaDollarSign, FaMapMarkerAlt, FaWhatsapp } from "react-icons/fa";
 import Image from "next/image";
 
@@ -16,24 +16,33 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
   const { itinerary } = useItinerary();
   const isAdded = itinerary.find((item) => item._id === winery._id);
 
-  const whatsappNumber = winery.contact_info.phone;
-  let formattedNumber = whatsappNumber ? whatsappNumber.replace(/\D/g, "") : "";
-  if (formattedNumber.length === 10) {
-    formattedNumber = "1" + formattedNumber;
-  }
-  const whatsappLink = formattedNumber ? `https://wa.me/${formattedNumber}` : "";
+  const { formattedNumber, whatsappLink } = useMemo(() => {
+    const whatsappNumber = winery.contact_info?.phone;
+    let formatted = whatsappNumber ? whatsappNumber.replace(/\D/g, "") : "";
+    if (formatted.length === 10) {
+      formatted = "1" + formatted;
+    }
+    return {
+      formattedNumber: formatted,
+      whatsappLink: formatted ? `https://wa.me/${formatted}` : ""
+    };
+  }, [winery.contact_info?.phone]);
 
-  const hasMultipleTastings = winery.tasting_info && winery.tasting_info.length > 1;
-  const tastingPrices = winery.tasting_info?.map(t => t.tasting_price) || [];
-  const minPrice = tastingPrices.length > 0 ? Math.min(...tastingPrices) : 0;
-  const maxPrice = tastingPrices.length > 0 ? Math.max(...tastingPrices) : 0;
+  const { priceDisplay, minPrice, maxPrice, uniqueWineTypes } = useMemo(() => {
+    const hasMultipleTastings = winery.tasting_info && winery.tasting_info.length > 1;
+    const tastingPrices = winery.tasting_info?.map(t => t.tasting_price) || [];
+    const minPrice = tastingPrices.length > 0 ? Math.min(...tastingPrices) : 0;
+    const maxPrice = tastingPrices.length > 0 ? Math.max(...tastingPrices) : 0;
 
-  const priceDisplay = hasMultipleTastings
-    ? `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`
-    : `$${winery.tasting_info?.[0]?.tasting_price?.toFixed(2) ?? "N/A"}`;
+    const priceDisplay = hasMultipleTastings
+      ? `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`
+      : `$${winery.tasting_info?.[0]?.tasting_price?.toFixed(2) ?? "N/A"}`;
 
-  const allWineTypes = winery.tasting_info?.flatMap(t => t.wine_types) || [];
-  const uniqueWineTypes = [...new Set(allWineTypes)];
+    const allWineTypes = winery.tasting_info?.flatMap(t => t.wine_types) || [];
+    const uniqueWineTypes = [...new Set(allWineTypes)];
+
+    return { priceDisplay, minPrice, maxPrice, uniqueWineTypes };
+  }, [winery.tasting_info]);
 
   return (
     <div className="flex flex-col sm:flex-row items-stretch rounded-2xl bg-white transition-all hover:shadow-xl hover:shadow-gray-200/50 border border-transparent hover:border-gray-100 ease-in-out duration-300 overflow-hidden mb-4">
@@ -65,7 +74,7 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
           </Link>
           <p className="text-sm text-gray-500 line-clamp-2 mt-1">{winery.description}</p>
 
-          {hasMultipleTastings && (
+          {winery.tasting_info && winery.tasting_info.length > 1 && (
             <div className="mt-3">
               <span className="inline-block bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg">
                 {winery.tasting_info.length} Tasting Experiences

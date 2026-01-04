@@ -31,12 +31,35 @@ export async function POST(req: Request) {
 
 import { mockWineries } from "@/lib/mockData";
 
+
 export async function GET(req: Request) {
   try {
     await dbConnect();
-    const wineries = await Winery.find().lean();
+
+    // Parse query params for pagination
+    const { searchParams } = new URL(req.url);
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "1000", 10); // Default to high limit to preserve existing behavior for now, but allow optimization
+    const skip = (page - 1) * limit;
+
+    // Use .select() to return only necessary fields for the card view
+    // This drastically reduces payload size by omitting heavy fields if not needed
+    const wineries = await Winery.find()
+      .select("name description location tasting_info contact_info amenities images")
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
     const total = await Winery.countDocuments();
-    return NextResponse.json({ message: "sucess", wineries, total }, { status: 200 });
+
+    return NextResponse.json({
+      message: "success",
+      wineries,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
+    }, { status: 200 });
+
   } catch (error: any) {
     console.error("Error in GET /api/winery (Falling back to mock data):", error);
     // Fallback to mock data so the app "works" for the user

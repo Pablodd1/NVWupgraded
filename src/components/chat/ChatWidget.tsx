@@ -16,6 +16,8 @@ export default function ChatWidget() {
     const [isChatLoading, setIsChatLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const [lastSearchResults, setLastSearchResults] = useState<any[]>([]);
+
     // Auto-scroll to bottom of chat
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -35,31 +37,46 @@ export default function ChatWidget() {
         setIsChatLoading(true);
 
         try {
-            // 1. Send to AI
-            const response = await axios.post("/api/ai-search", { query: userMessage });
-            const { filters, wineries, count } = response.data;
+            // 1. Send to AI with history and context
+            const payload = {
+                query: userMessage,
+                history: chatMessages.slice(-5), // Send last 5 messages for context
+                context: lastSearchResults.slice(0, 5) // Send top 5 previous results for reference
+            };
 
-            let botResponse = "";
-            if (count > 0) {
-                if (language === 'es') {
-                    botResponse = `Encontré ${count} bodegas que coinciden con tu búsqueda. Aquí tienes algunas: ${wineries.slice(0, 3).map((w: any) => w.name).join(", ")}.`;
+            const response = await axios.post("/api/ai-search", payload);
+            const { filters, wineries, count, message } = response.data;
+
+            // Update context if new results found
+            if (wineries && wineries.length > 0) {
+                setLastSearchResults(wineries);
+            }
+
+            let botResponse = message;
+
+            // Fallback if no AI message generated (backwards compatibility)
+            if (!botResponse) {
+                if (count > 0) {
+                    if (language === 'es') {
+                        botResponse = `Encontré ${count} bodegas que coinciden con tu búsqueda. Aquí tienes algunas: ${wineries.slice(0, 3).map((w: any) => w.name).join(", ")}.`;
+                    } else {
+                        botResponse = `I found ${count} wineries matching your request. Here are a few: ${wineries.slice(0, 3).map((w: any) => w.name).join(", ")}.`;
+                    }
                 } else {
-                    botResponse = `I found ${count} wineries matching your request. Here are a few: ${wineries.slice(0, 3).map((w: any) => w.name).join(", ")}.`;
-                }
-            } else {
-                if (language === 'es') {
-                    botResponse = "No pude encontrar ninguna bodega que coincida con esa descripción. Intenta preguntar por 'Vino tinto en Calistoga' o 'Bodegas para niños'.";
-                } else {
-                    botResponse = "I couldn't find any wineries matching that description. Try asking for 'Red wine in Calistoga' or 'Kid friendly wineries'.";
+                    if (language === 'es') {
+                        botResponse = "No pude encontrar ninguna bodega que coincida con esa descripción. Intenta preguntar por 'Vino tinto en Calistoga' o 'Bodegas para niños'.";
+                    } else {
+                        botResponse = "I couldn't find any wineries matching that description. Try asking for 'Red wine in Calistoga' or 'Kid friendly wineries'.";
+                    }
                 }
             }
 
             setChatMessages(prev => [...prev, { text: botResponse, isUser: false }]);
 
             // 2. Log interaction
-            // We don't await this to avoid blocking UI
             axios.post("/api/chat/log", {
                 messages: [
+                    ...chatMessages.slice(-5),
                     { role: "user", content: userMessage },
                     { role: "bot", content: botResponse }
                 ],
@@ -127,8 +144,8 @@ export default function ChatWidget() {
                         {chatMessages.map((msg, idx) => (
                             <div key={idx} className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`rounded-2xl p-3 max-w-[85%] text-sm shadow-sm ${msg.isUser
-                                        ? 'bg-primary text-white rounded-tr-none'
-                                        : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none'
+                                    ? 'bg-primary text-white rounded-tr-none'
+                                    : 'bg-white border border-gray-200 text-gray-800 rounded-tl-none'
                                     }`}>
                                     <p>{msg.text}</p>
                                 </div>

@@ -4,6 +4,8 @@ import User from "@/models/user.model";
 import { createToken, setTokenCookie } from "@/lib/auth";
 import { sendWelcomeNotification } from "@/lib/notifications";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   try {
     await dbConnect();

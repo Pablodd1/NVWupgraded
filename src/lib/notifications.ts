@@ -1,7 +1,10 @@
 import { Resend } from 'resend';
 import UserModel from "@/models/user.model";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Initialize Resend safely to prevent build errors if env var is missing
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : { emails: { send: async () => { console.warn("Resend not configured"); return { error: "Resend key missing" }; } } } as any;
 
 // ========================================
 // EMAIL CONFIGURATION
