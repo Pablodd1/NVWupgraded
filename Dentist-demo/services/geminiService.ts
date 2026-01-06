@@ -6,46 +6,50 @@ import { ColorAdjustment, MaterialAdjustment } from "../types.ts";
  * Focuses on high-fidelity dental textures and realistic material rendering.
  */
 export const editDentalImage = async (
-  base64Image: string, 
-  prompt: string, 
+  base64Image: string,
+  prompt: string,
   selectedTeeth: number[] = [],
   colorAdjustment: ColorAdjustment = { hue: 0, saturation: 0 },
   materialAdjustment?: MaterialAdjustment
 ): Promise<string> => {
-  // Ensure we get the latest key from the process shim
-  const apiKey = (window as any).process?.env?.API_KEY || "";
+  // Check multiple sources for the API key (Vite, Process shim, and AI Studio)
+  const apiKey =
+    import.meta.env?.VITE_GEMINI_API_KEY ||
+    (window as any).process?.env?.API_KEY ||
+    "";
+
   if (!apiKey) {
-    throw new Error("Clinical API Key is not configured. Please select an API key.");
+    throw new Error("Clinical API Key is not configured. Please add VITE_GEMINI_API_KEY to your Vercel Environment Variables.");
   }
-  
+
   const ai = new GoogleGenAI({ apiKey });
-  
+
   try {
     const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
-    
+
     let toothTargetingInstruction = "";
     if (selectedTeeth.length > 0) {
-        toothTargetingInstruction = `
+      toothTargetingInstruction = `
         TARGET SPECIFICITY (Universal Numbering System):
         - Apply treatment EXCLUSIVELY to teeth: ${selectedTeeth.join(', ')}.
         - Maintain pixel-perfect margins at the gingiva (gum line).
         - Ensure interproximal spaces (gaps) are realistically rendered without blending adjacent teeth.
         `;
     } else {
-        toothTargetingInstruction = 'TARGET: Focus on the aesthetic maxillary and mandibular "Smile Zone" visible in the capture.';
+      toothTargetingInstruction = 'TARGET: Focus on the aesthetic maxillary and mandibular "Smile Zone" visible in the capture.';
     }
 
     let colorInstruction = "";
     if (colorAdjustment.hue !== 0 || colorAdjustment.saturation !== 0) {
-        const hueDesc = colorAdjustment.hue > 0 
-            ? "Shift to warmer VITA A3/A4 natural shades." 
-            : "Shift to cooler, high-value VITA B1/Bleach shades.";
-            
-        const satDesc = colorAdjustment.saturation > 0 
-            ? "Increase internal chroma depth." 
-            : "Minimize chroma for a brighter, high-translucency look.";
+      const hueDesc = colorAdjustment.hue > 0
+        ? "Shift to warmer VITA A3/A4 natural shades."
+        : "Shift to cooler, high-value VITA B1/Bleach shades.";
 
-        colorInstruction = `
+      const satDesc = colorAdjustment.saturation > 0
+        ? "Increase internal chroma depth."
+        : "Minimize chroma for a brighter, high-translucency look.";
+
+      colorInstruction = `
         CHROMATIC CALIBRATION:
         - Value/Hue: ${colorAdjustment.hue !== 0 ? hueDesc : 'Maintain natural base shade'}.
         - Saturation: ${colorAdjustment.saturation !== 0 ? satDesc : 'Balanced'}.
@@ -54,7 +58,7 @@ export const editDentalImage = async (
 
     const textureType = materialAdjustment?.texture || "enamel with subtle perikymata";
     const reflectivityVal = materialAdjustment?.reflectivity || 0.6;
-    
+
     // Explicit instructions for micro-surface topology
     let microTextureDetail = "";
     if (textureType.toLowerCase().includes("enamel")) {
@@ -113,7 +117,7 @@ export const editDentalImage = async (
       for (const part of response.candidates[0].content.parts) {
         if (part.inlineData && part.inlineData.data) {
           generatedImageBase64 = part.inlineData.data;
-          break; 
+          break;
         }
       }
     }
@@ -121,7 +125,7 @@ export const editDentalImage = async (
     if (!generatedImageBase64) {
       throw new Error("Clinical visualization failed. Check API key status and network connection.");
     }
-    
+
     return `data:image/jpeg;base64,${generatedImageBase64}`;
 
   } catch (error: any) {
