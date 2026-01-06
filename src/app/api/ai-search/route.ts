@@ -54,7 +54,9 @@ export async function POST(req: Request) {
         }
 
         // 3. Search Wineries
+        console.log('Final MongoDB Query:', JSON.stringify(mongoQuery, null, 2));
         const wineries = await Winery.find(mongoQuery).limit(10);
+        console.log(`Found ${wineries.length} wineries matching query.`);
 
         // 4. Generate Conversational Response
         const message = await generateConversationalResponse(query, wineries, context || [], history || []);
