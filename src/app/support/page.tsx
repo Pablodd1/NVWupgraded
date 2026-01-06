@@ -100,7 +100,8 @@ const SupportPage = () => {
           </p>
         </div>
 
-        {/* Phone Support */}
+        {/* Phone Support - Removed as per request */}
+        {/*
         <div className="mb-6">
           <h3 className="font-semibold text-lg text-primary mb-2">Phone Support 📞</h3>
           <p className="text-gray-600 text-sm md:text-base">
@@ -115,6 +116,7 @@ const SupportPage = () => {
             </a>
           </p>
         </div>
+        */}
 
         {/* Social Media */}
         <div className="mb-6">
