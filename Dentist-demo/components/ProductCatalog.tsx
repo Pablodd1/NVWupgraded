@@ -1,6 +1,6 @@
 import React from 'react';
 import { Product } from '../types';
-import { Sparkles, Crown, Palette, Activity, Gem, Ruler, Scissors, Beaker, Coins, BoxSelect, Grid3X3, Anchor } from 'lucide-react';
+import { Sparkles, Crown, Palette, Activity, Gem, Ruler, Scissors, Beaker, Coins, BoxSelect, Grid3x3, Anchor } from 'lucide-react';
 
 const PRODUCTS: Product[] = [
   {
@@ -68,7 +68,7 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({ onSelect, onAddT
   const getIcon = (category: string, id: string) => {
     if (id.startsWith('gold')) return <Coins className="w-5 h-5 text-amber-600/70" strokeWidth={1.5} />;
     if (id === 'dental-implant') return <Anchor className="w-5 h-5 text-slate-500" strokeWidth={1.5} />;
-    switch(category) {
+    switch (category) {
       case 'whitening': return <Beaker className="w-5 h-5 text-slate-500" strokeWidth={1.5} />;
       case 'crowns': return <Crown className="w-5 h-5 text-slate-500" strokeWidth={1.5} />;
       case 'veneers': return <Palette className="w-5 h-5 text-slate-500" strokeWidth={1.5} />;
@@ -96,22 +96,22 @@ export const ProductCatalog: React.FC<ProductCatalogProps> = ({ onSelect, onAddT
               </div>
             </div>
             <p className="text-[11px] text-slate-400 mb-6 leading-relaxed flex-1 italic">{product.description}</p>
-             <div className="mb-6 flex justify-between items-center border-t border-slate-50 pt-4">
-                 <span className="font-mono text-slate-800 font-bold text-xs">${product.price.toLocaleString()}</span>
-                 <div className="flex gap-1.5">
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-100"></div>
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-100"></div>
-                 </div>
+            <div className="mb-6 flex justify-between items-center border-t border-slate-50 pt-4">
+              <span className="font-mono text-slate-800 font-bold text-xs">${product.price.toLocaleString()}</span>
+              <div className="flex gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-100"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-100"></div>
+              </div>
             </div>
-            
+
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={() => onSelect(product)}
                 className="flex-1 bg-slate-800 text-white py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-amber-600 transition-all rounded-xl shadow-lg"
               >
                 Visualize
               </button>
-              <button 
+              <button
                 onClick={() => onAddToCart(product)}
                 className="px-4 border-2 border-slate-100 text-slate-400 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-slate-50 hover:text-slate-600 transition-all rounded-xl"
               >
