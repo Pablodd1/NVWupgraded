@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Dental Health and Beauty | Professional Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@1.33.0",
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.475.0?external=react,react-dom",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/"
+  }
+}
+</script>
+    <style>
+      :root {
+        --clinical-bg: #F8FAFC;
+        --clinical-text: #1E293B;
+        --clinical-accent: #B45309; /* Softened Amber */
+        --clinical-border: #E2E8F0;
+      }
+      body {
+        font-family: 'Lato', sans-serif;
+        background-color: var(--clinical-bg);
+        color: var(--clinical-text);
+        overflow: hidden;
+        height: 100%;
+        width: 100%;
+      }
+      #root {
+        height: 100%;
+        width: 100%;
+      }
+      #loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #F8FAFC;
+        z-index: 9999;
+        transition: opacity 0.5s ease-out;
+      }
+      h1, h2, h3, h4, h5, h6 {
+        font-family: 'Playfair Display', serif;
+        color: #0F172A;
+      }
+      .bg-luxury {
+        background-color: #F8FAFC;
+        background-image: 
+          radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.1) 1px, transparent 0);
+        background-size: 40px 40px;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: #F1F5F9;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94A3B8;
+      }
+
+      .enamel-glaze {
+        position: relative;
+        overflow: hidden;
+      }
+      .enamel-glaze::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, 
+          rgba(255, 255, 255, 0.5) 0%, 
+          transparent 50%, 
+          rgba(255, 255, 255, 0.2) 100%);
+        pointer-events: none;
+        z-index: 5;
+      }
+      
+      .micro-texture::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        opacity: 0.03;
+        pointer-events: none;
+        z-index: 4;
+      }
+
+      .animate-pulse-slow {
+        animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.9; transform: scale(0.99); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.8s ease-out;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      @keyframes enamel-shimmer {
+        0% { transform: translateX(-150%) skewX(-20deg); opacity: 0; }
+        20% { opacity: 0.3; }
+        80% { opacity: 0.3; }
+        100% { transform: translateX(150%) skewX(-20deg); opacity: 0; }
+      }
+      .shimmer-effect {
+        position: relative;
+        overflow: hidden;
+      }
+      .shimmer-effect::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 60%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        animation: enamel-shimmer 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        filter: blur(16px);
+      }
+      
+      .selection-ping {
+        animation: selection-ping-anim 0.8s cubic-bezier(0, 0, 0.2, 1);
+      }
+      @keyframes selection-ping-anim {
+        0% { transform: scale(1); opacity: 0.6; }
+        100% { transform: scale(2.2); opacity: 0; }
+      }
+    </style>
+    <script>
+      window.process = { env: { API_KEY: "" } };
+      window.onerror = function(message, source, lineno, colno, error) {
+        console.error("Runtime error:", message, "at", source, lineno, colno);
+      };
+    </script>
+  </head>
+  <body class="bg-luxury text-slate-700">
+    <div id="loader">
+      <div class="w-10 h-10 border-[3px] border-slate-200 border-t-amber-500 rounded-full animate-spin mb-4"></div>
+      <p class="font-serif text-slate-400 italic text-sm tracking-wide">Refining Visual Studio...</p>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
+  </body>
+</html>

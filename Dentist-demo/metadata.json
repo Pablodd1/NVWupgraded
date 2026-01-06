@@ -1,0 +1,7 @@
+{
+  "name": "Dental Health & Beauty - Professional Showcase",
+  "description": "Clinical-grade virtual dental try-on and treatment planning tool. Visualize cosmetic and restorative procedures with high-fidelity AI simulation.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
