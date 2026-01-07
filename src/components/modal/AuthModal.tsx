@@ -206,6 +206,13 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
                 {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
               </span>
             </div>
+            {isLoginMode && (
+              <div className="text-right">
+                <a href="/forgot-password" className="text-xs text-gray-500 hover:text-[#6B1E23] transition-colors">
+                  Forgot Password?
+                </a>
+              </div>
+            )}
 
             {!isLoginMode && (
               <div className="flex flex-col gap-3 mt-2 bg-gray-50 p-4 rounded-xl border border-gray-100">

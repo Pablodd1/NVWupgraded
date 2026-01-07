@@ -26,6 +26,10 @@ export interface IUser {
   smsOptInDate?: Date;
   smsOptInAgeConfirmed?: boolean;
 
+  // Password Reset
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
+
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -62,6 +66,10 @@ const UserSchema = new Schema<IUser>(
     smsOptIn: { type: Boolean, default: false },
     smsOptInDate: { type: Date },
     smsOptInAgeConfirmed: { type: Boolean, default: false },
+
+    // Password Reset
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
   },
   { timestamps: true }
 );

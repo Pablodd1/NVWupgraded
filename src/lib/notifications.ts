@@ -528,6 +528,37 @@ export interface SendBookingNotificationsParams {
 }
 
 // ========================================
+// PASSWORD RESET NOTIFICATION
+// ========================================
+
+export async function sendPasswordResetEmail(email: string, resetToken: string) {
+  const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`;
+
+  const content = `
+    <h2 style="color:#6B1E23; margin-bottom:24px;">Reset Your Password 🔒</h2>
+    <p>We received a request to reset your password for Napa Valley Wineries.</p>
+    <p>Click the button below to set a new password. This link will expire in 1 hour.</p>
+    
+    <div style="margin:24px 0;">
+      <a href="${resetLink}" class="button">Reset Password</a>
+    </div>
+
+    <p style="font-size: 13px; color: #666;">
+      If you didn't request this, you can safely ignore this email.
+    </p>
+  `;
+
+  const subject = "Reset Your Password - Napa Valley Wineries";
+
+  await resend.emails.send({
+    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
+    to: email,
+    subject,
+    html: EmailTemplate({ content, subject })
+  });
+}
+
+// ========================================
 // ACCOUNT WELCOME NOTIFICATIONS
 // ========================================
 
@@ -811,5 +842,6 @@ export default {
   sendFinalBookingDecision,
   sendWelcomeNotification,
   sendHourReminder,
-  sendErrorNotification
+  sendErrorNotification,
+  sendPasswordResetEmail
 };
