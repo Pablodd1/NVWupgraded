@@ -36,11 +36,20 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
     e.preventDefault();
 
     if (isWineryRegistration) {
-      // Mock submission for Winery Partners
-      setFormData({ ...formData, isWineryOwner: true });
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Fake network delay
-      toast.success("Application Received! A member of our Sommelier Team will reach out to verify your vineyard.");
-      setShowPopup(false);
+      const response = await register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        role: 'winery',
+        marketingConsent: formData.marketingConsent,
+        smsConsent: formData.smsConsent,
+      });
+      if (response.success) {
+        toast.success("Welcome aboard! Your winery account has been created.");
+        setShowPopup(false);
+      }
       return;
     }
 
@@ -57,6 +66,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
         phone: formData.phone,
         password: formData.password,
         dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined,
+        role: 'customer',
         marketingConsent: formData.marketingConsent,
         smsConsent: formData.smsConsent,
       });

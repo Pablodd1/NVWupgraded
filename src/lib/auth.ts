@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
 
-const SECRET = process.env.JWT_SECRET || process.env.NEXT_PUBLIC_JWT_SECRET || "";
+const SECRET = process.env.JWT_SECRET || "";
 
 export interface TokenPayload {
   userId: string;

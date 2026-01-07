@@ -187,8 +187,8 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute = isAdminRoute || isWineryDashboard;
 
   if (isProtectedRoute) {
-    // Use JWT_SECRET (not NEXT_PUBLIC_JWT_SECRET for security)
-    const secret = process.env.JWT_SECRET || process.env.NEXT_PUBLIC_JWT_SECRET;
+    // Use JWT_SECRET (Strictly server-side for security)
+    const secret = process.env.JWT_SECRET;
 
     if (!secret) {
       console.error("JWT_SECRET not configured!");
@@ -215,7 +215,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/", request.url));
     }
 
-    if (isWineryDashboard && payload.role !== "winery_owner") {
+    if (isWineryDashboard && payload.role !== "winery") {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }
