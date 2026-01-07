@@ -2,9 +2,18 @@ import { Resend } from 'resend';
 import UserModel from "@/models/user.model";
 
 // Initialize Resend safely to prevent build errors if env var is missing
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : { emails: { send: async () => { console.warn("Resend not configured"); return { error: "Resend key missing" }; } } } as any;
+// SAFETY SWITCH: Temporarily disabled (mock only) until domain is verified
+const resend = {
+  emails: {
+    send: async () => {
+      console.warn("Resend email SKIPPED (Safety Mode)");
+      return { id: "mock_id", error: null };
+    }
+  }
+} as any;
+// const resend = process.env.RESEND_API_KEY
+//   ? new Resend(process.env.RESEND_API_KEY)
+//   : { emails: { send: async () => { console.warn("Resend not configured"); return { error: "Resend key missing" }; } } } as any;
 
 // ========================================
 // EMAIL CONFIGURATION
@@ -31,10 +40,12 @@ interface MessageResult {
  * does not need to change. It respects the same age‑verification and opt‑in checks.
  */
 async function sendWhatsApp(to: string, message: string, userEmail?: string): Promise<MessageResult> {
-  const whatsappEnabled = process.env.ENABLE_WHATSAPP === "true";
+  // SAFETY SWITCH: Temporarily disabled until Plivo/WhatsApp is fully verified
+  // const whatsappEnabled = process.env.ENABLE_WHATSAPP === "true";
+  const whatsappEnabled = false;
 
   if (!whatsappEnabled) {
-    return { success: false, message: "WhatsApp disabled in configuration" };
+    return { success: false, message: "WhatsApp temporarily disabled for safety" };
   }
 
   // ---------------------------------------------------
