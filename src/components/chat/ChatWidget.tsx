@@ -97,7 +97,7 @@ export default function ChatWidget() {
             {!showChat && (
                 <button
                     onClick={() => setShowChat(true)}
-                    className="fixed bottom-20 md:bottom-5 right-5 h-14 w-14 rounded-full bg-primary text-white shadow-lg hover:bg-secondary transition-all z-50 flex items-center justify-center transform hover:scale-110"
+                    className="fixed bottom-28 md:bottom-5 right-5 h-14 w-14 rounded-full bg-primary text-white shadow-lg hover:bg-secondary transition-all z-50 flex items-center justify-center transform hover:scale-110"
                     aria-label="Open Chat"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
