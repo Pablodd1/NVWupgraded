@@ -61,77 +61,105 @@ export async function POST(req: NextRequest) {
     }
 
     // Create winery owner account first
-    const newUser = await User.create({
-      firstName,
-      lastName,
-      email: email.toLowerCase(),
-      password, // Password will be hashed by the model pre-save hook
-      phone: phone || "",
-      role: "winery",
-      dateOfBirth: new Date("1990-01-01"), // Default DOB
-    });
+    let newUser;
+    try {
+      newUser = await User.create({
+        firstName,
+        lastName,
+        email: email.toLowerCase(),
+        password, // Password will be hashed by the model pre-save hook
+        phone: phone || "",
+        role: "winery",
+        dateOfBirth: new Date("1990-01-01"), // Default DOB
+      });
+    } catch (userError: any) {
+      return NextResponse.json(
+        { message: "Failed to create user account: " + userError.message },
+        { status: 400 }
+      );
+    }
 
     // Create winery with owner reference
-    const newWinery = await Winery.create({
-      name: wineryName,
-      owner: newUser._id,
-      location: {
-        address: wineryAddress,
-        latitude: wineryLat || 38.5025,
-        longitude: wineryLong || -122.2654,
-        is_mountain_location: false,
-      },
-      contact_info: {
-        phone: wineryPhone || phone || "",
-        email: wineryEmail || email,
-        website: wineryWebsite || "",
-      },
-      description: wineryDescription || `Welcome to ${wineryName}!`,
-      tasting_info: [{
-        tasting_title: "Wine Tasting Experience",
-        tasting_description: "Experience our finest wines",
-        ava: "Napa Valley",
-        tasting_price: 50,
-        available_times: ["10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM"],
-        wine_types: ["Cabernet Sauvignon", "Chardonnay"],
-        number_of_wines_per_tasting: 5,
-        special_features: [],
-        images: ["https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"],
-        food_pairing_options: [],
-        tours: {
-          available: true,
-          tour_price: 25,
-          tour_options: [{ description: "Cellar Tour", cost: 25 }],
+    let newWinery;
+    try {
+      newWinery = await Winery.create({
+        name: wineryName,
+        owner: newUser._id,
+        location: {
+          address: wineryAddress,
+          latitude: wineryLat || 38.5025,
+          longitude: wineryLong || -122.2654,
+          is_mountain_location: false,
         },
-        wine_details: [],
-        booking_info: {
-          booking_enabled: true,
-          max_guests_per_slot: 20,
-          number_of_people: [1, 2, 4, 6],
-          dynamic_pricing: {
-            enabled: false,
-            weekend_multiplier: 1.2,
+        contact_info: {
+          phone: wineryPhone || phone || "",
+          email: wineryEmail || email,
+          website: wineryWebsite || "",
+        },
+        description: wineryDescription || `Welcome to ${wineryName}!`,
+        tasting_info: [{
+          tasting_title: "Wine Tasting Experience",
+          tasting_description: "Experience our finest wines",
+          ava: "Napa Valley",
+          tasting_price: 50,
+          available_times: ["10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM"],
+          wine_types: ["Cabernet Sauvignon", "Chardonnay"],
+          number_of_wines_per_tasting: 5,
+          special_features: [],
+          images: ["https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"],
+          food_pairing_options: [],
+          tours: {
+            available: true,
+            tour_price: 25,
+            tour_options: [{ description: "Cellar Tour", cost: 25 }],
           },
-          available_slots: [],
+          wine_details: [],
+          booking_info: {
+            booking_enabled: true,
+            max_guests_per_slot: 20,
+            number_of_people: [1, 2, 4, 6],
+            dynamic_pricing: {
+              enabled: false,
+              weekend_multiplier: 1.2,
+            },
+            available_slots: [],
+          },
+          other_features: [],
+        }],
+        amenities: {
+          virtual_sommelier: false,
+          augmented_reality_tours: false,
+          handicap_accessible: true,
         },
-        other_features: [],
-      }],
-      amenities: {
-        virtual_sommelier: false,
-        augmented_reality_tours: false,
-        handicap_accessible: true,
-      },
-      user_reviews: [],
-      transportation: {
-        uber_availability: true,
-        lyft_availability: true,
-        distance_from_user: 0,
-      },
-    });
+        user_reviews: [],
+        transportation: {
+          uber_availability: true,
+          lyft_availability: true,
+          distance_from_user: 0,
+        },
+      });
+    } catch (wineryError: any) {
+      // Rollback: Delete the user we just created
+      await User.findByIdAndDelete(newUser._id);
+      return NextResponse.json(
+        { message: "Failed to create winery (user rolled back): " + wineryError.message },
+        { status: 500 }
+      );
+    }
 
     // Update user with winery ID
-    newUser.wineryId = newWinery._id;
-    await newUser.save();
+    try {
+      newUser.wineryId = newWinery._id;
+      await newUser.save();
+    } catch (updateError: any) {
+      // Rollback: Delete user and winery
+      await User.findByIdAndDelete(newUser._id);
+      await Winery.findByIdAndDelete(newWinery._id);
+      return NextResponse.json(
+        { message: "Failed to link user to winery (rolled back): " + updateError.message },
+        { status: 500 }
+      );
+    }
 
     // Auto-generate slots for the next 30 days
     // Re-fetch the winery document to ensure we have a Mongoose-enabled object for .save()
