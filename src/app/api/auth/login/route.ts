@@ -4,9 +4,12 @@ import User from "@/models/user.model";
 import { createToken, setTokenCookie } from "@/lib/auth";
 
 export async function POST(req: Request) {
+  let email, password;
   try {
     await dbConnect();
-    const { email, password } = await req.json();
+    const body = await req.json();
+    email = body.email;
+    password = body.password;
 
     console.log("🔐 LOGIN ATTEMPT:", {
       email,
@@ -91,7 +94,7 @@ export async function POST(req: Request) {
     ];
 
     try {
-      const { email, password } = await (req.clone()).json();
+      // Use the already parsed credentials
       const demoUser = demoCreds.find(u => u.email === email && u.pass === password);
 
       if (demoUser) {

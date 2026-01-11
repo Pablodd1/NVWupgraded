@@ -60,9 +60,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create winery first
+    // Create winery owner account first
+    const newUser = await User.create({
+      firstName,
+      lastName,
+      email: email.toLowerCase(),
+      password, // Password will be hashed by the model pre-save hook
+      phone: phone || "",
+      role: "winery",
+      dateOfBirth: new Date("1990-01-01"), // Default DOB
+    });
+
+    // Create winery with owner reference
     const newWinery = await Winery.create({
       name: wineryName,
+      owner: newUser._id,
       location: {
         address: wineryAddress,
         latitude: wineryLat || 38.5025,
@@ -117,25 +129,9 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create winery owner account
-    const newUser = await User.create({
-      firstName,
-      lastName,
-      email: email.toLowerCase(),
-      password: hashedPassword,
-      phone: phone || "",
-      role: "winery",
-      wineryId: newWinery._id,
-      dateOfBirth: new Date("1990-01-01"), // Default DOB
-    });
-
-    // Update winery with owner reference
-    await Winery.findByIdAndUpdate(newWinery._id, {
-      owner: newUser._id,
-    });
+    // Update user with winery ID
+    newUser.wineryId = newWinery._id;
+    await newUser.save();
 
     // Auto-generate slots for the next 30 days
     // Re-fetch the winery document to ensure we have a Mongoose-enabled object for .save()
