@@ -124,7 +124,11 @@ A web platform for discovering, booking, and managing wine tasting experiences a
 - `GET /api/admin/users` - List users
 - `GET /api/admin/stats` - Platform statistics
 
-### 4.5 Winery Dashboard
+### 4.5 Support
+- `POST /api/support` - Submit support request (sends to support@napavalleywineries.com)
+- `GET /api/support` - Get support contact information
+
+### 4.6 Winery Dashboard
 - `GET /api/winery-dashboard/bookings` - Winery's bookings
 - `PUT /api/winery-dashboard/bookings/[id]` - Update booking status
 
@@ -137,7 +141,7 @@ A web platform for discovering, booking, and managing wine tasting experiences a
 - `/winery/[id]` - Winery detail page
 - `/itinerary` - User's itinerary
 - `/bookings` - Booking history
-- `/support` - Support page
+- `/support` - Help Center (FAQs + Contact form + Support info)
 - `/forgot-password` - Password reset request
 - `/reset-password` - Password reset form
 
@@ -163,16 +167,55 @@ A web platform for discovering, booking, and managing wine tasting experiences a
 - JWT tokens stored in HTTP-only cookies
 - Session expires after 7 days
 
-### 6.2 Bookings
-- Only authenticated users can book
-- Bookings require available slot capacity
-- Winery owners must confirm bookings
-- Customers can cancel before confirmation
+### 6.2 Slot Inventory System (LIVE)
+The slot inventory system is **LIVE** with real-time capacity management:
 
-### 6.3 Role Access
+**How it works:**
+1. **Auto-generation**: When a winery is created, slots are auto-generated for the next 30 days
+   - 3 time slots per day: Morning (10AM-12PM), Afternoon (1PM-3PM), Evening (4PM-6PM)
+   - Default capacity: 10-20 guests per slot
+2. **Real-time deduction**: When a booking is made:
+   - `bookedCapacity` is incremented atomically
+   - `availableCapacity` is decremented atomically
+   - Uses MongoDB's `findOneAndUpdate` with atomic `$inc` for race condition safety
+3. **Status updates**: Pre-save middleware automatically updates slot status:
+   - `available`: >30% capacity remaining
+   - `limited`: ≤30% capacity remaining
+   - `full`: 0 capacity remaining
+   - `blocked`: Manually blocked by winery owner
+4. **Cancellation rollback**: If booking fails or is cancelled:
+   - Capacity is restored via `releaseCapacity()` method
+5. **Daily reset**: Slots do NOT auto-reset daily (they persist)
+   - New slots are generated as dates approach (rolling 30-day window via cron)
+
+**Key Methods (slotInventory.model.ts):**
+- `checkAvailability(wineryId, date, timeSlot, requiredCapacity)` - Verify slot availability
+- `reserveCapacity(wineryId, date, timeSlot, capacity, bookingId)` - Reserve spots
+- `releaseCapacity(wineryId, date, timeSlot, capacity, bookingId)` - Release on cancellation
+
+### 6.3 Bookings
+- Only authenticated users can book
+- Bookings require available slot capacity (checked atomically)
+- Capacity is reserved at booking time (not confirmation)
+- If any slot reservation fails, all reserved slots are rolled back
+- Winery owners can confirm/reject bookings
+- Customers can cancel before the booking date
+
+### 6.4 Role Access
 - `customer`: Can book, view own bookings
 - `winery`: Can manage own winery only
 - `admin`: Full access to all resources
+
+### 6.5 Voice Search (AI-Powered)
+The voice search feature allows customers to find wineries using natural language:
+
+**How it works:**
+1. User clicks microphone icon in navbar
+2. Browser's Web Speech API transcribes audio to text
+3. Text is sent to AI NLP processor (`processNaturalLanguageAI`)
+4. AI extracts filters: wine types, AVAs, features, price range, time preference
+5. Filters are applied to winery search
+6. Supported browsers: Chrome, Edge (uses Web Speech API)
 
 ---
 
