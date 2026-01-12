@@ -4,7 +4,8 @@ import User from "@/models/user.model";
 import { createToken, setTokenCookie } from "@/lib/auth";
 
 export async function POST(req: Request) {
-  let email, password;
+  let email: string = "";
+  let password: string = "";
   try {
     await dbConnect();
     const body = await req.json();
