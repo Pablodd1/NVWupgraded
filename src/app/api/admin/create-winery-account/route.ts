@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create winery owner account first
-    let newUser;
+    let newUser: any;
     try {
       newUser = await User.create({
         firstName,
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create winery with owner reference
-    let newWinery;
+    let newWinery: any;
     try {
       newWinery = await Winery.create({
         name: wineryName,
