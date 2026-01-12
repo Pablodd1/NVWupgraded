@@ -47,6 +47,7 @@
     "mongoose": "^8.10.0",
     "next": "^15.5.9",
     "nodemailer": "^7.0.3",
+    "plivo": "^4.75.4",
     "preline": "^2.7.0",
     "react": "^19.0.0",
     "react-datepicker": "^8.0.0",
