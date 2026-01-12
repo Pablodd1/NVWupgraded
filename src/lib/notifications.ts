@@ -36,77 +36,13 @@ interface MessageResult {
 
 /**
  * Send a WhatsApp message via Plivo.
- * The function keeps the same signature as the old `sendSMS` so the rest of the code
- * does not need to change. It respects the same age‑verification and opt‑in checks.
+ * TEMPORARILY DISABLED - All messaging functionality is mocked until
+ * Plivo/WhatsApp integration is fully configured and verified.
  */
 async function sendWhatsApp(to: string, message: string, userEmail?: string): Promise<MessageResult> {
-  // SAFETY SWITCH: Temporarily disabled until Plivo/WhatsApp is fully verified
-  // const whatsappEnabled = process.env.ENABLE_WHATSAPP === "true";
-  const whatsappEnabled = false;
-
-  if (!whatsappEnabled) {
-    return { success: false, message: "WhatsApp temporarily disabled for safety" };
-  }
-
-  // ---------------------------------------------------
-  // 1️⃣  Re‑use the same compliance checks we had for SMS
-  // ---------------------------------------------------
-  if (userEmail) {
-    try {
-      const user = await UserModel.findOne({ email: userEmail });
-      if (!user) {
-        console.warn(`WhatsApp not sent: User not found (${userEmail})`);
-        return { success: false, error: "User not found" };
-      }
-      if (!user.ageVerified) {
-        console.warn(`WhatsApp not sent: User age not verified (${userEmail})`);
-        return { success: false, error: "Age not verified" };
-      }
-      if (!user.smsOptIn || !user.smsOptInAgeConfirmed) {
-        console.warn(`WhatsApp not sent: User has not opted in to WhatsApp (${userEmail})`);
-        return { success: false, error: "WhatsApp opt‑in required" };
-      }
-      console.log(`✅ Age verification and WhatsApp opt‑in confirmed for ${userEmail}`);
-    } catch (dbError) {
-      console.error("Database check error:", dbError);
-      // Continue with sending – fallback to best‑effort
-    }
-  }
-
-  // ---------------------------------------------------
-  // 2️⃣  Pull Plivo credentials from env
-  // ---------------------------------------------------
-  const authId = process.env.PLIVO_AUTH_ID;
-  const authToken = process.env.PLIVO_AUTH_TOKEN;
-  const fromNumber = process.env.PLIVO_WHATSAPP_NUMBER; // must be a WhatsApp‑enabled number
-
-  if (!authId || !authToken || !fromNumber) {
-    console.warn("Plivo credentials not configured. WhatsApp not sent.");
-    return { success: false, error: "Plivo not configured" };
-  }
-
-  // ---------------------------------------------------
-  // 3️⃣  Build the message payload – Plivo expects a JSON body
-  // ---------------------------------------------------
-  const plivo = require("plivo");
-  const client = new plivo.Client(authId, authToken);
-
-  // Add the mandatory opt‑out line for compliance
-  const compliantMessage = `${message}\n\nReply STOP to opt out.`;
-
-  try {
-    const response = await client.messages.create(
-      fromNumber, // source (must start with "whatsapp:")
-      `whatsapp:${to}`,
-      compliantMessage,
-      { url: undefined } // optional callback URL – not needed for simple send
-    );
-    console.log(`✅ WhatsApp sent via Plivo: ${response.messageUuid}`);
-    return { success: true, message: response.messageUuid[0] };
-  } catch (err: any) {
-    console.error("❌ WhatsApp error via Plivo:", err.message || err);
-    return { success: false, error: err.message || "Unknown error" };
-  }
+  // SAFETY SWITCH: Completely disabled - just log and return
+  console.log(`[SMS/WhatsApp DISABLED] Would send to ${to}: ${message.substring(0, 50)}...`);
+  return { success: false, message: "SMS/WhatsApp temporarily disabled" };
 }
 
 // Backwards‑compatible alias – existing code calls `sendSMS`
