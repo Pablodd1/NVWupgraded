@@ -88,6 +88,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Normalize website URL (add https:// if missing)
+    let normalizedWebsite = wineryWebsite || "";
+    if (normalizedWebsite && !normalizedWebsite.startsWith("http://") && !normalizedWebsite.startsWith("https://")) {
+      normalizedWebsite = "https://" + normalizedWebsite.replace(/^www\./, "www.");
+    }
+
     // Create winery with owner reference
     let newWinery: any;
     try {
@@ -103,7 +109,7 @@ export async function POST(req: NextRequest) {
         contact_info: {
           phone: wineryPhone || phone || "",
           email: wineryEmail || email,
-          website: wineryWebsite || "",
+          website: normalizedWebsite,
         },
         description: wineryDescription || `Welcome to ${wineryName}!`,
         tasting_info: [{

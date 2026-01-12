@@ -412,12 +412,13 @@ export default function CreateWineryAccount() {
                     Website
                   </label>
                   <input
-                    type="url"
+                    type="text"
                     value={formData.wineryWebsite}
                     onChange={(e) => handleInputChange('wineryWebsite', e.target.value)}
                     className="input input-bordered w-full"
-                    placeholder="https://www.winery.com"
+                    placeholder="winery.com or www.winery.com"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Enter domain (e.g., winery.com, www.winery.com)</p>
                 </div>
               </div>
             </div>
