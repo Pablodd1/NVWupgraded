@@ -184,7 +184,7 @@ const MobileBottomNav = ({
   setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
   t: any;
 }) => (
-  <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-gray-100 shadow-lg flex justify-center py-1 rounded-t-xl neumorphism-card z-18 border-t-2 border-basic">
+  <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-gray-100 shadow-lg flex justify-center py-1 rounded-t-xl neumorphism-card z-50 border-t-2 border-basic">
     <div className="flex justify-between w-full items-center px-4">
       <NavLink icon={<FaHome size={20} />} href="/" label="Home" />
       <NavLink icon={<FaHistory size={20} />} href="/bookings" label="Bookings" />
