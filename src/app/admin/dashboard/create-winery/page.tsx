@@ -126,11 +126,13 @@ export default function CreateWineryAccount() {
         router.push("/admin/dashboard/users");
       } else {
         const error = await response.json();
-        toast.error(error.message || "Failed to create winery account");
+        const errorMessage = error.message || "Failed to create winery account";
+        console.error("Server Error:", errorMessage);
+        toast.error(`Error: ${errorMessage}`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to create winery account:", error);
-      toast.error("Error creating winery account");
+      toast.error(`Network Error: ${error.message || "Unknown error"}`);
     } finally {
       setSubmitting(false);
     }

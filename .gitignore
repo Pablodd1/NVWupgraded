@@ -37,3 +37,11 @@ yarn-error.log*
 *.Zone.Identifier
 /.vs
 /.env
+core
+
+# Exclude unrelated projects
+Dentist-demo/
+core
+
+# Exclude unrelated projects
+Dentist-demo/
