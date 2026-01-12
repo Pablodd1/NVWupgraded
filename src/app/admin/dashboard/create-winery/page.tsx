@@ -51,7 +51,12 @@ export default function CreateWineryAccount() {
 
   const validateForm = () => {
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      toast.error("Please fill in all required user fields");
+      toast.error("Please fill in all required user fields (First Name, Last Name, Email, Password)");
+      return false;
+    }
+
+    if (!formData.phone) {
+      toast.error("Phone number is required");
       return false;
     }
 
@@ -223,7 +228,7 @@ export default function CreateWineryAccount() {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone
+                  Phone <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="tel"
@@ -231,6 +236,7 @@ export default function CreateWineryAccount() {
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   className="input input-bordered w-full"
                   placeholder="+1 (555) 123-4567"
+                  required
                 />
               </div>
               

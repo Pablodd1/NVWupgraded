@@ -44,6 +44,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!phone) {
+      return NextResponse.json(
+        { message: "Phone number is required" },
+        { status: 400 }
+      );
+    }
+
     if (!wineryName || !wineryAddress) {
       return NextResponse.json(
         { message: "Winery details (name, address) are required" },
@@ -68,9 +75,11 @@ export async function POST(req: NextRequest) {
         lastName,
         email: email.toLowerCase(),
         password, // Password will be hashed by the model pre-save hook
-        phone: phone || "",
+        phone: phone,
         role: "winery",
         dateOfBirth: new Date("1990-01-01"), // Default DOB
+        ageVerified: true, // Admin-created accounts are pre-verified
+        isActive: true,
       });
     } catch (userError: any) {
       return NextResponse.json(
