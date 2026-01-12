@@ -121,14 +121,15 @@ export default function WineryProfile() {
 
   const addTasting = () => {
     if (!profile) return;
+    // Empty tasting template - winery owner fills in all details
     const newTasting: TastingInfo = {
-      tasting_title: "New Tasting Package",
-      tasting_description: "Describe this experience",
+      tasting_title: "",
+      tasting_description: "",
       ava: "",
-      tasting_price: 50,
-      available_times: ["10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM"],
-      wine_types: ["Red", "White"],
-      number_of_wines_per_tasting: 4,
+      tasting_price: 0,
+      available_times: [],
+      wine_types: [],
+      number_of_wines_per_tasting: 0,
       special_features: [],
       images: [],
       food_pairing_options: [],
@@ -136,9 +137,9 @@ export default function WineryProfile() {
       wine_details: [],
       booking_info: {
         booking_enabled: true,
-        max_guests_per_slot: 10,
-        number_of_people: [1, 2, 4, 6],
-        dynamic_pricing: { enabled: false, weekend_multiplier: 1.2 },
+        max_guests_per_slot: 0,
+        number_of_people: [],
+        dynamic_pricing: { enabled: false, weekend_multiplier: 1.0 },
         available_slots: []
       },
       other_features: []

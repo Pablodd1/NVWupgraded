@@ -95,6 +95,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Create winery with owner reference
+    // NOTE: tasting_info is EMPTY - winery owners must fill in their own details
     let newWinery: any;
     try {
       newWinery = await Winery.create({
@@ -111,45 +112,18 @@ export async function POST(req: NextRequest) {
           email: wineryEmail || email,
           website: normalizedWebsite,
         },
-        description: wineryDescription || `Welcome to ${wineryName}!`,
-        tasting_info: [{
-          tasting_title: "Wine Tasting Experience",
-          tasting_description: "Experience our finest wines",
-          ava: "Napa Valley",
-          tasting_price: 50,
-          available_times: ["10:00 AM", "12:00 PM", "2:00 PM", "4:00 PM"],
-          wine_types: ["Cabernet Sauvignon", "Chardonnay"],
-          number_of_wines_per_tasting: 5,
-          special_features: [],
-          images: ["https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"],
-          food_pairing_options: [],
-          tours: {
-            available: true,
-            tour_price: 25,
-            tour_options: [{ description: "Cellar Tour", cost: 25 }],
-          },
-          wine_details: [],
-          booking_info: {
-            booking_enabled: true,
-            max_guests_per_slot: 20,
-            number_of_people: [1, 2, 4, 6],
-            dynamic_pricing: {
-              enabled: false,
-              weekend_multiplier: 1.2,
-            },
-            available_slots: [],
-          },
-          other_features: [],
-        }],
+        description: wineryDescription || "",
+        // Empty tasting_info - winery owner will fill this in via their dashboard
+        tasting_info: [],
         amenities: {
           virtual_sommelier: false,
           augmented_reality_tours: false,
-          handicap_accessible: true,
+          handicap_accessible: false,
         },
         user_reviews: [],
         transportation: {
-          uber_availability: true,
-          lyft_availability: true,
+          uber_availability: false,
+          lyft_availability: false,
           distance_from_user: 0,
         },
       });
