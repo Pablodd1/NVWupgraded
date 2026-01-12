@@ -38,3 +38,6 @@ yarn-error.log*
 /.vs
 /.env
 core
+
+# Exclude unrelated projects
+Dentist-demo/

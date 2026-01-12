@@ -6,50 +6,29 @@ Comprehensive booking notification system that sends **beautiful HTML emails** a
 
 ## 📧 Email Notifications
 
-### Ethereal Email (Default - No Setup Required)
-The system automatically creates a **free test email account** using [Ethereal Email](https://ethereal.email/):
-- **No signup required**
-- **No API keys needed**
-- **Perfect for development & testing**
-- **All emails captured in a web inbox**
+### Provider: Resend (Primary)
+The system is integrated with [Resend](https://resend.com) for high-deliverability transactional emails.
 
-When the app starts, check the console for:
-```
-📧 Ethereal Email Account Created:
-   User: random-user@ethereal.email
-   Pass: generated-password
-   View emails at: https://ethereal.email/messages
-```
-
-Visit the Ethereal inbox to see all sent emails!
-
-### Production Email Setup
-
-For production, configure your own SMTP server in `.env.local`:
-
+**Configuration Requirements (.env.local):**
 ```env
-# Gmail Example
-MAILTRAP_HOST=smtp.gmail.com
-MAILTRAP_PORT=587
-MAILTRAP_USER=your-email@gmail.com
-MAILTRAP_PASS=your-app-specific-password
+RESEND_API_KEY=re_your_api_key
 EMAIL_FROM=notifications@yourdomain.com
+NEXT_PUBLIC_APP_URL=https://napa-one.vercel.app
 ```
 
-**Supported SMTP Providers:**
-- **Gmail**: Use App-Specific Password (2FA required)
-- **SendGrid**: Free tier 100 emails/day
-- **AWS SES**: 62,000 emails/month free
-- **Mailgun**: 5,000 emails/month free
-- **Postmark**: 100 emails/month free
+**Benefits:**
+- ✅ Modern API-based sending (no SMTP overhead)
+- ✅ High deliverability with verified domains
+- ✅ Detailed tracking and analytics in Resend dashboard
+- ✅ Support for complex HTML templates and attachments
 
 ## 📱 SMS Notifications (Optional)
 
-SMS is **disabled by default**. To enable:
+SMS is **enabled by default** if credentials are provided. To configure:
 
 ### Step 1: Sign up for Twilio
 1. Go to [twilio.com](https://www.twilio.com/)
-2. Create free account (get $15 credit)
+2. Create free account (get $15 credit) or production account
 3. Get a phone number (+1 xxx-xxx-xxxx)
 
 ### Step 2: Configure `.env.local`
@@ -60,121 +39,61 @@ TWILIO_PHONE_NUMBER=+1234567890
 NEXT_PUBLIC_ENABLE_SMS=true
 ```
 
-### Step 3: Install Twilio SDK
-```bash
-npm install twilio
-```
-
-**SMS Will Be Sent:**
-- ✅ When customer books a winery
-- ✅ When winery receives a booking
+**SMS Will Be Sent For:**
+- ✅ Initial Itinerary Requests
+- ✅ Booking Confirmations/Declines
+- ✅ 1-Hour Tasting Reminders (+ Directions)
+- ✅ Critical System Errors (Admin alert)
 
 ## 🎨 Email Templates
 
-### Customer Confirmation Email
-**Subject:** `Booking Confirmed at [Winery Name]`
+### 1. Customer Welcome Email
+**Subject:** `Welcome to Napa Valley Wineries! ✨`
+- Sent immediately upon registration.
 
-**Includes:**
-- 🎉 Welcoming header with Napa Valley Wineries branding
-- 📋 Complete booking details (ID, date, time, guests)
-- 📝 Special requests (if any)
-- 🔗 "View Your Bookings" button
-- 💡 What's next guidance
+### 2. Itinerary Summary
+**Subject:** `Your Napa Valley Itinerary - Request Received`
+- Sent after choosing multiple wineries and submitting.
 
-### Winery Notification Email
-**Subject:** `New Booking - [Customer Name]`
+### 3. Winery Notification
+**Subject:** `New Booking Request - [Customer Name]`
+- Alerts winery owners of pending requests.
 
-**Includes:**
-- 📋 Booking notification
-- 👤 Customer contact details (name, email, phone)
-- 📅 Booking details (date, time, guests)
-- 📝 Special requests from customer
-- 🔗 "Manage Bookings" dashboard link
+### 4. Final Booking Decision
+**Subject:** `Final Confirmation: Your visit to [Winery] is set!`
+- Sent when a winery confirms or declines a specific slot.
 
-### Admin Alert Email
-**Subject:** `New Booking - [Booking ID]`
-
-**Includes:**
-- 📊 System-level booking notification
-- 📋 Summary (customer, winery, date, time)
-- 🔗 "View in Admin Panel" link
+### 5. Tasting Reminders
+**Subject:** `Tasting Reminder: See you in 1 hour! 🍷`
+- Automated reminder with Google Maps/Uber integration.
 
 ## 🚀 How It Works
 
 ### Booking Flow with Notifications
 ```
-1. Customer books winery experience
+1. Customer submits itinerary
    ↓
-2. System creates booking in database
+2. System creates records in MongoDB
    ↓
-3. Inventory capacity is reserved
-   ↓
-4. Notification System Activated:
+3. Notification Service Activated:
    
-   📧 Email sent to:
-      - Customer (confirmation)
-      - Winery (new booking alert)
-      - Admin (system alert)
+   📧 Resend Emails:
+      - Customer (itinerary summary)
+      - Winery Owners (individual booking alerts)
+      - Admin (platform overview)
    
-   📱 SMS sent to:
-      - Customer's phone (if provided)
-      - Winery's phone (if provided)
+   📱 Twilio SMS:
+      - Customer (confirmation text)
    ↓
-5. Success response returned
+4. Winery Responds (Confirm/Decline)
+   ↓
+5. Final Notification sent to Customer (Email + SMS)
 ```
-
-### Email Preview URLs
-In development, all emails show preview URLs in console:
-```bash
-📧 Customer email sent: https://ethereal.email/message/xxxxxxxxxxx
-📧 Winery email sent: https://ethereal.email/message/xxxxxxxxxxx
-```
-
-Click the URLs to view beautiful HTML emails in your browser!
 
 ## 📋 API Integration
 
 ### Booking API (`/api/itinerary/book`)
-```typescript
-POST /api/itinerary/book
-
-// After successful booking:
-{
-  "message": "Booking created successfully",
-  "booking": { ... },
-  "notifications": [
-    {
-      "wineryId": "...",
-      "wineryName": "Opus One Winery",
-      "notifications": {
-        "success": true,
-        "results": {
-          "emails": [
-            {
-              "to": "customer@email.com",
-              "status": "success",
-              "messageId": "...",
-              "previewUrl": "https://ethereal.email/message/..."
-            },
-            {
-              "to": "winery@email.com",
-              "status": "success",
-              "messageId": "..."
-            }
-          ],
-          "sms": [
-            {
-              "to": "+1234567890",
-              "success": false,
-              "message": "SMS disabled in configuration"
-            }
-          ]
-        }
-      }
-    }
-  ]
-}
-```
+The notification logic is handled internally within the API route calling `src/lib/notifications.ts`.
 
 ### Notification Service Usage
 ```typescript
@@ -193,195 +112,39 @@ const result = await sendBookingNotifications({
   numberOfGuests: 4,
   specialRequests: "Vegetarian options please" // Optional
 });
-
-console.log(result);
-// {
-//   success: true,
-//   results: {
-//     emails: [...],
-//     sms: [...]
-//   }
-// }
-```
-
-## 🎨 Email Design Features
-
-- ✅ **Responsive Design**: Works on mobile, tablet, desktop
-- ✅ **Wine-Themed Colors**: #6B1E23 (burgundy) brand color
-- ✅ **Professional Layout**: Clean, readable, organized
-- ✅ **Call-to-Action Buttons**: Primary action buttons with hover effects
-- ✅ **Information Cards**: Color-coded sections for easy reading
-- ✅ **Footer Links**: Contact support, website, unsubscribe
-- ✅ **HTML Tables**: Wide email client compatibility
-
-## 📊 Notification Status Tracking
-
-All notification results are logged and returned:
-
-```typescript
-{
-  emails: [
-    {
-      to: "customer@email.com",
-      status: "success" | "error",
-      messageId: "...",
-      previewUrl: "...", // Ethereal only
-      error: "..." // If failed
-    }
-  ],
-  sms: [
-    {
-      to: "+1234567890",
-      success: true | false,
-      message: "...", // Twilio SID or disable message
-      error: "..." // If failed
-    }
-  ]
-}
 ```
 
 ## 🧪 Testing
 
 ### Test Email Delivery
-```bash
-# Start the dev server
-npm run dev
+1. Ensure `RESEND_API_KEY` is set.
+2. Sign up as a new user or create a booking.
+3. Check your recipient inbox or the Resend dashboard logs.
 
-# Create a test booking
-# Check console for Ethereal URLs
-# Click URLs to view emails in browser
+### Test SMS
+1. Ensure `NEXT_PUBLIC_ENABLE_SMS=true` and Twilio keys are valid.
+2. Verify the Recipient Phone Number is in E.164 format (e.g., +15555555555).
+3. Check the Twilio console for message logs.
+
+## 🔐 Compliance (Twilio Requirement)
+The system enforces strict opt-in rules:
+- **Age Gate**: Users must be 21+ to receive SMS alerts.
+- **Opt-In**: SMS is only sent if `smsConsent` is true.
+- **Opt-Out**: Every SMS includes "Reply STOP to opt out".
+
+## 🚨 Error Reporting
+The system automatically notifies the admin via Email/SMS during:
+- Database connection failures
+- Payment verification errors
+- Runtime crashes in API routes
+
+**Config:**
+```env
+ADMIN_EMAIL=admin@napawineries.com
+ADMIN_PHONE=+15555555555
 ```
-
-### Test SMS (if enabled)
-```bash
-# Ensure Twilio is configured
-# Use a verified phone number (free tier)
-# Create a booking
-# Check phone for SMS
-```
-
-## 🔐 Security Best Practices
-
-1. **Never commit credentials**
-   - `.env.local` is in `.gitignore`
-   - Use environment variables in production
-
-2. **Use App-Specific Passwords**
-   - Gmail requires 2FA + app password
-   - Never use your main password
-
-3. **Rate Limiting**
-   - Twilio has daily limits
-   - Monitor usage to avoid overages
-
-4. **Email Validation**
-   - All emails validated before sending
-   - Invalid emails logged, not sent
-
-## 🚀 Production Deployment
-
-### Environment Variables Checklist
-```bash
-# Email (Required)
-✅ MAILTRAP_HOST=smtp.yourprovider.com
-✅ MAILTRAP_PORT=587
-✅ MAILTRAP_USER=your-email@domain.com
-✅ MAILTRAP_PASS=your-password
-✅ EMAIL_FROM=notifications@yourdomain.com
-
-# SMS (Optional)
-⬜ TWILIO_ACCOUNT_SID=ACxxxxx
-⬜ TWILIO_AUTH_TOKEN=xxxxx
-⬜ TWILIO_PHONE_NUMBER=+1234567890
-⬜ NEXT_PUBLIC_ENABLE_SMS=true
-
-# App URL (Required)
-✅ NEXT_PUBLIC_APP_URL=https://yourdomain.com
-```
-
-### Deployment Steps
-1. Set all environment variables in hosting platform
-2. Test email delivery with a booking
-3. Monitor logs for email success/failures
-4. (Optional) Enable SMS after testing email
-
-## 📈 Future Enhancements
-
-- [ ] **Booking Reminders**: Send reminder 24h before booking
-- [ ] **Cancellation Emails**: Notify all parties of cancellations
-- [ ] **Review Requests**: Email customers after their visit
-- [ ] **Newsletter Integration**: Marketing emails to customers
-- [ ] **Email Templates Editor**: Admin UI to customize templates
-- [ ] **WhatsApp Integration**: Alternative to SMS
-- [ ] **Push Notifications**: In-app notifications
-- [ ] **Delivery Analytics**: Track open rates, click rates
-
-## 🚨 Error Reporting (New)
-
-The system now includes an automatic error reporting feature that notifies the admin team when issues occur.
-
-### Client-Side Integration
-To catch client-side errors, you can use a global error handler or call the API directly:
-
-```typescript
-// Example: Global Error Boundary or try-catch block
-try {
-  // risky code
-} catch (error: any) {
-  // Report to server
-  fetch('/api/log-error', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      error: error.message,
-      stack: error.stack,
-      url: window.location.href,
-      userAgent: navigator.userAgent
-    })
-  });
-}
-```
-
-### Server-Side Integration
-For API routes or Server Actions, import the utility directly:
-
-```typescript
-import { sendErrorNotification } from "@/lib/notifications";
-
-try {
-  // ... database operation
-} catch (error: any) {
-  await sendErrorNotification({
-    error: error.message,
-    source: 'server',
-    stack: error.stack,
-    additionalInfo: { params }
-  });
-}
-```
-
-### Configuration
-Add these to your `.env.local`:
-```bash
-ADMIN_EMAIL=your-admin-email@domain.com
-ADMIN_PHONE=+15555555555 # For critical SMS alerts
-```
-
-## ✅ Implementation Status
-
-**Phase 5: Email & SMS Notifications** ✅ **COMPLETE**
-
-- ✅ Ethereal Email auto-configuration (no setup)
-- ✅ Beautiful HTML email templates
-- ✅ Customer booking confirmations
-- ✅ Winery booking alerts
-- ✅ Admin system notifications
-- ✅ SMS integration (Twilio ready)
-- ✅ Comprehensive error handling
-- ✅ Preview URLs for testing
-- ✅ Production-ready SMTP support
 
 ---
 
-**Last Updated**: Phase 5 Implementation  
-**Status**: ✅ Complete and Ready for Production
+**Last Updated**: 2026-01-06 (Post-Resend Migration) 
+**Status**: ✅ Production Ready

@@ -36,11 +36,20 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
     e.preventDefault();
 
     if (isWineryRegistration) {
-      // Mock submission for Winery Partners
-      setFormData({ ...formData, isWineryOwner: true });
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Fake network delay
-      toast.success("Application Received! A member of our Sommelier Team will reach out to verify your vineyard.");
-      setShowPopup(false);
+      const response = await register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        role: 'winery',
+        marketingConsent: formData.marketingConsent,
+        smsConsent: formData.smsConsent,
+      });
+      if (response.success) {
+        toast.success("Welcome aboard! Your winery account has been created.");
+        setShowPopup(false);
+      }
       return;
     }
 
@@ -57,6 +66,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
         phone: formData.phone,
         password: formData.password,
         dateOfBirth: formData.dateOfBirth ? new Date(formData.dateOfBirth) : undefined,
+        role: 'customer',
         marketingConsent: formData.marketingConsent,
         smsConsent: formData.smsConsent,
       });
@@ -196,6 +206,13 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
                 {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
               </span>
             </div>
+            {isLoginMode && (
+              <div className="text-right">
+                <a href="/forgot-password" className="text-xs text-gray-500 hover:text-[#6B1E23] transition-colors">
+                  Forgot Password?
+                </a>
+              </div>
+            )}
 
             {!isLoginMode && (
               <div className="flex flex-col gap-3 mt-2 bg-gray-50 p-4 rounded-xl border border-gray-100">

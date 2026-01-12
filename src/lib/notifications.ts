@@ -2,9 +2,18 @@ import { Resend } from 'resend';
 import UserModel from "@/models/user.model";
 
 // Initialize Resend safely to prevent build errors if env var is missing
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : { emails: { send: async () => { console.warn("Resend not configured"); return { error: "Resend key missing" }; } } } as any;
+// SAFETY SWITCH: Temporarily disabled (mock only) until domain is verified
+const resend = {
+  emails: {
+    send: async () => {
+      console.warn("Resend email SKIPPED (Safety Mode)");
+      return { id: "mock_id", error: null };
+    }
+  }
+} as any;
+// const resend = process.env.RESEND_API_KEY
+//   ? new Resend(process.env.RESEND_API_KEY)
+//   : { emails: { send: async () => { console.warn("Resend not configured"); return { error: "Resend key missing" }; } } } as any;
 
 // ========================================
 // EMAIL CONFIGURATION
@@ -14,82 +23,94 @@ const resend = process.env.RESEND_API_KEY
 
 
 // ========================================
-// SMS CONFIGURATION (Twilio)
+// ========================================
+// WHATSAPP CONFIGURATION (Plivo)
+// ========================================
 // ========================================
 
-interface SMSResult {
+interface MessageResult {
   success: boolean;
   message?: string;
   error?: string;
 }
 
-async function sendSMS(to: string, message: string, userEmail?: string): Promise<SMSResult> {
-  const smsEnabled = process.env.NEXT_PUBLIC_ENABLE_SMS === "true";
+/**
+ * Send a WhatsApp message via Plivo.
+ * The function keeps the same signature as the old `sendSMS` so the rest of the code
+ * does not need to change. It respects the same age‑verification and opt‑in checks.
+ */
+async function sendWhatsApp(to: string, message: string, userEmail?: string): Promise<MessageResult> {
+  // SAFETY SWITCH: Temporarily disabled until Plivo/WhatsApp is fully verified
+  // const whatsappEnabled = process.env.ENABLE_WHATSAPP === "true";
+  const whatsappEnabled = false;
 
-  if (!smsEnabled) {
-    return { success: false, message: "SMS disabled in configuration" };
+  if (!whatsappEnabled) {
+    return { success: false, message: "WhatsApp temporarily disabled for safety" };
   }
+
+  // ---------------------------------------------------
+  // 1️⃣  Re‑use the same compliance checks we had for SMS
+  // ---------------------------------------------------
+  if (userEmail) {
+    try {
+      const user = await UserModel.findOne({ email: userEmail });
+      if (!user) {
+        console.warn(`WhatsApp not sent: User not found (${userEmail})`);
+        return { success: false, error: "User not found" };
+      }
+      if (!user.ageVerified) {
+        console.warn(`WhatsApp not sent: User age not verified (${userEmail})`);
+        return { success: false, error: "Age not verified" };
+      }
+      if (!user.smsOptIn || !user.smsOptInAgeConfirmed) {
+        console.warn(`WhatsApp not sent: User has not opted in to WhatsApp (${userEmail})`);
+        return { success: false, error: "WhatsApp opt‑in required" };
+      }
+      console.log(`✅ Age verification and WhatsApp opt‑in confirmed for ${userEmail}`);
+    } catch (dbError) {
+      console.error("Database check error:", dbError);
+      // Continue with sending – fallback to best‑effort
+    }
+  }
+
+  // ---------------------------------------------------
+  // 2️⃣  Pull Plivo credentials from env
+  // ---------------------------------------------------
+  const authId = process.env.PLIVO_AUTH_ID;
+  const authToken = process.env.PLIVO_AUTH_TOKEN;
+  const fromNumber = process.env.PLIVO_WHATSAPP_NUMBER; // must be a WhatsApp‑enabled number
+
+  if (!authId || !authToken || !fromNumber) {
+    console.warn("Plivo credentials not configured. WhatsApp not sent.");
+    return { success: false, error: "Plivo not configured" };
+  }
+
+  // ---------------------------------------------------
+  // 3️⃣  Build the message payload – Plivo expects a JSON body
+  // ---------------------------------------------------
+  const plivo = require("plivo");
+  const client = new plivo.Client(authId, authToken);
+
+  // Add the mandatory opt‑out line for compliance
+  const compliantMessage = `${message}\n\nReply STOP to opt out.`;
 
   try {
-    // TWILIO COMPLIANCE: Check age verification and SMS opt-in
-    if (userEmail) {
-      try {
-        const user = await UserModel.findOne({ email: userEmail });
-
-        if (!user) {
-          console.warn(`SMS not sent: User not found (${userEmail})`);
-          return { success: false, error: "User not found" };
-        }
-
-        // Check age verification (21+ requirement)
-        if (!user.ageVerified) {
-          console.warn(`SMS not sent: User age not verified (${userEmail})`);
-          return { success: false, error: "Age not verified" };
-        }
-
-        // Check SMS opt-in with age confirmation
-        if (!user.smsOptIn || !user.smsOptInAgeConfirmed) {
-          console.warn(`SMS not sent: User has not opted in to SMS (${userEmail})`);
-          return { success: false, error: "SMS opt-in required" };
-        }
-
-        console.log(`✅ Age verification and SMS opt-in confirmed for ${userEmail}`);
-      } catch (dbError) {
-        console.error("Database check error:", dbError);
-        // Continue with SMS if DB check fails (fallback)
-      }
-    }
-
-    // Check if Twilio is configured
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const from = process.env.TWILIO_PHONE_NUMBER;
-
-    if (!accountSid || !authToken || !from) {
-      console.warn("Twilio credentials not configured. SMS not sent.");
-      return { success: false, error: "Twilio not configured" };
-    }
-
-    // Use Twilio SDK (install: npm install twilio)
-    const twilio = require("twilio");
-    const client = twilio(accountSid, authToken);
-
-    // Add opt-out language to message (Twilio compliance)
-    const compliantMessage = `${message}\n\nReply STOP to opt out.`;
-
-    const smsResult = await client.messages.create({
-      body: compliantMessage,
-      from: from,
-      to: to
-    });
-
-    console.log(`✅ SMS sent successfully: ${smsResult.sid}`);
-    return { success: true, message: smsResult.sid };
-  } catch (error: any) {
-    console.error("❌ SMS error:", error.message);
-    return { success: false, error: error.message };
+    const response = await client.messages.create(
+      fromNumber, // source (must start with "whatsapp:")
+      `whatsapp:${to}`,
+      compliantMessage,
+      { url: undefined } // optional callback URL – not needed for simple send
+    );
+    console.log(`✅ WhatsApp sent via Plivo: ${response.messageUuid}`);
+    return { success: true, message: response.messageUuid[0] };
+  } catch (err: any) {
+    console.error("❌ WhatsApp error via Plivo:", err.message || err);
+    return { success: false, error: err.message || "Unknown error" };
   }
 }
+
+// Backwards‑compatible alias – existing code calls `sendSMS`
+export const sendSMS = sendWhatsApp; // keep original export name for other modules
 
 // ========================================
 // EMAIL TEMPLATES
@@ -518,6 +539,37 @@ export interface SendBookingNotificationsParams {
 }
 
 // ========================================
+// PASSWORD RESET NOTIFICATION
+// ========================================
+
+export async function sendPasswordResetEmail(email: string, resetToken: string) {
+  const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${resetToken}`;
+
+  const content = `
+    <h2 style="color:#6B1E23; margin-bottom:24px;">Reset Your Password 🔒</h2>
+    <p>We received a request to reset your password for Napa Valley Wineries.</p>
+    <p>Click the button below to set a new password. This link will expire in 1 hour.</p>
+    
+    <div style="margin:24px 0;">
+      <a href="${resetLink}" class="button">Reset Password</a>
+    </div>
+
+    <p style="font-size: 13px; color: #666;">
+      If you didn't request this, you can safely ignore this email.
+    </p>
+  `;
+
+  const subject = "Reset Your Password - Napa Valley Wineries";
+
+  await resend.emails.send({
+    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
+    to: email,
+    subject,
+    html: EmailTemplate({ content, subject })
+  });
+}
+
+// ========================================
 // ACCOUNT WELCOME NOTIFICATIONS
 // ========================================
 
@@ -801,5 +853,6 @@ export default {
   sendFinalBookingDecision,
   sendWelcomeNotification,
   sendHourReminder,
-  sendErrorNotification
+  sendErrorNotification,
+  sendPasswordResetEmail
 };

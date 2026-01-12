@@ -7,7 +7,7 @@ interface AuthStore {
   loading: boolean;
   error: string | null;
   fetchUser: () => Promise<void>;
-  register: (data: { firstName: string; lastName: string; email: string; phone: string; password: string; dateOfBirth?: Date; marketingConsent?: boolean; smsConsent?: boolean }) => Promise<{ success: boolean; message?: string }>;
+  register: (data: { firstName: string; lastName: string; email: string; phone: string; password: string; dateOfBirth?: Date; role?: string; marketingConsent?: boolean; smsConsent?: boolean }) => Promise<{ success: boolean; message?: string }>;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
 }
@@ -32,13 +32,13 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
-  register: async ({ firstName, lastName, email, phone, password, dateOfBirth, marketingConsent, smsConsent }) => {
+  register: async ({ firstName, lastName, email, phone, password, dateOfBirth, role, marketingConsent, smsConsent }) => {
     set({ loading: true });
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, phone, password, dateOfBirth, marketingConsent, smsConsent }),
+        body: JSON.stringify({ firstName, lastName, email, phone, password, dateOfBirth, role, marketingConsent, smsConsent }),
       });
 
       const data = await res.json();
