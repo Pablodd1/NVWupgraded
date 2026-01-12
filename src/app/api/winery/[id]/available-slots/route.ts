@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbConnect";
 import SlotInventory from "@/models/slotInventory.model";
 import Winery from "@/models/winery.model";
+import { getMockSlots } from "@/lib/mockInventory";
 
 export async function GET(
   request: Request,
@@ -153,8 +154,7 @@ export async function GET(
     now.setHours(0, 0, 0, 0);
     const todayStr = now.toISOString().split('T')[0];
 
-    // Import mock data dynamically or via the helper
-    const { getMockSlots } = require("@/lib/mockInventory");
+    // Use static import for mock data
     const mockSlots = getMockSlots(id);
 
     // If no mock slots, create some fake ones for demo purposes
