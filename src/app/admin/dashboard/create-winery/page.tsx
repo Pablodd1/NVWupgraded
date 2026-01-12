@@ -9,6 +9,7 @@ export default function CreateWineryAccount() {
   const { user, loading, fetchUser } = useAuthStore();
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     // User account details
@@ -92,6 +93,7 @@ export default function CreateWineryAccount() {
     }
 
     setSubmitting(true);
+    setErrorMessage(null);
 
     try {
       const response = await fetch("/api/admin/create-winery-account", {
@@ -131,13 +133,16 @@ export default function CreateWineryAccount() {
         router.push("/admin/dashboard/users");
       } else {
         const error = await response.json();
-        const errorMessage = error.message || "Failed to create winery account";
-        console.error("Server Error:", errorMessage);
-        toast.error(`Error: ${errorMessage}`);
+        const errMsg = error.message || "Failed to create winery account";
+        console.error("Server Error:", errMsg);
+        setErrorMessage(errMsg);
+        toast.error(errMsg);
       }
     } catch (error: any) {
       console.error("Failed to create winery account:", error);
-      toast.error(`Network Error: ${error.message || "Unknown error"}`);
+      const errMsg = `Network Error: ${error.message || "Unknown error"}`;
+      setErrorMessage(errMsg);
+      toast.error(errMsg);
     } finally {
       setSubmitting(false);
     }
@@ -176,6 +181,29 @@ export default function CreateWineryAccount() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Error Banner */}
+          {errorMessage && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-red-800">{errorMessage}</p>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setErrorMessage(null)}
+                  className="ml-auto text-red-500 hover:text-red-700"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Owner Account Section */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center mb-4">
