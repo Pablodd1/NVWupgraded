@@ -148,20 +148,43 @@ export async function POST(req: NextRequest) {
     }
 
     // All slots successfully reserved - calculate total price and create booking
-    const firstWinery = data[0];
-    const paymentMethod = firstWinery?.payment_method?.type || "pay_winery";
+    const firstWineryData = data[0];
+    const paymentMethod = firstWineryData?.payment_method?.type || "pay_winery";
+
+    // Pre-fetch wineries to get up-to-date pricing/fees
+    const wineryIds = data.map((d: any) => d.wineryId);
+    const wineries = await WineryModel.find({ _id: { $in: wineryIds } });
 
     // Calculate total price accurately
     const totalPrice = data.reduce((acc: number, item: any) => {
       let wineryTotal = 0;
-      const guests = item.numberOfGuests || 1;
+      const guests = Number(item.numberOfGuests) || 1;
+      const winery = wineries.find(w => w._id.toString() === item.wineryId.toString());
 
-      // Tasting price per guest
-      if (item.tasting) wineryTotal += item.tasting * guests;
+      if (winery) {
+        // Find the specific tasting being booked
+        const tasting = winery.tasting_info.find((t: any) => t.tasting_title === item.tastingTitle)
+          || winery.tasting_info[0];
 
-      // Features, food, tours (assuming these are per guest or set prices)
-      item.foodPairings?.forEach((fp: any) => wineryTotal += (fp.price || 0) * guests);
-      item.tours?.forEach((t: any) => wineryTotal += (t.price || 0) * guests);
+        if (tasting) {
+          // Check max guests condition
+          const maxGuests = tasting.booking_info?.max_guests_per_slot || 20;
+          if (guests > maxGuests) {
+            throw new Error(`Winery ${winery.name} only allows up to ${maxGuests} guests per slot.`);
+          }
+
+          // Calculation: Base Fee + (Additional Guest Fee * Guests)
+          // OR if legacy: tasting_price * Guests
+          const baseFee = Number(tasting.base_booking_fee) || 0;
+          const guestFee = Number(tasting.additional_guest_fee) || Number(tasting.tasting_price) || 0;
+
+          wineryTotal += baseFee + (guestFee * guests);
+        }
+      }
+
+      // Add features, food, tours (assuming these are per guest)
+      item.foodPairings?.forEach((fp: any) => wineryTotal += (Number(fp.price) || 0) * guests);
+      item.tours?.forEach((t: any) => wineryTotal += (Number(t.price) || 0) * guests);
       item.otherFeatures?.forEach((of: any) => wineryTotal += (Number(of.price) || 0) * guests);
 
       return acc + wineryTotal;

@@ -81,6 +81,8 @@ export interface TastingInfo {
   tasting_description: string;
   ava: string;
   tasting_price: number;
+  base_booking_fee?: number;
+  additional_guest_fee?: number;
   available_times: string[];
   wine_types: string[];
   number_of_wines_per_tasting: number;

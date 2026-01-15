@@ -25,6 +25,7 @@ export async function getAISearchFilters(query: string) {
   - Wine Types: "Red", "White", "Rosé", "Sparkling", "Dessert"
   - Price Range: { min: number, max: number }
   - Features: "Outdoor Seating", "Modern Architecture", "Cave Tour", "Hidden Gem", "Historic", "Food Pairing", "Great Views", "Dog Friendly", "Kid Friendly", "Walk-ins Welcome", "Handicap Accessible"
+  - Number of People: integer
 
   Return ONLY a JSON object that strictly follows this structure:
   {
@@ -32,6 +33,7 @@ export async function getAISearchFilters(query: string) {
     "wineTypes": string[],
     "priceRange": { "min": number, "max": number },
     "features": string[],
+    "numberOfPeople": number | null,
     "name": string | null,
     "interpretation": "A brief sentence explaining what the user is looking for."
   }`;

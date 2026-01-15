@@ -228,6 +228,8 @@ export default function WineryProfile() {
                     type="text" value={profile.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     className="input input-bordered w-full focus:border-wine-primary"
+                    placeholder="e.g. Napa Estate"
+                    aria-label="Winery Display Name"
                   />
                 </div>
                 <div className="form-control">
@@ -236,6 +238,8 @@ export default function WineryProfile() {
                     value={profile.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     className="textarea textarea-bordered h-32 focus:border-wine-primary"
+                    placeholder="Tell guests about your winery's unique experience..."
+                    aria-label="Winery Description"
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -245,6 +249,8 @@ export default function WineryProfile() {
                       type="text" value={profile.location.address}
                       onChange={(e) => handleInputChange('location.address', e.target.value)}
                       className="input input-bordered focus:border-wine-primary"
+                      placeholder="123 Wine Way, St. Helena, CA"
+                      aria-label="Street Address"
                     />
                   </div>
                   <div className="flex items-center gap-4 mt-8">
@@ -265,6 +271,8 @@ export default function WineryProfile() {
                       type="number" step="any" value={profile.location.latitude}
                       onChange={(e) => handleInputChange('location.latitude', parseFloat(e.target.value))}
                       className="input input-bordered focus:border-wine-primary"
+                      placeholder="38.5025"
+                      aria-label="Latitude"
                     />
                   </div>
                   <div className="form-control">
@@ -273,6 +281,8 @@ export default function WineryProfile() {
                       type="number" step="any" value={profile.location.longitude}
                       onChange={(e) => handleInputChange('location.longitude', parseFloat(e.target.value))}
                       className="input input-bordered focus:border-wine-primary"
+                      placeholder="-122.4656"
+                      aria-label="Longitude"
                     />
                   </div>
                 </div>
@@ -297,9 +307,34 @@ export default function WineryProfile() {
                     <button
                       onClick={() => removeTasting(idx)}
                       className="absolute top-4 right-4 text-red-500 hover:text-red-700 p-2"
+                      title="Remove Tasting Package"
+                      aria-label="Remove Tasting Package"
                     >
                       <FaTrash size={18} />
                     </button>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Base Booking Fee ($)</label>
+                        <input
+                          type="number" value={tasting.base_booking_fee || 0}
+                          onChange={(e) => handleTastingChange(idx, 'base_booking_fee', Number(e.target.value))}
+                          className="input input-bordered input-sm"
+                          placeholder="0"
+                          aria-label="Base Booking Fee"
+                        />
+                      </div>
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Additional Guest Fee ($)</label>
+                        <input
+                          type="number" value={tasting.additional_guest_fee || 0}
+                          onChange={(e) => handleTastingChange(idx, 'additional_guest_fee', Number(e.target.value))}
+                          className="input input-bordered input-sm"
+                          placeholder="0"
+                          aria-label="Additional Guest Fee"
+                        />
+                      </div>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                       <div className="form-control">
@@ -308,14 +343,18 @@ export default function WineryProfile() {
                           type="text" value={tasting.tasting_title}
                           onChange={(e) => handleTastingChange(idx, 'tasting_title', e.target.value)}
                           className="input input-bordered input-sm font-bold"
+                          placeholder="e.g. Reserve Flight"
+                          aria-label="Tasting Title"
                         />
                       </div>
                       <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Price per Tasting ($)</label>
+                        <label className="label text-xs font-bold uppercase text-gray-500">Old Tasting Price (Legacy) ($)</label>
                         <input
                           type="number" value={tasting.tasting_price}
                           onChange={(e) => handleTastingChange(idx, 'tasting_price', Number(e.target.value))}
-                          className="input input-bordered input-sm"
+                          className="input input-bordered input-sm opacity-50"
+                          placeholder="0"
+                          aria-label="Legacy Tasting Price"
                         />
                       </div>
                     </div>
@@ -337,6 +376,8 @@ export default function WineryProfile() {
                           type="text" value={tasting.wine_types?.join(', ') || ''}
                           onChange={(e) => handleTastingChange(idx, 'wine_types', e.target.value.split(',').map(s => s.trim()))}
                           className="input input-bordered input-sm"
+                          placeholder="Red, White, Rosé"
+                          aria-label="Wine Types"
                         />
                       </div>
                       <div className="form-control">
@@ -357,6 +398,8 @@ export default function WineryProfile() {
                           type="text" value={tasting.special_features?.join(', ') || ''}
                           onChange={(e) => handleTastingChange(idx, 'special_features', e.target.value.split(',').map(s => s.trim()))}
                           className="input input-bordered input-sm"
+                          placeholder="Cave Tour, Great Views"
+                          aria-label="Special Features"
                         />
                       </div>
                       <div className="form-control">
@@ -365,6 +408,8 @@ export default function WineryProfile() {
                           type="text" value={tasting.ava}
                           onChange={(e) => handleTastingChange(idx, 'ava', e.target.value)}
                           className="input input-bordered input-sm"
+                          placeholder="e.g. Rutherford"
+                          aria-label="AVA Region"
                         />
                       </div>
                     </div>
@@ -385,6 +430,8 @@ export default function WineryProfile() {
                             type="number" value={tasting.tours.tour_price}
                             onChange={(e) => handleTastingChange(idx, 'tours.tour_price', Number(e.target.value))}
                             className="input input-bordered input-xs w-20"
+                            placeholder="0"
+                            aria-label="Tour Price"
                           />
                         </div>
                       )}
@@ -411,6 +458,7 @@ export default function WineryProfile() {
                     value={profile.payment_method?.type || 'pay_winery'}
                     onChange={(e) => handleInputChange('payment_method.type', e.target.value)}
                     className="select select-bordered w-full"
+                    aria-label="Payment Strategy"
                   >
                     <option value="pay_stripe">In-App Payment (Pre-paid / Stripe)</option>
                     <option value="external_booking">External Booking Link</option>
@@ -470,7 +518,7 @@ export default function WineryProfile() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Uber_logo_2018.png" className="w-8 h-4 object-contain grayscale" />
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/c/cc/Uber_logo_2018.png" className="w-8 h-4 object-contain grayscale" alt="Uber Logo" />
                     <span className="font-semibold text-gray-700">Uber Availability</span>
                   </div>
                   <input
@@ -481,7 +529,7 @@ export default function WineryProfile() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/a0/Lyft_logo.svg/2560px-Lyft_logo.svg.png" className="w-8 h-4 object-contain grayscale" />
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/a0/Lyft_logo.svg/2560px-Lyft_logo.svg.png" className="w-8 h-4 object-contain grayscale" alt="Lyft Logo" />
                     <span className="font-semibold text-gray-700">Lyft Availability</span>
                   </div>
                   <input
@@ -506,6 +554,8 @@ export default function WineryProfile() {
                     type="tel" value={profile.contact_info.phone}
                     onChange={(e) => handleInputChange('contact_info.phone', e.target.value)}
                     className="input input-bordered input-sm"
+                    placeholder="+1 (707) 123-4567"
+                    aria-label="Public Phone Number"
                   />
                 </div>
                 <div className="form-control">
@@ -514,6 +564,8 @@ export default function WineryProfile() {
                     type="email" value={profile.contact_info.email}
                     onChange={(e) => handleInputChange('contact_info.email', e.target.value)}
                     className="input input-bordered input-sm"
+                    placeholder="concierge@winery.com"
+                    aria-label="Public Email Address"
                   />
                 </div>
                 <div className="form-control">

@@ -53,6 +53,10 @@ export async function POST(req: Request) {
             }
         }
 
+        if (filters.numberOfPeople) {
+            mongoQuery['tasting_info.booking_info.max_guests_per_slot'] = { $gte: filters.numberOfPeople };
+        }
+
         // 3. Search Wineries
         console.log('Final MongoDB Query:', JSON.stringify(mongoQuery, null, 2));
         const wineries = await Winery.find(mongoQuery).limit(10);

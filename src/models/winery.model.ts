@@ -55,7 +55,9 @@ const TastingInfoSchema = new mongoose.Schema({
   tasting_title: { type: String, required: true },
   tasting_description: { type: String, required: true },
   ava: { type: String },
-  tasting_price: { type: Number, default: 0, min: 0 }, // Allow $0 (free) tastings
+  tasting_price: { type: Number, default: 0, min: 0 }, // Legacy/Combined price
+  base_booking_fee: { type: Number, default: 0, min: 0 }, // Fixed fee for booking
+  additional_guest_fee: { type: Number, default: 0, min: 0 }, // Fee per guest
   available_times: [{ type: String }],
   wine_types: [{ type: String }],
   number_of_wines_per_tasting: { type: Number, min: 1, default: 1 },
