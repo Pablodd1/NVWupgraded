@@ -223,23 +223,23 @@ export default function WineryProfile() {
               </h2>
               <div className="space-y-6">
                 <div className="form-control">
-                  <label className="label font-bold text-gray-700">Winery Display Name</label>
+                  <label htmlFor="wineryName" className="label font-bold text-gray-700">Winery Display Name</label>
                   <input
+                    id="wineryName"
                     type="text" value={profile.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     className="input input-bordered w-full focus:border-wine-primary"
                     placeholder="e.g. Napa Estate"
-                    aria-label="Winery Display Name"
                   />
                 </div>
                 <div className="form-control">
-                  <label className="label font-bold text-gray-700">Official Description (for AI Search & Results)</label>
+                  <label htmlFor="wineryDescription" className="label font-bold text-gray-700">Official Description (for AI Search & Results)</label>
                   <textarea
+                    id="wineryDescription"
                     value={profile.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     className="textarea textarea-bordered h-32 focus:border-wine-primary"
                     placeholder="Tell guests about your winery's unique experience..."
-                    aria-label="Winery Description"
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

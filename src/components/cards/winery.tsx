@@ -26,24 +26,37 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
   // Get current tasting info based on selection
   const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex] || primaryTastingInfo;
 
-  // Get available slots from the currently selected tasting
-  const availableSlots = currentTastingInfo?.booking_info?.available_slots || [];
+  const [calendarData, setCalendarData] = useState<Record<string, any[]>>({});
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
-  // Filter out invalid dates before processing
-  const validSlots = availableSlots.filter((slot) => {
-    const date = new Date(slot);
-    return !isNaN(date.getTime());
-  });
+  // Fetch real-time slots
+  useEffect(() => {
+    const fetchSlots = async () => {
+      // If we already have specific slot data passed in that is "fresh", we could use it, 
+      // but for now, always fetch to be safe.
+      if (!winery._id) return;
 
-  // Extract unique dates from valid slots
-  const uniqueDatesSet = new Set(validSlots.map((slot) => {
-    const date = new Date(slot);
-    // Use local date string to avoid timezone shifts
-    const offset = date.getTimezoneOffset();
-    const localDate = new Date(date.getTime() - (offset * 60 * 1000));
-    return localDate.toISOString().split("T")[0];
-  }));
-  const availableDates = Array.from(uniqueDatesSet).sort();
+      setLoadingSlots(true);
+      try {
+        // We use the available-slots API we created/updated
+        const res = await fetch(`/api/winery/${winery._id}/available-slots`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.calendar) {
+            setCalendarData(data.calendar);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch slots", err);
+      } finally {
+        setLoadingSlots(false);
+      }
+    };
+    fetchSlots();
+  }, [winery._id]);
+
+  // Extract available dates from the fetched calendar
+  const availableDates = Object.keys(calendarData).sort();
 
   // Set min/max dates for date picker
   const minDate = availableDates.length > 0 ? availableDates[0] : "";
@@ -73,31 +86,77 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
   }, [selectedTastingIndex]);
 
   // Update available times when date changes
+  // Update available times when date changes
   useEffect(() => {
-    if (selectedDate) {
-      const timesForDate = validSlots
-        .filter((slot) => {
-          const date = new Date(slot);
-          if (isNaN(date.getTime())) return false;
+    if (selectedDate && calendarData[selectedDate]) {
+      // Get slots for this date from the calendar map
+      const slotsForDate = calendarData[selectedDate];
 
-          const offset = date.getTimezoneOffset();
-          const localDate = new Date(date.getTime() - (offset * 60 * 1000));
-          return localDate.toISOString().split("T")[0] === selectedDate;
+      // Extract time strings (already formatted in API response usually, or we format them)
+      // The API returns "timeSlot" which is like "10:00 AM" or similar.
+      // But we need the ISO string or just the time string? 
+      // The Booking API expects ISO string.
+      // Let's see what `timeSlot` looks like. In API it is "Morning (10:00 AM - ...)" or just "10:00 AM".
+      // We need to construct a valid ISO string for the backend.
+      // Or we can pass the time string and let backend handle it? 
+      // Existing code used ISO strings.
+      // Let's try to parse the time from the slot or use the slot time directly.
+
+      // Ideally, the calendar data should have full ISOs or we construct them.
+      // Our API returns `{ timeSlot: string, availableCapacity: number... }`. 
+      // timeSlot might be "10:00 AM".
+      // We need to combine `selectedDate` (YYYY-MM-DD) + `timeSlot` to get ISO.
+
+      // Helper to parse time string
+      const getISOFromSlot = (dateStr: string, timeSlotStr: string) => {
+        // Extract time: "10:00 AM" or "10:00"
+        const timeMatch = timeSlotStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+        if (!timeMatch) return null;
+
+        let [_, h, m, period] = timeMatch;
+        let hours = parseInt(h);
+        const minutes = parseInt(m);
+
+        if (period) {
+          if (period.toUpperCase() === 'PM' && hours < 12) hours += 12;
+          if (period.toUpperCase() === 'AM' && hours === 12) hours = 0;
+        }
+
+        // create date object in local time
+        const d = new Date(dateStr);
+        d.setHours(hours, minutes, 0, 0);
+        // We want the string representation that matches what backend expects.
+        // Backend `book` route expects `dateTime`.
+        return d.toISOString();
+      };
+
+      const times = slotsForDate
+        .filter((slot: any) => slot.availableCapacity > 0)
+        .map((slot: any) => {
+          // We store the original slot string for display, but passing ISO is better for consistency?
+          // Wait, existing code expects `selectedTime` to be ISO string? 
+          // `availableTimes` was `timesForDate` which were ISO strings.
+          // Let's construct ISOs.
+          const iso = getISOFromSlot(selectedDate, slot.timeSlot);
+          return iso ? { iso, display: slot.timeSlot } : null;
         })
-        .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+        .filter(Boolean) as { iso: string, display: string }[];
 
-      setAvailableTimes(timesForDate);
+      setAvailableTimes(times.map(t => t.iso)); // Storing ISOs
 
-      // Auto-select first available time if current selection is invalid
-      if (timesForDate.length > 0 && (!selectedTime || !timesForDate.includes(selectedTime))) {
-        setSelectedTime(timesForDate[0]);
+      // Store display mapping if needed, or re-parse on render ?
+      // For now, let's just use the ISOs and format them in render.
+
+      // Auto-select first available
+      if (times.length > 0 && (!selectedTime || !times.find(t => t.iso === selectedTime))) {
+        setSelectedTime(times[0].iso);
       }
     } else {
       setAvailableTimes([]);
       setSelectedTime("");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedTastingIndex]);
+  }, [selectedDate, selectedTastingIndex, calendarData]);
 
   // Notify parent component of updates
   useEffect(() => {
@@ -267,10 +326,11 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Date Picker */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`date-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">
                 Date <span className="text-red-500">*</span>
               </label>
               <input
+                id={`date-${winery._id}`}
                 type="date"
                 value={selectedDate}
                 onChange={handleDateChange}
@@ -286,10 +346,11 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
 
             {/* Time Selector */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor={`time-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">
                 Time <span className="text-red-500">*</span>
               </label>
               <select
+                id={`time-${winery._id}`}
                 className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
                 value={selectedTime}
                 onChange={handleTimeChange}
@@ -331,8 +392,9 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
             {/* Food Pairing */}
             {currentTastingInfo?.food_pairing_options && currentTastingInfo.food_pairing_options.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Food Pairing (Optional)</label>
+                <label htmlFor={`food-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">Food Pairing (Optional)</label>
                 <select
+                  id={`food-${winery._id}`}
                   className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
                   onChange={handleFoodPairingChange}
                   defaultValue=""
@@ -350,8 +412,9 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
             {/* Tours */}
             {currentTastingInfo?.tours?.tour_options && currentTastingInfo.tours.tour_options.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tour (Optional)</label>
+                <label htmlFor={`tour-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">Tour (Optional)</label>
                 <select
+                  id={`tour-${winery._id}`}
                   className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
                   onChange={handleTourChange}
                   defaultValue=""
@@ -370,8 +433,9 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
           {/* Other Features Row */}
           {currentTastingInfo?.other_features && currentTastingInfo.other_features.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Other Features (Optional)</label>
+              <label htmlFor={`other-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">Other Features (Optional)</label>
               <select
+                id={`other-${winery._id}`}
                 className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
                 onChange={handleChangeOther}
                 defaultValue=""
