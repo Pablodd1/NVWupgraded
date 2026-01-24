@@ -11,7 +11,6 @@ import {
   FaDollarSign,
   FaClock,
   FaGlassCheers,
-  FaWhatsapp,
   FaUsers,
   FaCar,
 } from "react-icons/fa";
@@ -548,22 +547,7 @@ const WineryDetail = () => {
                   <p className="text-gray-600">{winery?.contact_info.email}</p>
                 </div>
               </div>
-              {winery?.contact_info.phone && (
-                <a
-                  href={`https://wa.me/${winery?.contact_info.phone.replace(/\D/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center space-x-4"
-                >
-                  <div className="p-3 bg-wine-primary/10 rounded-full">
-                    <FaWhatsapp className="h-5 w-5 text-wine-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-serif text-xl mb-1">WhatsApp</h3>
-                    <p className="text-gray-600">Chat with us</p>
-                  </div>
-                </a>
-              )}
+
             </div>
             <div className="flex flex-col justify-center gap-4">
               <Button

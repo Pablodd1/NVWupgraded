@@ -24,7 +24,7 @@ const resend = {
 
 // ========================================
 // ========================================
-// WHATSAPP CONFIGURATION (Plivo)
+// COMMUNICATION CONFIGURATION
 // ========================================
 // ========================================
 
@@ -35,18 +35,13 @@ interface MessageResult {
 }
 
 /**
- * Send a WhatsApp message via Plivo.
- * TEMPORARILY DISABLED - All messaging functionality is mocked until
- * Plivo/WhatsApp integration is fully configured and verified.
+ * SMS/WhatsApp functionality has been removed from the system.
+ * Communication now handled through email and in-app notifications only.
  */
-async function sendWhatsApp(to: string, message: string, userEmail?: string): Promise<MessageResult> {
-  // SAFETY SWITCH: Completely disabled - just log and return
-  console.log(`[SMS/WhatsApp DISABLED] Would send to ${to}: ${message.substring(0, 50)}...`);
-  return { success: false, message: "SMS/WhatsApp temporarily disabled" };
-}
-
-// Backwards‑compatible alias – existing code calls `sendSMS`
-export const sendSMS = sendWhatsApp; // keep original export name for other modules
+export const sendSMS = async (to: string, message: string, userEmail?: string): Promise<MessageResult> => {
+  console.log(`[SMS DISABLED] Communication via email and in-app notifications only`);
+  return { success: false, message: "SMS functionality removed" };
+};
 
 // ========================================
 // EMAIL TEMPLATES

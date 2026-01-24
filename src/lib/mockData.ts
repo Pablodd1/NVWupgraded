@@ -79,6 +79,104 @@ export const mockWineries = [
         owner: "657999acac9c9c0012345670"
     },
     {
+        _id: "657999acac9c9c0012345673",
+        name: "Premium Test Winery",
+        location: {
+            address: "123 Test Lane, Napa, CA 94558",
+            latitude: 38.2975,
+            longitude: -122.2869,
+            is_mountain_location: false,
+        },
+        contact_info: {
+            phone: "(707) 555-0123",
+            email: "test@premiumwinery.com",
+            website: "https://www.premiumtestwinery.com",
+        },
+        description: "A premium test winery showcasing per-person pricing functionality. This winery demonstrates the new pricing model with base fees and additional guest costs.",
+        tasting_info: [
+            {
+                tasting_title: "Premium Tasting Experience",
+                tasting_description: "An exclusive tasting showcasing our per-person pricing model with $50 base fee and $25 per additional guest.",
+                ava: "Napa Valley",
+                base_booking_fee: 50,
+                additional_guest_fee: 25,
+                tasting_price: 0, // Legacy price disabled
+                available_times: ["10:00 AM", "11:30 AM", "1:00 PM", "2:30 PM", "4:00 PM"],
+                wine_types: ["Red", "White", "Sparkling"],
+                number_of_wines_per_tasting: 4,
+                special_features: ["VIP Experience", "Private Sommelier", "Cellar Tour"],
+                images: [
+                    "https://images.unsplash.com/photo-1536940378788-fcaf6a0bb426",
+                    "https://images.unsplash.com/photo-1556439298-d5321c86e54b",
+                ],
+                food_pairing_options: [
+                    { id: "fp_test1", name: "Gourmet Cheese Board", price: 35 },
+                    { id: "fp_test2", name: "Chocolate & Wine Pairing", price: 20 },
+                    { id: "fp_test3", name: "Seasonal Fruit Platter", price: 25 },
+                ],
+                tours: {
+                    available: true,
+                    tour_price: 75,
+                    tour_options: [
+                        { tour_id: "tour_test1", description: "VIP Cellar Experience", cost: 75 },
+                        { tour_id: "tour_test2", description: "Vineyard Sunset Tour", cost: 100 },
+                    ],
+                },
+                wine_details: [
+                    {
+                        id: "wine_test1",
+                        name: "Estate Reserve Cabernet",
+                        description: "Our flagship reserve wine with exceptional aging potential",
+                        year: 2021,
+                        tasting_notes: "Dark cherry, blackberry, oak, and subtle vanilla notes",
+                        photo: "https://images.unsplash.com/photo-1560471269382-3821946a7e5a",
+                    },
+                    {
+                        id: "wine_test2",
+                        name: "Chardonnay Reserve",
+                        description: "Elegant barrel-fermented Chardonnay with buttery finish",
+                        year: 2022,
+                        tasting_notes: "Green apple, citrus, butterscotch, and toasted oak",
+                        photo: "https://images.unsplash.com/photo-1560471269382-3821946a7e5a",
+                    },
+                ],
+                booking_info: {
+                    booking_enabled: true,
+                    max_guests_per_slot: 12,
+                    number_of_people: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                    dynamic_pricing: {
+                        enabled: true,
+                        weekend_multiplier: 1.3,
+                    },
+                    available_slots: ["10:00 AM", "11:30 AM", "1:00 PM", "2:30 PM", "4:00 PM"],
+                },
+                other_features: [
+                    { feature_id: "feat_test1", description: "VIP Lounge Access", cost: 75 },
+                    { feature_id: "feat_test2", description: "Personalized Wine Education Session", cost: 50 },
+                ],
+            },
+        ],
+        amenities: {
+            virtual_sommelier: true,
+            augmented_reality_tours: true,
+            handicap_accessible: true,
+        },
+        user_reviews: [
+            {
+                review_id: "review_test1",
+                user_id: "user_test1",
+                rating: 5,
+                comment: "Excellent experience with the new pricing system! The per-person model makes it clear what we're paying for.",
+            },
+        ],
+        transportation: {
+            uber_availability: true,
+            lyft_availability: true,
+            distance_from_user: 3.8,
+        },
+        owner: "657999acac9c9c0012345670"
+    },
+    {
         _id: "657999acac9c9c0012345672",
         name: "Opus One Winery",
         location: {

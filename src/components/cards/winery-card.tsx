@@ -3,7 +3,7 @@ import { Winery } from "@/app/interfaces";
 import { useItinerary } from "@/store/itinerary";
 import Link from "next/link";
 import { FC, memo, useMemo } from "react";
-import { FaWineBottle, FaDollarSign, FaMapMarkerAlt, FaWhatsapp } from "react-icons/fa";
+import { FaWineBottle, FaDollarSign, FaMapMarkerAlt } from "react-icons/fa";
 import Image from "next/image";
 
 interface WineryCardProps {
@@ -16,17 +16,7 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
   const { itinerary } = useItinerary();
   const isAdded = itinerary.find((item) => item._id === winery._id);
 
-  const { formattedNumber, whatsappLink } = useMemo(() => {
-    const whatsappNumber = winery.contact_info?.phone;
-    let formatted = whatsappNumber ? whatsappNumber.replace(/\D/g, "") : "";
-    if (formatted.length === 10) {
-      formatted = "1" + formatted;
-    }
-    return {
-      formattedNumber: formatted,
-      whatsappLink: formatted ? `https://wa.me/${formatted}` : ""
-    };
-  }, [winery.contact_info?.phone]);
+
 
   const { priceDisplay, minPrice, maxPrice, uniqueWineTypes } = useMemo(() => {
     const hasMultipleTastings = winery.tasting_info && winery.tasting_info.length > 1;
@@ -114,17 +104,7 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
             View Experience
           </Link>
 
-          {whatsappLink && (
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all duration-300 flex items-center justify-center"
-              title="Chat with Winery"
-            >
-              <FaWhatsapp size={20} />
-            </a>
-          )}
+
         </div>
       </div>
     </div>
