@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { FaUserAlt, FaSignOutAlt, FaHome, FaMapMarkerAlt, FaWineGlassAlt, FaMicrophone, FaHistory } from "react-icons/fa";
-import { useItinerary } from "@/store/itinerary";
+import { useItinerary, ItineraryWinery } from "@/store/itinerary";
 import Image from "next/image";
 import AuthModal from "../modal/AuthModal";
 import { MdExplore, MdOutlineSupportAgent, MdSupport } from "react-icons/md";
@@ -18,8 +18,53 @@ export function Navbar() {
   const [loading, setLoading] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [totalCost, setTotalCost] = useState(0);
   const router = useRouter();
   const { t, language, toggleLanguage } = useLanguage();
+
+  // Calculate total cost from itinerary
+  useEffect(() => {
+    const calculateTotalCost = () => {
+      return itinerary.reduce((total, winery) => {
+        let wineryCost = 0;
+        const bookingDetails = winery.bookingDetails;
+        const selectedTastingIndex = bookingDetails?.selectedTastingIndex || 0;
+        const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
+
+        // Calculate tasting cost using per-person pricing if available
+        const numberOfGuests = bookingDetails?.numberOfGuests || 1;
+        if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
+          // Use per-person pricing
+          wineryCost += currentTastingInfo.base_booking_fee; // Base fee for first person
+          if (numberOfGuests > 1) {
+            wineryCost += (numberOfGuests - 1) * (currentTastingInfo.additional_guest_fee || 0);
+          }
+        } else if (currentTastingInfo?.tasting_price) {
+          // Use legacy pricing
+          wineryCost += currentTastingInfo.tasting_price;
+        }
+
+        // Add food pairing prices
+        if (bookingDetails?.foodPairings) {
+          wineryCost += bookingDetails.foodPairings.reduce((sum, pairing) => sum + (pairing.price || 0), 0);
+        }
+
+        // Add tour prices
+        if (bookingDetails?.tours) {
+          wineryCost += bookingDetails.tours.reduce((sum, tour) => sum + (tour.price || 0), 0);
+        }
+
+        // Add other features prices
+        if (bookingDetails?.otherFeature) {
+          wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + (feature.price || 0), 0);
+        }
+
+        return total + wineryCost;
+      }, 0);
+    };
+
+    setTotalCost(calculateTotalCost());
+  }, [itinerary]);
 
   useEffect(() => {
     if (!user) {
@@ -93,7 +138,7 @@ export function Navbar() {
               </button>
 
               <VoiceFilter />
-              <ItineraryButton itineraryCount={itinerary.length} label={t('nav_itinerary')} />
+              <ItineraryButton itineraryCount={itinerary.length} totalCost={totalCost} label={t('nav_itinerary')} />
               {user ? (
                 <UserProfile user={user} handleLogout={handleLogout} loading={loading} t={t} />
               ) : (
@@ -112,6 +157,7 @@ export function Navbar() {
         user={user}
         handleLogout={handleLogout}
         itineraryCount={itinerary.length}
+        totalCost={totalCost}
         isProfileMenuOpen={isProfileMenuOpen}
         toggleProfileMenu={toggleProfileMenu}
         closeProfileMenu={closeProfileMenu}
@@ -129,7 +175,7 @@ const NavbarLink = ({ href, text }: { href: string; text: string }) => (
   </Link>
 );
 
-const ItineraryButton = ({ itineraryCount, label }: { itineraryCount: number; label?: string }) => (
+const ItineraryButton = ({ itineraryCount, totalCost, label }: { itineraryCount: number; totalCost: number; label?: string }) => (
   <div className="relative neumorphism-card p-2">
     <Link
       href="/itinerary"
@@ -138,9 +184,16 @@ const ItineraryButton = ({ itineraryCount, label }: { itineraryCount: number; la
       <FaWineGlassAlt size={16} />
       <span className="text-sm">{label || "Itinerary"}</span>
       {itineraryCount > 0 && (
-        <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
-          {itineraryCount}
-        </span>
+        <>
+          <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-bounce">
+            {itineraryCount}
+          </span>
+          {totalCost > 0 && (
+            <span className="text-xs font-bold bg-green-600 px-2 py-1 rounded-full">
+              ${totalCost.toFixed(0)}
+            </span>
+          )}
+        </>
       )}
     </Link>
   </div>
@@ -166,24 +219,26 @@ const UserProfile = ({ user, handleLogout, loading, t }: { user: IUser; handleLo
 const MobileBottomNav = ({
   user,
   handleLogout,
-  itineraryCount,
-  isProfileMenuOpen,
-  toggleProfileMenu,
-  closeProfileMenu,
-  loading = false,
-  setShowModal,
-  t
-}: {
-  user: any;
-  handleLogout: () => void;
-  itineraryCount: number;
-  isProfileMenuOpen: boolean;
-  toggleProfileMenu: () => void;
-  closeProfileMenu: () => void;
-  loading: boolean;
-  setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
-  t: any;
-}) => (
+      itineraryCount,
+      totalCost,
+      isProfileMenuOpen,
+      toggleProfileMenu,
+      closeProfileMenu,
+      loading,
+      setShowModal,
+      t
+  }: {
+    user: any;
+    handleLogout: () => void;
+    itineraryCount: number;
+    totalCost: number;
+    isProfileMenuOpen: boolean;
+    toggleProfileMenu: () => void;
+    closeProfileMenu: () => void;
+    loading: boolean;
+    setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
+    t: any;
+  }) => (
   <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-gray-100 shadow-lg flex justify-center py-1 rounded-t-xl neumorphism-card z-50 border-t-2 border-basic">
     <div className="flex justify-between w-full items-center px-4">
       <NavLink icon={<FaHome size={20} />} href="/" label="Home" />
@@ -191,7 +246,7 @@ const MobileBottomNav = ({
 
       <VoiceFilter />
 
-      <NavLink icon={<FaMapMarkerAlt size={20} />} href="/itinerary" label="Itinerary" badge={itineraryCount} />
+      <NavLink icon={<FaMapMarkerAlt size={20} />} href="/itinerary" label="Itinerary" badge={itineraryCount} totalCost={totalCost} />
 
       <div className="relative">
         <NavLink
@@ -242,12 +297,14 @@ const NavLink = ({
   href,
   label,
   badge,
+  totalCost,
   onClick,
 }: {
   icon: React.ReactNode;
   href: string;
   label: string;
   badge?: number;
+  totalCost?: number;
   onClick?: () => void;
 }) => (
   <Link
@@ -259,9 +316,16 @@ const NavLink = ({
     <span className="text-xs font-semibold ">{label}</span>
     {badge
       ? badge > 0 && (
-        <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center animate-bounce">
-          {badge}
-        </span>
+        <>
+          <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center animate-bounce">
+            {badge}
+          </span>
+          {totalCost && totalCost > 0 && (
+            <span className="absolute -bottom-1 right-0 bg-green-600 text-white text-xs px-1 rounded font-bold">
+              ${totalCost.toFixed(0)}
+            </span>
+          )}
+        </>
       )
       : ""}
   </Link>

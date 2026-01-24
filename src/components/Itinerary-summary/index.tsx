@@ -19,9 +19,16 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
         const selectedTastingIndex = bookingDetails?.selectedTastingIndex || 0;
         const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
 
-        // Always calculate the total cost for display purposes
-        // Add tasting price for the selected tasting
-        if (currentTastingInfo?.tasting_price) {
+        // Calculate tasting cost using per-person pricing if available, otherwise use legacy pricing
+        const numberOfGuests = bookingDetails?.numberOfGuests || 1;
+        if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
+          // Use per-person pricing
+          wineryCost += currentTastingInfo.base_booking_fee; // Base fee for first person
+          if (numberOfGuests > 1) {
+            wineryCost += (numberOfGuests - 1) * (currentTastingInfo.additional_guest_fee || 0);
+          }
+        } else if (currentTastingInfo?.tasting_price) {
+          // Use legacy pricing
           wineryCost += currentTastingInfo.tasting_price;
         }
 
@@ -89,7 +96,15 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
 
               // Calculate winery subtotal
               let winerySubtotal = 0;
-              if (currentTastingInfo?.tasting_price) {
+              const numberOfGuests = bookingDetails?.numberOfGuests || 1;
+              if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
+                // Use per-person pricing
+                winerySubtotal += currentTastingInfo.base_booking_fee; // Base fee for first person
+                if (numberOfGuests > 1) {
+                  winerySubtotal += (numberOfGuests - 1) * (currentTastingInfo.additional_guest_fee || 0);
+                }
+              } else if (currentTastingInfo?.tasting_price) {
+                // Use legacy pricing
                 winerySubtotal += currentTastingInfo.tasting_price;
               }
               if (bookingDetails?.foodPairings) {
@@ -124,7 +139,14 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                       bookingDetails.tours?.length > 0 ||
                       bookingDetails.otherFeature?.length > 0) ? (
                     <ul className="ml-4 list-disc text-xs">
-                      {currentTastingInfo?.tasting_price && (
+                      {currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0 ? (
+                        <li>
+                          Tasting (per-person): Base ${currentTastingInfo.base_booking_fee.toFixed(2)}
+                          {bookingDetails?.numberOfGuests && bookingDetails.numberOfGuests > 1 && currentTastingInfo.additional_guest_fee && (
+                            <> + ${((bookingDetails.numberOfGuests - 1) * currentTastingInfo.additional_guest_fee).toFixed(2)} for {bookingDetails.numberOfGuests - 1} additional guests</>
+                          )}
+                        </li>
+                      ) : currentTastingInfo?.tasting_price && (
                         <li>Tasting: ${currentTastingInfo.tasting_price.toFixed(2)}</li>
                       )}
                       {bookingDetails?.foodPairings?.map((pairing) => (

@@ -17,6 +17,8 @@ interface WineryBooking {
   wineryId: mongoose.Types.ObjectId;
   datetime: Date;
   tasting: number | null;
+  baseBookingFee?: number; // Base fee for first person
+  additionalGuestFee?: number; // Fee per additional guest
   tours: any[]; // Support detailed tour info
   foodPairings: FoodPairing[];
   otherFeatures: any[]; // Support detailed feature info
@@ -29,6 +31,8 @@ const wineryBookingSchema = new Schema<WineryBooking>(
     wineryId: { type: Schema.Types.ObjectId, required: true, ref: "Winery" },
     datetime: { type: Date, required: true },
     tasting: { type: Number, default: null },
+    baseBookingFee: { type: Number, default: 0 },
+    additionalGuestFee: { type: Number, default: 0 },
     tours: { type: [Object], default: [] },
     foodPairings: { type: [foodPairingSchema], default: [] },
     otherFeatures: { type: [Object], default: [] },

@@ -173,12 +173,22 @@ export async function POST(req: NextRequest) {
             throw new Error(`Winery ${winery.name} only allows up to ${maxGuests} guests per slot.`);
           }
 
-          // Calculation: Base Fee + (Additional Guest Fee * Guests)
-          // OR if legacy: tasting_price * Guests
+          // Calculation: Base Fee + (Additional Guest Fee * (Guests - 1))
+          // OR if legacy: tasting_price
           const baseFee = Number(tasting.base_booking_fee) || 0;
-          const guestFee = Number(tasting.additional_guest_fee) || Number(tasting.tasting_price) || 0;
+          const additionalGuestFee = Number(tasting.additional_guest_fee) || 0;
 
-          wineryTotal += baseFee + (guestFee * guests);
+          if (baseFee > 0) {
+            // Use per-person pricing
+            wineryTotal += baseFee; // Base fee for first person
+            if (guests > 1) {
+              wineryTotal += (guests - 1) * additionalGuestFee; // Additional fee for extra guests
+            }
+          } else {
+            // Use legacy pricing
+            const legacyPrice = Number(tasting.tasting_price) || 0;
+            wineryTotal += legacyPrice;
+          }
         }
       }
 
@@ -197,16 +207,23 @@ export async function POST(req: NextRequest) {
       status: "pending" // Initial Master Status
     });
 
-    booking.wineries = data.map((winery: any) => ({
-      wineryId: winery.wineryId,
-      datetime: winery.dateTime,
-      tasting: winery.tasting,
-      tours: winery.tours || [],
-      foodPairings: winery.foodPairings || [],
-      otherFeatures: winery.otherFeature || [],
-      numberOfGuests: winery.numberOfGuests || 1,
-      status: "pending" // Initial Individual Status
-    }));
+    booking.wineries = data.map((winery: any) => {
+      const wineryDetails = wineries.find(w => w._id.toString() === winery.wineryId.toString());
+      const tasting = wineryDetails?.tasting_info?.find((t: any) => t.tasting_title === winery.tastingTitle) || wineryDetails?.tasting_info?.[0];
+      
+      return {
+        wineryId: winery.wineryId,
+        datetime: winery.dateTime,
+        tasting: winery.tasting,
+        baseBookingFee: tasting?.base_booking_fee || 0,
+        additionalGuestFee: tasting?.additional_guest_fee || 0,
+        tours: winery.tours || [],
+        foodPairings: winery.foodPairings || [],
+        otherFeatures: winery.otherFeature || [],
+        numberOfGuests: winery.numberOfGuests || 1,
+        status: "pending" // Initial Individual Status
+      };
+    });
     await booking.save();
 
     // 1. Send ONE Master Itinerary Email to Customer

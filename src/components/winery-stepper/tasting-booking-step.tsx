@@ -497,11 +497,38 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-control">
+                <label className="label">Base Booking Fee (First Person)</label>
+                <input
+                  type="number"
+                  placeholder="Base fee for first guest"
+                  className="input input-bordered"
+                  value={tasting.base_booking_fee || ""}
+                  onChange={(e) => handleTastingChange(index, "base_booking_fee", parseFloat(e.target.value) || 0)}
+                  min={0}
+                  step="0.01"
+                />
+              </div>
+              <div className="form-control">
+                <label className="label">Additional Guest Fee</label>
+                <input
+                  type="number"
+                  placeholder="Fee per additional guest"
+                  className="input input-bordered"
+                  value={tasting.additional_guest_fee || ""}
+                  onChange={(e) => handleTastingChange(index, "additional_guest_fee", parseFloat(e.target.value) || 0)}
+                  min={0}
+                  step="0.01"
+                />
+              </div>
+            </div>
+
             <div className="form-control">
-              <label className="label">Wine Tasting Price</label>
+              <label className="label">Legacy Wine Tasting Price (Optional)</label>
               <input
                 type="number"
-                placeholder="Enter fixed price for tasting (e.g., 100)"
+                placeholder="Enter fixed price for tasting (e.g., 100) - will be overridden by per-person pricing if set"
                 className="input input-bordered"
                 value={tasting.tasting_price || ""}
                 onChange={handleTastingPriceChange(index)}
