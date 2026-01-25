@@ -309,24 +309,14 @@ export const SplitBookingDisplay: React.FC<SplitBookingDisplayProps> = ({
         </Button>
         <Button 
           onClick={() => {
-            // Share functionality using Web Share API if available, otherwise fallback
-            if (navigator.share) {
-              navigator.share({
-                title: 'Split Booking Details',
-                text: `Your booking has been split into ${bookingData.splitBookings.length + 1} separate bookings. Total: $${bookingData.totalPrice.toFixed(2)}`,
-                url: window.location.href
-              });
-            } else {
-              // Fallback: copy URL to input and let user manually copy
-              const url = window.location.href;
-              const input = document.createElement('input');
-              input.value = url;
-              document.body.appendChild(input);
-              input.select();
-              document.execCommand('copy');
-              document.body.removeChild(input);
-              // Simple feedback
-              alert('Booking link copied to clipboard!');
+            // Simple share functionality without complex APIs
+            const shareUrl = window.location.href;
+            const shareText = `Your booking has been split into ${bookingData.splitBookings.length + 1} separate bookings. Total: $${bookingData.totalPrice.toFixed(2)} - ${shareUrl}`;
+            
+            // Try to open share dialog in a simple way
+            if (confirm(`Share this booking?\n\n${shareText}\n\nClick OK to continue to share options.`)) {
+              // Open mailto link as simple sharing option
+              window.location.href = `mailto:?subject=Split Booking Details&body=${encodeURIComponent(shareText)}`;
             }
           }}
         >
