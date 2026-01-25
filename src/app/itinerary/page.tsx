@@ -150,6 +150,7 @@ export default function ItineraryPage() {
         wineryId: winery._id,
         dateTime: winery.bookingDetails?.selectedTime,
         numberOfGuests: winery.bookingDetails?.numberOfGuests || 1,
+        tastingTitle: currentTastingInfo?.tasting_title,
         tastingIndex: selectedTastingIndex,
         tasting: winery.bookingDetails?.tasting ? (currentTastingInfo?.tasting_price ?? 0) : null,
         foodPairings: winery.bookingDetails?.foodPairings || [],
@@ -171,12 +172,20 @@ export default function ItineraryPage() {
           let wineryTotal = 0;
           const selectedTastingIndex = winery.bookingDetails?.selectedTastingIndex || 0;
           const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
+          const guests = winery.bookingDetails?.numberOfGuests || 1;
 
-          if (currentTastingInfo?.tasting_price) wineryTotal += currentTastingInfo.tasting_price;
+          if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
+            wineryTotal += currentTastingInfo.base_booking_fee;
+            if (guests > 1) {
+              wineryTotal += (guests - 1) * (currentTastingInfo.additional_guest_fee || 0);
+            }
+          } else if (currentTastingInfo?.tasting_price) {
+            wineryTotal += currentTastingInfo.tasting_price;
+          }
 
-          winery.bookingDetails?.foodPairings?.forEach(p => wineryTotal += (p.price || 0));
-          winery.bookingDetails?.tours?.forEach(t => wineryTotal += (t.price || 0));
-          winery.bookingDetails?.otherFeature?.forEach(f => wineryTotal += (Number(f.price) || 0));
+          winery.bookingDetails?.foodPairings?.forEach(p => wineryTotal += ((p.price || 0) * guests));
+          winery.bookingDetails?.tours?.forEach(t => wineryTotal += ((t.price || 0) * guests));
+          winery.bookingDetails?.otherFeature?.forEach(f => wineryTotal += ((Number(f.price) || 0) * guests));
 
           if (wineryTotal > 0) {
             lineItems.push({

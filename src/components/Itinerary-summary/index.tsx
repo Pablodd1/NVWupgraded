@@ -32,19 +32,19 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
           wineryCost += currentTastingInfo.tasting_price;
         }
 
-        // Add food pairing prices if selected
+        // Add food pairing prices if selected (multiplied by guests)
         if (bookingDetails?.foodPairings) {
-          wineryCost += bookingDetails.foodPairings.reduce((sum, pairing) => sum + (pairing.price || 0), 0);
+          wineryCost += bookingDetails.foodPairings.reduce((sum, pairing) => sum + ((pairing.price || 0) * numberOfGuests), 0);
         }
 
-        // Add tour prices if selected
+        // Add tour prices if selected (multiplied by guests)
         if (bookingDetails?.tours) {
-          wineryCost += bookingDetails.tours.reduce((sum, tour) => sum + (tour.price || 0), 0);
+          wineryCost += bookingDetails.tours.reduce((sum, tour) => sum + ((tour.price || 0) * numberOfGuests), 0);
         }
 
-        // Add other features prices if selected
+        // Add other features prices if selected (multiplied by guests)
         if (bookingDetails?.otherFeature) {
-          wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + (feature.price || 0), 0);
+          wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + ((feature.price || 0) * numberOfGuests), 0);
         }
 
         return total + wineryCost;
@@ -108,13 +108,13 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                 winerySubtotal += currentTastingInfo.tasting_price;
               }
               if (bookingDetails?.foodPairings) {
-                winerySubtotal += bookingDetails.foodPairings.reduce((sum, p) => sum + p.price, 0);
+                winerySubtotal += bookingDetails.foodPairings.reduce((sum, p) => sum + (p.price * numberOfGuests), 0);
               }
               if (bookingDetails?.tours) {
-                winerySubtotal += bookingDetails.tours.reduce((sum, t) => sum + t.price, 0);
+                winerySubtotal += bookingDetails.tours.reduce((sum, t) => sum + (t.price * numberOfGuests), 0);
               }
               if (bookingDetails?.otherFeature) {
-                winerySubtotal += bookingDetails.otherFeature.reduce((sum, f) => sum + f.price, 0);
+                winerySubtotal += bookingDetails.otherFeature.reduce((sum, f) => sum + (f.price * numberOfGuests), 0);
               }
 
               return (
@@ -151,17 +151,17 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                       )}
                       {bookingDetails?.foodPairings?.map((pairing) => (
                         <li key={pairing.name}>
-                          {pairing.name}: ${pairing.price.toFixed(2)}
+                          {pairing.name}: ${pairing.price.toFixed(2)} x {numberOfGuests} = ${(pairing.price * numberOfGuests).toFixed(2)}
                         </li>
                       ))}
                       {bookingDetails?.tours?.map((tour) => (
                         <li key={tour.description}>
-                          {tour.description}: ${tour.price.toFixed(2)}
+                          {tour.description}: ${tour.price.toFixed(2)} x {numberOfGuests} = ${(tour.price * numberOfGuests).toFixed(2)}
                         </li>
                       ))}
                       {bookingDetails?.otherFeature?.map((feature) => (
                         <li key={feature.description}>
-                          {feature.description}: ${feature.price.toFixed(2)}
+                          {feature.description}: ${feature.price.toFixed(2)} x {numberOfGuests} = ${(feature.price * numberOfGuests).toFixed(2)}
                         </li>
                       ))}
                     </ul>

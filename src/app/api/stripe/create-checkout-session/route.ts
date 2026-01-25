@@ -113,32 +113,69 @@ export async function POST(req: Request) {
     const userId = await getUserIdFromToken();
     if (!userId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
+    // Pre-fetch wineries to get up-to-date pricing
+    const wineryIds = bookData.map((d: any) => d.wineryId);
+    const wineries = await WineryModel.find({ _id: { $in: wineryIds } });
+
     const totalPrice = bookData.reduce((acc: number, item: any) => {
       let wineryTotal = 0;
-      const guests = item.numberOfGuests || 1;
-      if (item.tasting) wineryTotal += item.tasting * guests;
-      item.foodPairings?.forEach((fp: any) => wineryTotal += (fp.price || 0) * guests);
-      item.tours?.forEach((t: any) => wineryTotal += (t.price || 0) * guests);
+      const guests = Number(item.numberOfGuests) || 1;
+      const winery = wineries.find(w => w._id.toString() === item.wineryId.toString());
+
+      if (winery) {
+        // Find the specific tasting being booked
+        const tasting = winery.tasting_info.find((t: any) => t.tasting_title === item.tastingTitle)
+          || winery.tasting_info[item.tastingIndex || 0]
+          || winery.tasting_info[0];
+
+        if (tasting) {
+          const baseFee = Number(tasting.base_booking_fee) || 0;
+          const additionalGuestFee = Number(tasting.additional_guest_fee) || 0;
+
+          if (baseFee > 0) {
+            wineryTotal += baseFee; // Base fee for first person
+            if (guests > 1) {
+              wineryTotal += (guests - 1) * additionalGuestFee; // Additional fee for extra guests
+            }
+          } else {
+            wineryTotal += (Number(tasting.tasting_price) || 0);
+          }
+        }
+      }
+
+      // Add features, food, tours (per guest)
+      item.foodPairings?.forEach((fp: any) => wineryTotal += (Number(fp.price) || 0) * guests);
+      item.tours?.forEach((t: any) => wineryTotal += (Number(t.price) || 0) * guests);
       item.otherFeatures?.forEach((of: any) => wineryTotal += (Number(of.price) || 0) * guests);
+
       return acc + wineryTotal;
     }, 0);
 
     const booking = new BookingModel({
       userId,
       payment_method: "pay_stripe",
-      paymentStatus: "pending", // Critical: starts as pending
+      paymentStatus: "pending",
       status: "pending",
       totalPrice,
       totalAmount: totalPrice,
-      wineries: bookData.map((winery: any) => ({
-        wineryId: winery.wineryId,
-        datetime: winery.dateTime,
-        tasting: winery.tasting,
-        tours: winery.tours || [],
-        foodPairings: winery.foodPairings || [],
-        otherFeatures: winery.otherFeature || [],
-        numberOfGuests: winery.numberOfGuests || 1
-      }))
+      wineries: bookData.map((winery: any) => {
+        const wineryDetails = wineries.find(w => w._id.toString() === winery.wineryId.toString());
+        const tasting = wineryDetails?.tasting_info?.find((t: any) => t.tasting_title === winery.tastingTitle)
+          || wineryDetails?.tasting_info?.[winery.tastingIndex || 0]
+          || wineryDetails?.tasting_info?.[0];
+
+        return {
+          wineryId: winery.wineryId,
+          datetime: winery.dateTime,
+          tasting: winery.tasting,
+          baseBookingFee: tasting?.base_booking_fee || 0,
+          additionalGuestFee: tasting?.additional_guest_fee || 0,
+          tours: winery.tours || [],
+          foodPairings: winery.foodPairings || [],
+          otherFeatures: winery.otherFeature || [],
+          numberOfGuests: winery.numberOfGuests || 1
+        };
+      })
     });
 
     // 3. Create Stripe Session with Booking ID in Metadata

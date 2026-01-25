@@ -18,6 +18,7 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
   const [availableTimes, setAvailableTimes] = useState<string[]>([]);
   const [selections, setSelections] = useState({
     tasting: true, // Auto-select tasting by default
+    numberOfGuests: 1,
     foodPairings: [] as { name: string; price: number }[],
     tours: [] as { description: string; price: number }[],
     otherFeature: [] as { description: string; price: number }[],
@@ -64,6 +65,7 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
       selectedTime,
       selectedTastingIndex,
       tasting: selections.tasting,
+      numberOfGuests: selections.numberOfGuests,
       foodPairings: selections.foodPairings,
       tours: selections.tours || [],
       otherFeature: selections.otherFeature || [],
@@ -107,13 +109,14 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
         selectedTime,
         selectedTastingIndex,
         tasting: selections.tasting,
+        numberOfGuests: selections.numberOfGuests,
         foodPairings: selections.foodPairings,
         tours: selections.tours || [],
         otherFeature: selections.otherFeature || [],
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedTime, selectedTastingIndex, selections.tasting, selections.foodPairings, selections.tours, selections.otherFeature]);
+  }, [selectedDate, selectedTime, selectedTastingIndex, selections.tasting, selections.numberOfGuests, selections.foodPairings, selections.tours, selections.otherFeature]);
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const dateValue = e.target.value;
@@ -246,9 +249,31 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
 
         {/* Tasting Price Info */}
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
-          <span className="text-sm text-green-800 font-medium">
-            ✅ Tasting: ${currentTastingInfo?.tasting_price?.toFixed(2) ?? "N/A"} (Selected)
-          </span>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-green-800 font-medium">
+              ✅ Tasting: {currentTastingInfo?.tasting_title}
+            </span>
+            <span className="text-sm text-green-800 font-bold">
+              ${(() => {
+                let tastingPrice = 0;
+                if (currentTastingInfo?.base_booking_fee) {
+                  tastingPrice = currentTastingInfo.base_booking_fee + (selections.numberOfGuests > 1 ? (selections.numberOfGuests - 1) * (currentTastingInfo.additional_guest_fee || 0) : 0);
+                } else {
+                  tastingPrice = (currentTastingInfo?.tasting_price || 0);
+                }
+                return tastingPrice.toFixed(2);
+              })()}
+            </span>
+          </div>
+          {currentTastingInfo?.base_booking_fee ? (
+            <p className="text-[10px] text-green-600 mt-1">
+              (${currentTastingInfo.base_booking_fee} base + ${currentTastingInfo.additional_guest_fee} per extra guest)
+            </p>
+          ) : (
+            <p className="text-[10px] text-green-600 mt-1">
+              (Flat rate for up to {currentTastingInfo?.booking_info?.max_guests_per_slot || 6} guests)
+            </p>
+          )}
         </div>
 
         {/* Available Times Display */}
@@ -324,6 +349,27 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
                 <p className="text-xs text-red-500 mt-1">No available times for selected date</p>
               )}
             </div>
+          </div>
+
+          {/* Number of Guests */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Number of Guests
+            </label>
+            <select
+              className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
+              value={selections.numberOfGuests}
+              onChange={(e) => {
+                const guests = Number(e.target.value);
+                setSelections((prev) => ({ ...prev, numberOfGuests: guests }));
+              }}
+            >
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                <option key={num} value={num}>
+                  {num} {num === 1 ? "Guest" : "Guests"}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Food Pairings and Tours Row */}
