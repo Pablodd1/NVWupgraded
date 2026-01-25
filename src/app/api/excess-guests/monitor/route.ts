@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/dbConnect';
+import { dbConnect } from '@/lib/dbConnect';
 import mongoose from 'mongoose';
 import ExcessGuestDetectionService from '@/lib/excessGuestDetection';
 import DynamicPricingService from '@/lib/dynamicPricing';
@@ -8,7 +8,7 @@ import Booking from '@/models/booking.model';
 // GET - Monitor exceeding bookings and capacity alerts
 export async function GET(request: NextRequest) {
   try {
-    await connectToDatabase();
+    await dbConnect();
     const { searchParams } = new URL(request.url);
     
     const wineryId = searchParams.get('wineryId');

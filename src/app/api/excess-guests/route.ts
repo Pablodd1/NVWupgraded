@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/dbConnect';
+import { dbConnect } from '@/lib/dbConnect';
 import mongoose from 'mongoose';
 import Winery from '@/models/winery.model';
 import SlotInventory from '@/models/slotInventory.model';
@@ -11,7 +11,7 @@ import DynamicPricingService from '@/lib/dynamicPricing';
 // POST - Handle booking request with excess guests
 export async function POST(request: NextRequest) {
   try {
-    await connectToDatabase();
+    await dbConnect();
     const body = await request.json();
     
     const {
