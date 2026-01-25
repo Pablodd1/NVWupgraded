@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   try {
     await dbConnect();
     const { searchParams } = new URL(request.url);
-    
+
     const wineryId = searchParams.get('wineryId');
     const reportType = searchParams.get('reportType') || 'summary'; // 'summary', 'detailed', 'critical'
     const startDate = searchParams.get('startDate');
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
           recommendations: generateRecommendations(filteredResults)
         };
         break;
-      
+
       case 'critical':
         responseData = {
           criticalBookings: filteredResults.criticalExceedances,
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
           actionItems: generateActionItems(filteredResults)
         };
         break;
-      
+
       case 'summary':
       default:
         responseData = filteredResults;
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
         startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         endDate ? new Date(endDate) : new Date()
       );
-      
+
       return NextResponse.json({
         success: true,
         data: {
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
   try {
     await dbConnect();
     const body = await request.json();
-    
+
     const {
       bookingIds,
       notificationType, // 'owner', 'customer', 'admin', 'all'
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
 
     // Get bookings with full details
     const bookings = await Booking.find({
-      '_id': { $in: bookingIds.map(id => new mongoose.Types.ObjectId(id)) }
+      '_id': { $in: bookingIds.map((id: string) => new mongoose.Types.ObjectId(id)) }
     }).populate('userId wineries.wineryId');
 
     const notifications = [];
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     for (const booking of bookings) {
       for (const wineryBooking of booking.wineries) {
         const winery = wineryBooking.wineryId;
-        
+
         // Owner notification
         if (['owner', 'all'].includes(notificationType)) {
           notifications.push({
