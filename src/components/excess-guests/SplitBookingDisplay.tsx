@@ -309,9 +309,25 @@ export const SplitBookingDisplay: React.FC<SplitBookingDisplayProps> = ({
         </Button>
         <Button 
           onClick={() => {
-            // Share functionality could be implemented here
-            navigator.clipboard.writeText(window.location.href);
-            // Show toast notification
+            // Share functionality using Web Share API if available, otherwise fallback
+            if (navigator.share) {
+              navigator.share({
+                title: 'Split Booking Details',
+                text: `Your booking has been split into ${bookingData.splitBookings.length + 1} separate bookings. Total: $${bookingData.totalPrice.toFixed(2)}`,
+                url: window.location.href
+              });
+            } else {
+              // Fallback: copy URL to input and let user manually copy
+              const url = window.location.href;
+              const input = document.createElement('input');
+              input.value = url;
+              document.body.appendChild(input);
+              input.select();
+              document.execCommand('copy');
+              document.body.removeChild(input);
+              // Simple feedback
+              alert('Booking link copied to clipboard!');
+            }
           }}
         >
           Share Booking
