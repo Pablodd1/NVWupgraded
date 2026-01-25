@@ -2,7 +2,8 @@ import mongoose from 'mongoose';
 import Booking from '../models/booking.model';
 import SlotInventory from '../models/slotInventory.model';
 import Winery from '../models/winery.model';
-import { sendNotification } from './notifications';
+// Note: sendNotification removed as it's not exported from notifications
+// The notification functionality is handled via console.log for now
 
 export interface ExcessGuestRequest {
   originalBooking: any;

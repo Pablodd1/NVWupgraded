@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model, models, Model, Document } from "mongoose";
 
 export interface ISlotInventory {
   wineryId: mongoose.Types.ObjectId;
@@ -11,6 +11,33 @@ export interface ISlotInventory {
   bookings: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ISlotInventoryDocument extends ISlotInventory, Document {}
+
+export interface ISlotInventoryModel extends Model<ISlotInventoryDocument> {
+  checkAvailability(
+    wineryId: mongoose.Types.ObjectId,
+    date: Date,
+    timeSlot: string,
+    requiredCapacity?: number
+  ): Promise<{ available: boolean; reason?: string; slot?: ISlotInventoryDocument }>;
+  
+  reserveCapacity(
+    wineryId: mongoose.Types.ObjectId,
+    date: Date,
+    timeSlot: string,
+    capacity: number,
+    bookingId: mongoose.Types.ObjectId
+  ): Promise<ISlotInventoryDocument>;
+  
+  releaseCapacity(
+    wineryId: mongoose.Types.ObjectId,
+    date: Date,
+    timeSlot: string,
+    capacity: number,
+    bookingId: mongoose.Types.ObjectId
+  ): Promise<ISlotInventoryDocument>;
 }
 
 const SlotInventorySchema = new Schema<ISlotInventory>(
@@ -158,6 +185,6 @@ SlotInventorySchema.statics.releaseCapacity = async function (
   return slot;
 };
 
-const SlotInventory = models.SlotInventory || model<ISlotInventory>("SlotInventory", SlotInventorySchema);
+const SlotInventory = (models.SlotInventory || model<ISlotInventoryDocument, ISlotInventoryModel>("SlotInventory", SlotInventorySchema)) as ISlotInventoryModel;
 
 export default SlotInventory;
