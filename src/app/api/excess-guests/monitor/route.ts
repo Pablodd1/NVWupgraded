@@ -71,10 +71,16 @@ export async function GET(request: NextRequest) {
         endDate ? new Date(endDate) : new Date()
       );
       
-      responseData.pricingAnalytics = {
-        history: pricingHistory,
-        insights: generatePricingInsights(pricingHistory)
-      };
+      return NextResponse.json({
+        success: true,
+        data: {
+          ...responseData,
+          pricingAnalytics: {
+            history: pricingHistory,
+            insights: generatePricingInsights(pricingHistory)
+          }
+        }
+      });
     }
 
     return NextResponse.json({
