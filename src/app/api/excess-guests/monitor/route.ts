@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
 // POST - Send manual notifications for exceeding bookings
 export async function POST(request: NextRequest) {
   try {
-    await connectToDatabase();
+    await dbConnect();
     const body = await request.json();
     
     const {
