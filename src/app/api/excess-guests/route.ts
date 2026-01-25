@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
   try {
     await dbConnect();
     const body = await request.json();
-    
+
     const {
       wineryId,
       requestedDate,
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     };
 
     const tempBooking = await Booking.create(originalBookingData);
-    
+
     const excessRequest = {
       originalBooking: tempBooking,
       excessGuests: capacityCheck.excessGuests,
@@ -112,9 +112,9 @@ export async function POST(request: NextRequest) {
 // GET - Check capacity and pricing for excess guests
 export async function GET(request: NextRequest) {
   try {
-    await connectToDatabase();
+    await dbConnect();
     const { searchParams } = new URL(request.url);
-    
+
     const wineryId = searchParams.get('wineryId');
     const date = searchParams.get('date');
     const timeSlot = searchParams.get('timeSlot');
