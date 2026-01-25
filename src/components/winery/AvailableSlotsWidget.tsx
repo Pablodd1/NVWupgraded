@@ -5,6 +5,8 @@ import axios from "axios";
 
 interface AvailableSlotsWidgetProps {
   wineryId: string;
+  showExcessGuestInfo?: boolean;
+  onExcessGuestBooking?: (slotInfo: SlotInfo, date: string) => void;
 }
 
 interface SlotInfo {
@@ -12,6 +14,9 @@ interface SlotInfo {
   availableCapacity: number;
   totalCapacity: number;
   slotId: string;
+  maxGuestsPerSlot?: number;
+  allowExcessGuests?: boolean;
+  excessGuestMultiplier?: number;
 }
 
 interface DaySlots {
@@ -46,7 +51,11 @@ interface SlotsData {
   } | null;
 }
 
-export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetProps) {
+export default function AvailableSlotsWidget({ 
+  wineryId, 
+  showExcessGuestInfo = false,
+  onExcessGuestBooking 
+}: AvailableSlotsWidgetProps) {
   const [slotsData, setSlotsData] = useState<SlotsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
@@ -103,20 +112,31 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden border-2 border-gray-100">
-      {/* Header */}
-      <div className="bg-white p-6 border-b border-gray-100">
-        <div className="flex items-center justify-between text-black">
-          <div>
-            <h3 className="text-2xl font-serif font-bold mb-1 text-black">Available Now</h3>
-            <p className="text-gray-500 text-sm">
-              Updated: {currentTime.toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
-            </p>
-          </div>
-        </div>
-      </div>
+       {/* Header */}
+       <div className="bg-white p-6 border-b border-gray-100">
+         <div className="flex items-center justify-between text-black">
+           <div>
+             <h3 className="text-2xl font-serif font-bold mb-1 text-black">Available Now</h3>
+             <p className="text-gray-500 text-sm">
+               Updated: {currentTime.toLocaleTimeString('en-US', {
+                 hour: '2-digit',
+                 minute: '2-digit'
+               })}
+             </p>
+           </div>
+           {showExcessGuestInfo && (
+             <div className="text-right">
+               <div className="text-xs text-amber-600 font-medium mb-1">
+                <FaUsers className="inline mr-1" />
+                Excess Guest Available
+               </div>
+               <div className="text-xs text-gray-500">
+                Bookings over capacity will be split
+               </div>
+             </div>
+           )}
+         </div>
+       </div>
 
       {/* Earliest Available Slot - Highlighted */}
       {earliestAvailable && (
@@ -165,21 +185,31 @@ export default function AvailableSlotsWidget({ wineryId }: AvailableSlotsWidgetP
               if (isPast) return null; // Don't show past slots
 
               return (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <FaClock className="text-gray-600" />
-                    <span className="font-medium">{slot.timeSlot}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FaUsers className="text-gray-400 text-sm" />
-                    <span className="text-sm font-medium text-black">
-                      {slot.availableCapacity} available
-                    </span>
-                  </div>
-                </div>
+                 <div
+                   key={index}
+                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                 >
+                   <div className="flex items-center gap-3">
+                     <FaClock className="text-gray-600" />
+                     <span className="font-medium">{slot.timeSlot}</span>
+                     {slot.allowExcessGuests && (
+                       <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded">
+                        +Excess
+                       </span>
+                     )}
+                   </div>
+                   <div className="flex items-center gap-2">
+                     <FaUsers className="text-gray-400 text-sm" />
+                     <span className="text-sm font-medium text-black">
+                       {slot.availableCapacity} available
+                     </span>
+                     {slot.maxGuestsPerSlot && (
+                       <span className="text-xs text-gray-500">
+                        / {slot.maxGuestsPerSlot}
+                       </span>
+                     )}
+                   </div>
+                 </div>
               );
             })}
           </div>

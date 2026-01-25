@@ -497,6 +497,69 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
               </div>
             </div>
 
+            <div className="form-control">
+              <label className="label">Maximum Guests Per Slot (Hard Limit)</label>
+              <input
+                type="number"
+                placeholder="Maximum guests allowed per time slot"
+                className="input input-bordered"
+                value={tasting.booking_info.max_guests_per_slot || ""}
+                onChange={(e) => {
+                  const value = parseInt(e.target.value) || 8;
+                  handleTastingChange(index, "booking_info", {
+                    ...tasting.booking_info,
+                    max_guests_per_slot: Math.max(1, value)
+                  });
+                }}
+                min={1}
+                max={50}
+              />
+              <label className="label">
+                <span className="label-text-alt text-info">
+                  Bookings exceeding this limit will be split into multiple time slots with dynamic pricing
+                </span>
+              </label>
+            </div>
+
+            <div className="form-control">
+              <label className="label">Excess Guest Settings</label>
+              <div className="space-y-2">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    className="checkbox"
+                    checked={tasting.booking_info.allow_excess_guests || false}
+                    onChange={(e) => handleTastingChange(index, "booking_info", {
+                      ...tasting.booking_info,
+                      allow_excess_guests: e.target.checked
+                    })}
+                  />
+                  <span className="ml-2">Allow bookings exceeding maximum guests (will be split)</span>
+                </label>
+                
+                {tasting.booking_info.allow_excess_guests && (
+                  <div className="ml-6 space-y-2">
+                    <input
+                      type="number"
+                      placeholder="Excess guest fee multiplier"
+                      className="input input-bordered input-sm w-48"
+                      value={tasting.booking_info.excess_guest_multiplier || 1.5}
+                      onChange={(e) => handleTastingChange(index, "booking_info", {
+                        ...tasting.booking_info,
+                        excess_guest_multiplier: parseFloat(e.target.value) || 1.5
+                      })}
+                      min={1}
+                      max={5}
+                      step="0.1"
+                    />
+                    <label className="label-text text-xs text-gray-600">
+                      Multiplier applied to excess guest pricing (1.5 = 50% extra charge)
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="form-control">
                 <label className="label">Base Booking Fee (First Person)</label>

@@ -12,8 +12,10 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
   const [totalPrice, setTotalPrice] = useState(0);
 
   useEffect(() => {
-    const calculateTotalPrice = () => {
-      return wineries.reduce((total, winery) => {
+    const calculateTotalPrice = async () => {
+      let total = 0;
+      
+      for (const winery of wineries) {
         let wineryCost = 0;
         const bookingDetails = winery.bookingDetails;
         const selectedTastingIndex = bookingDetails?.selectedTastingIndex || 0;
@@ -32,6 +34,37 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
           wineryCost += currentTastingInfo.tasting_price;
         }
 
+        // Check for excess guests and apply dynamic pricing
+        const maxGuestsPerSlot = currentTastingInfo?.booking_info?.max_guests_per_slot || 8;
+        const allowExcessGuests = currentTastingInfo?.booking_info?.allow_excess_guests || false;
+        const excessGuests = Math.max(0, numberOfGuests - maxGuestsPerSlot);
+
+        if (excessGuests > 0 && allowExcessGuests && bookingDetails?.selectedDate && bookingDetails?.selectedTime) {
+          try {
+            // Get dynamic pricing for excess guests
+            const dateStr = new Date(bookingDetails.selectedDate).toISOString().split('T')[0];
+            const timeStr = new Date(bookingDetails.selectedTime).toTimeString().substring(0, 5);
+            
+            const response = await fetch(
+              `/api/excess-guests?wineryId=${winery._id}&date=${dateStr}&timeSlot=${timeStr}&guestCount=${numberOfGuests}`
+            );
+            
+            if (response.ok) {
+              const data = await response.json();
+              wineryCost = data.pricing.totalPrice;
+            } else {
+              // Fallback to excess guest multiplier
+              const excessMultiplier = currentTastingInfo?.booking_info?.excess_guest_multiplier || 1.5;
+              wineryCost *= excessMultiplier;
+            }
+          } catch (error) {
+            console.error('Error getting excess guest pricing:', error);
+            // Fallback to excess guest multiplier
+            const excessMultiplier = currentTastingInfo?.booking_info?.excess_guest_multiplier || 1.5;
+            wineryCost *= excessMultiplier;
+          }
+        }
+
         // Add food pairing prices if selected (multiplied by guests)
         if (bookingDetails?.foodPairings) {
           wineryCost += bookingDetails.foodPairings.reduce((sum, pairing) => sum + ((pairing.price || 0) * numberOfGuests), 0);
@@ -47,11 +80,15 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
           wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + ((feature.price || 0) * numberOfGuests), 0);
         }
 
-        return total + wineryCost;
-      }, 0);
+        total += wineryCost;
+      }
+
+      setTotalPrice(total);
     };
 
-    setTotalPrice(calculateTotalPrice());
+    if (wineries.length > 0) {
+      calculateTotalPrice();
+    }
   }, [wineries]);
 
   const totalTime = wineries.length * 1.5;
@@ -128,11 +165,20 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                       {currentTastingInfo.tasting_title}
                     </div>
                   )}
-                  {bookingDetails?.selectedDate && bookingDetails?.selectedTime && (
-                    <div className="ml-4 text-xs text-green-600">
-                      📅 {new Date(bookingDetails.selectedTime).toLocaleDateString()} at {new Date(bookingDetails.selectedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  )}
+                   {bookingDetails?.selectedDate && bookingDetails?.selectedTime && (
+                     <div className="ml-4 text-xs text-green-600">
+                       📅 {new Date(bookingDetails.selectedTime).toLocaleDateString()} at {new Date(bookingDetails.selectedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                       {(() => {
+                         const maxGuestsPerSlot = currentTastingInfo?.booking_info?.max_guests_per_slot || 8;
+                         const excessGuests = Math.max(0, (bookingDetails?.numberOfGuests || 1) - maxGuestsPerSlot);
+                         return excessGuests > 0 && currentTastingInfo?.booking_info?.allow_excess_guests ? (
+                           <span className="ml-2 text-amber-600 font-medium">
+                             +{excessGuests} excess guests
+                           </span>
+                         ) : null;
+                       })()}
+                     </div>
+                   )}
                   {bookingDetails &&
                     (bookingDetails.tasting ||
                       bookingDetails.foodPairings?.length > 0 ||
