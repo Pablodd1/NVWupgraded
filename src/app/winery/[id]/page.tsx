@@ -14,7 +14,7 @@ import {
   FaUsers,
   FaCar,
 } from "react-icons/fa";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/buttons/button";
 import { Card } from "@/components/cards/card";
 import BookingCalendar from "@/components/booking-calendar";
@@ -33,6 +33,7 @@ const WineryDetail = () => {
   const [selectedFoodPairingOption, setSelectedFoodPairingOption] = useState<string | null>(null);
   const [selectedNumberOfPeople, setSelectedNumberOfPeople] = useState<number | string>(1);
   const { id } = useParams() as { id: string };
+  const router = useRouter();
   const { itinerary, setItinerary } = useItinerary();
   const [winery, setWinery] = useState<Winery>(undefined as any);
   const hasFetchedWinery = useRef(false);
@@ -55,12 +56,16 @@ const WineryDetail = () => {
   };
 
   const addToItinerary = () => {
-    if (!itinerary.includes(id as any)) {
-      setItinerary([...itinerary, winery]);
-      toast.success(`${winery?.name} added to your itinerary!`);
-    } else {
-      toast.error("Winery already in itinerary!");
-    }
+    setItinerary(prev => {
+      const isAlreadyAdded = prev.some(item => (item._id || item.name) === (winery._id || winery.name));
+      if (!isAlreadyAdded) {
+        return [...prev, winery];
+      }
+      return prev;
+    });
+
+    toast.success(`${winery?.name} added to your itinerary!`);
+    router.push("/itinerary");
   };
 
   const handleLocationPermission = useCallback(() => {

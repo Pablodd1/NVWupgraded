@@ -1,6 +1,6 @@
 "use client";
 import { Winery } from "@/app/interfaces";
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 export interface BookingData {
   selectedDate: string;
@@ -24,6 +24,27 @@ const ItineraryContext = createContext<ItineraryContextType | undefined>(undefin
 
 export const ItineraryProvider = ({ children }: { children: ReactNode }) => {
   const [itinerary, setItinerary] = useState<ItineraryWinery[]>([]);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const saved = localStorage.getItem("nvw_itinerary");
+    if (saved) {
+      try {
+        setItinerary(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to parse saved itinerary", e);
+      }
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // Save to localStorage whenever itinerary changes
+  useEffect(() => {
+    if (isInitialized) {
+      localStorage.setItem("nvw_itinerary", JSON.stringify(itinerary));
+    }
+  }, [itinerary, isInitialized]);
 
   return <ItineraryContext.Provider value={{ itinerary, setItinerary }}>{children}</ItineraryContext.Provider>;
 };

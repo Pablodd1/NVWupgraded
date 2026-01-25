@@ -99,12 +99,24 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
         <div className="mt-6 flex flex-wrap gap-2">
           <Link
             href={`/winery/${winery._id}`}
-            className="py-3 px-6 rounded-xl font-bold transition-all duration-300 flex-1 sm:flex-none bg-gray-900 text-white hover:bg-primary shadow-lg shadow-gray-200 hover:shadow-primary/20 text-center flex items-center justify-center"
+            className="py-3 px-6 rounded-xl font-bold transition-all duration-300 flex-1 sm:flex-none bg-gray-900 text-white hover:bg-primary shadow-lg shadow-gray-200 hover:shadow-primary/20 text-center flex items-center justify-center text-sm"
           >
             View Experience
           </Link>
 
-
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              addToItinerary(winery);
+            }}
+            disabled={!!isAdded}
+            className={`py-3 px-6 rounded-xl font-bold transition-all duration-300 flex-1 sm:flex-none text-sm text-center flex items-center justify-center ${isAdded
+              ? "bg-green-50 text-green-600 border border-green-200 cursor-not-allowed"
+              : "bg-white border-2 border-primary text-primary hover:bg-primary hover:text-white"
+              }`}
+          >
+            {isAdded ? "✓ In Itinerary" : "+ Add to Itinerary"}
+          </button>
         </div>
       </div>
     </div>

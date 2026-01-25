@@ -12,6 +12,7 @@ import Filter from "@/components/filter-bar/filter-box";
 import { useAuthStore } from "@/store/authStore";
 import axios from "axios";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { type NLPResult } from "@/lib/ai-nlp";
 import { Filters, useFilterStore } from "@/hooks/useFilterStore";
 import { useUIStore } from "@/store/uiStore";
@@ -27,6 +28,7 @@ export default function Home() {
   const [showPopup, setShowPopup] = useState(false);
   const { itinerary, setItinerary } = useItinerary();
   const { user, loading: authLoading } = useAuthStore();
+  const router = useRouter();
   const [filteredWineries, setFilteredWineries] = useState<Winery[]>([]);
   const [wineries, setWineries] = useState<Winery[]>([]);
   const { showVoiceSearch } = useUIStore();
@@ -137,8 +139,17 @@ export default function Home() {
   }, [wineries]); // Redundant comment, just verifying logic.
 
   const addToItinerary = (winery: Winery) => {
-    setItinerary([...itinerary, winery]);
-    toast.success(`${winery.name} added to your itinerary!`);
+    setItinerary(prev => {
+      const isAlreadyAdded = prev.some(item => (item._id || item.name) === (winery._id || winery.name));
+      if (!isAlreadyAdded) {
+        return [...prev, winery];
+      }
+      return prev;
+    });
+
+    toast.success(`${winery?.name} added to your itinerary!`);
+    // Use router.push to navigate to itinerary page so user can see their addition
+    router.push("/itinerary");
   };
 
   const handleVoiceFilters = (result: NLPResult) => {
@@ -169,7 +180,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen relative md:top-20 top-[50px] bg-gray-100">
-      <AgeGateSplash onVerify={() => setIsAgeVerified(true)} />
+      {!isAgeVerified && <AgeGateSplash onVerify={() => setIsAgeVerified(true)} />}
       {showPopup && isAgeVerified && <AuthModal setShowPopup={setShowPopup} />}
       <div className="grid grid-cols-1 lg:grid-cols-4 p-4 max-w-[1600px] mx-auto">
 
