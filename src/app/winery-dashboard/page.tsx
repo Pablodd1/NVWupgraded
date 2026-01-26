@@ -137,7 +137,7 @@ export default function WineryDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <DashboardCard
             title="Profile Management"
             description="Update your winery details, hours, and contact information"
@@ -146,9 +146,16 @@ export default function WineryDashboard() {
             bgColor="bg-white"
           />
           <DashboardCard
-            title="Inventory & Slots"
-            description="Manage your availability, capacity, and time slots"
+            title="Availability Calendar"
+            description="📅 Set available dates, time slots, and manage capacity"
             icon={<FaCalendarAlt size={32} />}
+            href="/winery-dashboard/availability"
+            bgColor="bg-white"
+          />
+          <DashboardCard
+            title="Inventory & Slots"
+            description="View and filter your time slots in table format"
+            icon={<FaChartLine size={32} />}
             href="/winery-dashboard/inventory"
             bgColor="bg-white"
           />
