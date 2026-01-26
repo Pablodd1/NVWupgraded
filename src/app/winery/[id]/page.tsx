@@ -236,8 +236,8 @@ const WineryDetail = () => {
                 <FaClock className="h-6 w-6 text-wine-primary" />
               </div>
               <div>
-                <h3 className="font-serif text-lg mb-1">Times</h3>
-                <p className="text-gray-600 text-sm capitalize">{currentTastingInfo?.available_times?.join(", ") || "N/A"}</p>
+                <h3 className="font-serif text-lg mb-1">Tasting Duration</h3>
+                <p className="text-gray-600 text-sm">60-90 minutes</p>
               </div>
             </div>
           </Card>
@@ -335,22 +335,7 @@ const WineryDetail = () => {
                   </div>
                 )}
 
-                {/* Food Pairings Section - Only show if pairings exist */}
-                {currentTastingInfo?.food_pairing_options && currentTastingInfo.food_pairing_options.length > 0 && (
-                  <div>
-                    <h3 className="font-serif text-xl mb-4">Food Pairings</h3>
-                    {currentTastingInfo.food_pairing_options.map((pairing, index) => (
-                      <div key={index + 1} className="mb-4 p-4 border border-gray-200 rounded-lg">
-                        <p className="mb-2">
-                          <strong>{pairing.name}</strong>
-                        </p>
-                        <p className="text-lg font-semibold text-wine-primary">
-                          {pairing.price === 0 ? 'Free' : `$${pairing.price.toFixed(2)}`}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+
               </div>
             </div>
           )}
@@ -452,23 +437,6 @@ const WineryDetail = () => {
           ) : (
             /* Built-in Booking Flow */
             <div className="space-y-6">
-              {/* Food Pairing Option Selection */}
-              <div>
-                <label className="text-sm text-gray-900 font-extrabold">Select Food Pairing (Optional)</label>
-                <select
-                  value={selectedFoodPairingOption || ""}
-                  onChange={(e) => setSelectedFoodPairingOption(e.target.value)}
-                  className="select select-bordered w-full mt-2 text-sm"
-                >
-                  <option value="">No food pairing</option>
-                  {currentTastingInfo?.food_pairing_options?.map((option) => (
-                    <option key={option.name} value={option.name} data-price={option.price}>
-                      {option.name} (${option.price.toFixed(2)})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               {/* Number of People Selection */}
               <div>
                 <label className="text-sm text-gray-900 font-extrabold">Number of People</label>
@@ -615,6 +583,60 @@ const WineryDetail = () => {
           </div>
           {userLocation && <Map userLocation={userLocation} wineryLocation={winery?.location} />}
         </div>
+
+        {/* Food Pairings Section - Bottom of Page */}
+        {currentTastingInfo?.food_pairing_options && currentTastingInfo.food_pairing_options.length > 0 && (
+          <div className="max-w-7xl mx-auto px-4 py-16">
+            <div className="bg-white rounded-xl p-8 shadow-lg">
+              <h2 className="font-serif text-3xl mb-2 text-wine-primary">Food Pairings</h2>
+              <p className="text-gray-600 mb-6">Enhance your tasting experience with artisanal pairings. Select quantity per party.</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentTastingInfo.food_pairing_options.map((pairing, index) => (
+                  <div key={index} className="border-2 border-gray-200 rounded-xl p-6 hover:border-wine-primary transition-all">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h3 className="font-bold text-lg text-gray-900">{pairing.name}</h3>
+                        <p className="text-wine-primary font-semibold text-xl mt-1">
+                          {pairing.price === 0 ? 'Complimentary' : `$${pairing.price.toFixed(2)}`}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    {/* Quantity Selector - Click to Select */}
+                    <div className="mt-4">
+                      <p className="text-sm text-gray-500 mb-2">Quantity for party:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {[0, 1, 2, 3, 4, 5, 6].map((qty) => (
+                          <button
+                            key={qty}
+                            onClick={() => {
+                              // Store selection (you can integrate with itinerary store)
+                              toast.success(qty === 0 ? `${pairing.name} removed` : `${qty}x ${pairing.name} selected`);
+                            }}
+                            className={`
+                              w-10 h-10 rounded-full border-2 font-bold transition-all
+                              ${qty === 0 
+                                ? 'border-gray-300 text-gray-400 hover:border-red-400 hover:text-red-500' 
+                                : 'border-wine-primary/30 text-wine-primary hover:bg-wine-primary hover:text-white'
+                              }
+                            `}
+                          >
+                            {qty === 0 ? '✕' : qty}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <p className="text-center text-gray-500 text-sm mt-6">
+                Food pairings are per person. Click a number to select quantity for your party.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

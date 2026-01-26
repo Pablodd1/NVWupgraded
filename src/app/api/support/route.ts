@@ -91,7 +91,7 @@ export async function GET() {
     channels: [
       { type: "email", address: "support@napavalleywineries.com" },
       { type: "chat", description: "AI Concierge - available 24/7" },
-      { type: "social", platforms: ["Instagram", "LinkedIn", "Facebook"] }
+      { type: "social", platforms: ["Instagram", "Facebook"] }
     ],
     businessHours: "24/7 AI Support, Human response within 24 hours"
   });

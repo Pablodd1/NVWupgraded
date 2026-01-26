@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
-import { FaEnvelope, FaPhone, FaComments, FaInstagram, FaLinkedin, FaFacebook, FaPaperPlane, FaSearch, FaQuestionCircle } from "react-icons/fa";
+import { FaEnvelope, FaPhone, FaComments, FaInstagram, FaFacebook, FaPaperPlane, FaSearch, FaQuestionCircle } from "react-icons/fa";
 
 const SupportPage = () => {
   const { t, language } = useLanguage();
@@ -419,18 +419,10 @@ const SupportPage = () => {
                 <FaInstagram className="text-2xl" />
               </a>
               <a 
-                href="https://www.linkedin.com/company/winesnvw/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="bg-blue-600 p-4 rounded-full text-white hover:scale-110 transition"
-              >
-                <FaLinkedin className="text-2xl" />
-              </a>
-              <a 
                 href="https://www.facebook.com/people/Wines-Nvw/pfbid02GokGEaA8ZzDCsbwijRW4WYCK4hp63H6W31PwmvPtn4yw69onT6w7gjKpnVWweyysl/" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="bg-blue-700 p-4 rounded-full text-white hover:scale-110 transition"
+                className="bg-blue-600 p-4 rounded-full text-white hover:scale-110 transition"
               >
                 <FaFacebook className="text-2xl" />
               </a>
