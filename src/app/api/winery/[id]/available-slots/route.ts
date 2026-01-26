@@ -142,7 +142,9 @@ export async function GET(
         availableCapacity: earliestSlot.availableCapacity,
         slotId: earliestSlot._id
       } : null,
-      upcomingDates: datesWithAvailability.slice(0, 10) // Next 10 dates with availability
+      upcomingDates: datesWithAvailability, // Return all dates with availability
+      // Return a map of all available slots by date for the frontend picker
+      calendar: Object.fromEntries(slotsByDate)
     }, { status: 200 });
 
   } catch (error: any) {
