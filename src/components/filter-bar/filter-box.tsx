@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Winery } from "@/app/interfaces";
 import BottomSheet from "../bottom-sheet";
-import { FilterIcon } from "lucide-react";
+import { FilterIcon, SearchIcon } from "lucide-react";
 import { MdRestore } from "react-icons/md";
 import { FilterBlock } from "./FilterBlock";
 import { Filters, useFilterStore } from "@/hooks/useFilterStore";
@@ -228,27 +228,43 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
   };
 
   const [isBottomSheetOpen, setBottomSheetOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  
   return (
     <>
-      <div className="md:hidden flex flex-row gap-2 w-full">
-        <button
-          className="flex-1 flex items-center justify-center space-x-2 px-4 py-2 rounded-md transition-all duration-300 ease-in-out bg-primary text-white shadow-glassmorphism text-sm"
-          onClick={() => setBottomSheetOpen(true)}
-          disabled={isLoading}
-          aria-label="Apply Filters"
-        >
-          <span className="font-medium">Apply Filters</span>
-          <FilterIcon size={20} />
-        </button>
+      {/* Mobile Search Bar */}
+      <div className="flex md:hidden flex-col gap-2 w-full mb-4">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search wineries..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+          />
+          <SearchIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        </div>
+        
+        <div className="flex flex-row gap-2">
+          <button
+            className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-md transition-all duration-300 ease-in-out bg-primary text-white shadow-glassmorphism text-sm font-medium"
+            onClick={() => setBottomSheetOpen(true)}
+            disabled={isLoading}
+            aria-label="Apply Filters"
+          >
+            <FilterIcon size={18} />
+            <span className="font-medium">Filters</span>
+          </button>
 
-        <button
-          className="flex-3 flex items-center justify-center space-x-2 px-4 py-2 rounded-md border border-wine-primary text-wine-primary bg-transparent hover:bg-wine-primary hover:text-white hover:shadow-neumorphism transition duration-300 ease-in-out text-sm"
-          onClick={() => setShowResetModal(true)}
-          aria-label="Reset Filters"
-        >
-          <MdRestore size={20} />
-          <span className="font-medium">Reset</span>
-        </button>
+          <button
+            className="flex items-center justify-center space-x-2 px-4 py-3 rounded-md border border-wine-primary text-wine-primary bg-transparent hover:bg-wine-primary hover:text-white hover:shadow-neumorphism transition duration-300 ease-in-out text-sm font-medium"
+            onClick={() => setShowResetModal(true)}
+            aria-label="Reset Filters"
+          >
+            <MdRestore size={18} />
+            <span className="font-medium">Reset</span>
+          </button>
+        </div>
       </div>
 
       <BottomSheet isOpen={isBottomSheetOpen} onClose={() => setBottomSheetOpen(false)}>
@@ -262,6 +278,19 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
       </BottomSheet>
       <div className="hidden md:block p-4 bg-white shadow-lg rounded-lg w-full max-w-sm sm:max-w-md space-y-4 md:space-y-6">
         <h2 className="text-lg font-semibold text-gray-800">Filter Wineries</h2>
+        
+        {/* Desktop Search Bar */}
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Search wineries..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+          />
+          <SearchIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        </div>
+        
         <FilterBlock
           filters={filters}
           handleFilterChange={handleFilterChange}

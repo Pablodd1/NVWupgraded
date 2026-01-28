@@ -39,7 +39,7 @@ export const FilterBlock = ({
   return (
     <>
       {/* Total Price Range Filter */}
-      <div className="grid gap-4 mt-8 mb-5">
+      <div className="grid gap-4 mt-6 mb-5">
         <label className="text-sm text-gray-900 font-extrabold">Price Range of Tasting</label>
         <Range
           step={10}

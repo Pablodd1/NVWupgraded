@@ -79,10 +79,10 @@ const BottomSheet = ({ isOpen, onClose, children, anchor = "bottom" }: Props) =>
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        className={`fixed ${anchorClasses[anchor]} bg-white p-6 shadow-lg z-50 transition-transform transform ${
+        className={`fixed ${anchorClasses[anchor]} bg-white p-4 sm:p-6 shadow-lg z-50 transition-transform transform ${
           isOpen ? "translate-0" : translateClasses[anchor]
         }`}
-        style={{ transitionDuration: "300ms", maxHeight: "85vh", overflow: "auto" }}
+        style={{ transitionDuration: "300ms", maxHeight: "90vh", overflow: "auto" }}
       >
         <button className="absolute top-4 right-4 btn btn-sm btn-circle btn-outline" onClick={onClose} aria-label="Close">
           ✕

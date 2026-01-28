@@ -184,12 +184,12 @@ export default function Home() {
       {showPopup && isAgeVerified && <AuthModal setShowPopup={setShowPopup} />}
       <div className="grid grid-cols-1 lg:grid-cols-4 p-4 max-w-[1600px] mx-auto">
 
-        <div className="lg:col-span-1 sm:col-span-1 mb-10">
+        <div className="lg:col-span-1 mb-4 lg:mb-10">
           {/* We pass all loaded wineries to the filter. Client-side filtering applies to "Loaded So Far" */}
           <Filter wineries={wineries} onFilterApply={setFilteredWineries} />
         </div>
 
-        <div className="col-span-3 space-y-6 lg:ml-10 mb-20">
+        <div className="lg:col-span-3 space-y-6 lg:ml-10 mb-20">
           {/* Voice Search Toggle Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 mb-8 gap-4">
             <div>
