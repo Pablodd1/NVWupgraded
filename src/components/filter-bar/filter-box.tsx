@@ -119,19 +119,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
       });
     }
 
-    // Filter by available time
-    if (filters.time) {
-      filtered = filtered.filter((winery) => {
-        if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
 
-        // Check if any tasting has the required time
-        return winery.tasting_info.some(tasting => {
-          if (!tasting.available_times || !Array.isArray(tasting.available_times)) return false;
-
-          return tasting.available_times.some((time) => filters.time.toLowerCase() === time.toLowerCase());
-        });
-      });
-    }
 
     // Filter by special features
     if (filters.specialFeatures.length > 0) {
@@ -229,7 +217,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
 
   const [isBottomSheetOpen, setBottomSheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   return (
     <>
       {/* Mobile Search Bar */}
@@ -244,7 +232,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
           />
           <SearchIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
         </div>
-        
+
         <div className="flex flex-row gap-2">
           <button
             className="flex-1 flex items-center justify-center space-x-2 px-4 py-3 rounded-md transition-all duration-300 ease-in-out bg-primary text-white shadow-glassmorphism text-sm font-medium"
@@ -278,7 +266,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
       </BottomSheet>
       <div className="hidden md:block p-4 bg-white shadow-lg rounded-lg w-full max-w-sm sm:max-w-md space-y-4 md:space-y-6">
         <h2 className="text-lg font-semibold text-gray-800">Filter Wineries</h2>
-        
+
         {/* Desktop Search Bar */}
         <div className="relative">
           <input
@@ -290,7 +278,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
           />
           <SearchIcon size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
         </div>
-        
+
         <FilterBlock
           filters={filters}
           handleFilterChange={handleFilterChange}

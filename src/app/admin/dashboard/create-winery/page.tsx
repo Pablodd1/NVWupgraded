@@ -10,7 +10,7 @@ export default function CreateWineryAccount() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState({
     // User account details
     firstName: "",
@@ -19,7 +19,7 @@ export default function CreateWineryAccount() {
     password: "",
     confirmPassword: "",
     phone: "",
-    
+
     // Winery details
     wineryName: "",
     wineryAddress: "",
@@ -107,10 +107,10 @@ export default function CreateWineryAccount() {
       if (response.ok) {
         const data = await response.json();
         toast.success("Winery account created successfully!");
-        
+
         // Show credentials to admin
         alert(`Account Created!\n\nEmail: ${formData.email}\nPassword: ${formData.password}\n\nPlease share these credentials with the winery owner.`);
-        
+
         // Reset form
         setFormData({
           firstName: "",
@@ -128,7 +128,7 @@ export default function CreateWineryAccount() {
           wineryWebsite: "",
           wineryDescription: "",
         });
-        
+
         // Redirect to users page
         router.push("/admin/dashboard/users");
       } else {
@@ -193,7 +193,7 @@ export default function CreateWineryAccount() {
                 <div className="ml-3">
                   <p className="text-sm font-medium text-red-800">{errorMessage}</p>
                 </div>
-                <button 
+                <button
                   type="button"
                   onClick={() => setErrorMessage(null)}
                   className="ml-auto text-red-500 hover:text-red-700"
@@ -210,7 +210,7 @@ export default function CreateWineryAccount() {
               <FaUser className="text-2xl text-blue-600 mr-3" />
               <h2 className="text-xl font-bold text-gray-900">Owner Account Details</h2>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -225,7 +225,7 @@ export default function CreateWineryAccount() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Last Name <span className="text-red-500">*</span>
@@ -239,7 +239,7 @@ export default function CreateWineryAccount() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Email <span className="text-red-500">*</span>
@@ -249,11 +249,11 @@ export default function CreateWineryAccount() {
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   className="input input-bordered w-full"
-                  placeholder="owner@winery.com"
+                  placeholder="anabel@nvw.wine"
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Phone <span className="text-red-500">*</span>
@@ -267,7 +267,7 @@ export default function CreateWineryAccount() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Password <span className="text-red-500">*</span>
@@ -282,7 +282,7 @@ export default function CreateWineryAccount() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Confirm Password <span className="text-red-500">*</span>
@@ -306,7 +306,7 @@ export default function CreateWineryAccount() {
               <FaWineGlass className="text-2xl text-purple-600 mr-3" />
               <h2 className="text-xl font-bold text-gray-900">Winery Details</h2>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -321,7 +321,7 @@ export default function CreateWineryAccount() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Description
@@ -333,7 +333,7 @@ export default function CreateWineryAccount() {
                   placeholder="Describe the winery, its history, and specialties..."
                 />
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -349,7 +349,7 @@ export default function CreateWineryAccount() {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Latitude (optional)
@@ -363,7 +363,7 @@ export default function CreateWineryAccount() {
                     placeholder="38.5025"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Longitude (optional)
@@ -377,7 +377,7 @@ export default function CreateWineryAccount() {
                     placeholder="-122.2654"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <FaPhone className="inline mr-2" />
@@ -391,7 +391,7 @@ export default function CreateWineryAccount() {
                     placeholder="+1 (555) 987-6543"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <FaEnvelope className="inline mr-2" />
@@ -402,10 +402,10 @@ export default function CreateWineryAccount() {
                     value={formData.wineryEmail}
                     onChange={(e) => handleInputChange('wineryEmail', e.target.value)}
                     className="input input-bordered w-full"
-                    placeholder="info@winery.com"
+                    placeholder="anabel@nvw.wine"
                   />
                 </div>
-                
+
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     <FaGlobe className="inline mr-2" />

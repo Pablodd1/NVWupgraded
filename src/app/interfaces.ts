@@ -51,6 +51,8 @@ export interface BookingInfo {
   dynamic_pricing: DynamicPricing;
   available_slots: string[];
   external_booking_link?: string;
+  allow_excess_guests?: boolean;
+  excess_guest_multiplier?: number;
 }
 
 // Amenities.ts

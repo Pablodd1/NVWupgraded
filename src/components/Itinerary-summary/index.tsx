@@ -14,7 +14,7 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
   useEffect(() => {
     const calculateTotalPrice = async () => {
       let total = 0;
-      
+
       for (const winery of wineries) {
         let wineryCost = 0;
         const bookingDetails = winery.bookingDetails;
@@ -44,11 +44,11 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
             // Get dynamic pricing for excess guests
             const dateStr = new Date(bookingDetails.selectedDate).toISOString().split('T')[0];
             const timeStr = new Date(bookingDetails.selectedTime).toTimeString().substring(0, 5);
-            
+
             const response = await fetch(
               `/api/excess-guests?wineryId=${winery._id}&date=${dateStr}&timeSlot=${timeStr}&guestCount=${numberOfGuests}`
             );
-            
+
             if (response.ok) {
               const data = await response.json();
               wineryCost = data.pricing.totalPrice;
@@ -65,19 +65,19 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
           }
         }
 
-        // Add food pairing prices if selected (multiplied by guests)
+        // Add food pairing prices if selected
         if (bookingDetails?.foodPairings) {
-          wineryCost += bookingDetails.foodPairings.reduce((sum, pairing) => sum + ((pairing.price || 0) * numberOfGuests), 0);
+          wineryCost += bookingDetails.foodPairings.reduce((sum, pairing) => sum + (pairing.price || 0), 0);
         }
 
-        // Add tour prices if selected (multiplied by guests)
+        // Add tour prices if selected
         if (bookingDetails?.tours) {
-          wineryCost += bookingDetails.tours.reduce((sum, tour) => sum + ((tour.price || 0) * numberOfGuests), 0);
+          wineryCost += bookingDetails.tours.reduce((sum, tour) => sum + (tour.price || 0), 0);
         }
 
-        // Add other features prices if selected (multiplied by guests)
+        // Add other features prices if selected
         if (bookingDetails?.otherFeature) {
-          wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + ((feature.price || 0) * numberOfGuests), 0);
+          wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + (feature.price || 0), 0);
         }
 
         total += wineryCost;
@@ -145,13 +145,13 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                 winerySubtotal += currentTastingInfo.tasting_price;
               }
               if (bookingDetails?.foodPairings) {
-                winerySubtotal += bookingDetails.foodPairings.reduce((sum, p) => sum + (p.price * numberOfGuests), 0);
+                winerySubtotal += bookingDetails.foodPairings.reduce((sum, p) => sum + (p.price || 0), 0);
               }
               if (bookingDetails?.tours) {
-                winerySubtotal += bookingDetails.tours.reduce((sum, t) => sum + (t.price * numberOfGuests), 0);
+                winerySubtotal += bookingDetails.tours.reduce((sum, t) => sum + (t.price || 0), 0);
               }
               if (bookingDetails?.otherFeature) {
-                winerySubtotal += bookingDetails.otherFeature.reduce((sum, f) => sum + (f.price * numberOfGuests), 0);
+                winerySubtotal += bookingDetails.otherFeature.reduce((sum, f) => sum + (f.price || 0), 0);
               }
 
               return (
@@ -165,20 +165,20 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                       {currentTastingInfo.tasting_title}
                     </div>
                   )}
-                   {bookingDetails?.selectedDate && bookingDetails?.selectedTime && (
-                     <div className="ml-4 text-xs text-green-600">
-                       📅 {new Date(bookingDetails.selectedTime).toLocaleDateString()} at {new Date(bookingDetails.selectedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                       {(() => {
-                         const maxGuestsPerSlot = currentTastingInfo?.booking_info?.max_guests_per_slot || 8;
-                         const excessGuests = Math.max(0, (bookingDetails?.numberOfGuests || 1) - maxGuestsPerSlot);
-                         return excessGuests > 0 && currentTastingInfo?.booking_info?.allow_excess_guests ? (
-                           <span className="ml-2 text-amber-600 font-medium">
-                             +{excessGuests} excess guests
-                           </span>
-                         ) : null;
-                       })()}
-                     </div>
-                   )}
+                  {bookingDetails?.selectedDate && bookingDetails?.selectedTime && (
+                    <div className="ml-4 text-xs text-green-600">
+                      📅 {new Date(bookingDetails.selectedTime).toLocaleDateString()} at {new Date(bookingDetails.selectedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {(() => {
+                        const maxGuestsPerSlot = currentTastingInfo?.booking_info?.max_guests_per_slot || 8;
+                        const excessGuests = Math.max(0, (bookingDetails?.numberOfGuests || 1) - maxGuestsPerSlot);
+                        return excessGuests > 0 && currentTastingInfo?.booking_info?.allow_excess_guests ? (
+                          <span className="ml-2 text-amber-600 font-medium">
+                            +{excessGuests} excess guests
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
                   {bookingDetails &&
                     (bookingDetails.tasting ||
                       bookingDetails.foodPairings?.length > 0 ||
@@ -195,19 +195,19 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                       ) : currentTastingInfo?.tasting_price && (
                         <li>Tasting: ${currentTastingInfo.tasting_price.toFixed(2)}</li>
                       )}
-                      {bookingDetails?.foodPairings?.map((pairing) => (
-                        <li key={pairing.name}>
-                          {pairing.name}: ${pairing.price.toFixed(2)} x {numberOfGuests} = ${(pairing.price * numberOfGuests).toFixed(2)}
+                      {bookingDetails?.foodPairings?.map((pairing, idx) => (
+                        <li key={`${pairing.name}-${idx}`}>
+                          {pairing.name}: ${pairing.price.toFixed(2)}
                         </li>
                       ))}
-                      {bookingDetails?.tours?.map((tour) => (
-                        <li key={tour.description}>
-                          {tour.description}: ${tour.price.toFixed(2)} x {numberOfGuests} = ${(tour.price * numberOfGuests).toFixed(2)}
+                      {bookingDetails?.tours?.map((tour, idx) => (
+                        <li key={`${tour.description}-${idx}`}>
+                          {tour.description}: ${tour.price.toFixed(2)}
                         </li>
                       ))}
-                      {bookingDetails?.otherFeature?.map((feature) => (
-                        <li key={feature.description}>
-                          {feature.description}: ${feature.price.toFixed(2)} x {numberOfGuests} = ${(feature.price * numberOfGuests).toFixed(2)}
+                      {bookingDetails?.otherFeature?.map((feature, idx) => (
+                        <li key={`${feature.description}-${idx}`}>
+                          {feature.description}: ${feature.price.toFixed(2)}
                         </li>
                       ))}
                     </ul>

@@ -103,19 +103,12 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
               href="https://www.instagram.com/winesnvw/"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-outline border-gray-200 text-gray-600 hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-red-500 hover:to-purple-500 hover:text-white hover:border-transparent transition-all"
+              className="btn btn-outline border-gray-200 bg-gradient-to-br from-purple-600 to-pink-500 text-white border-transparent hover:scale-105 transition-all"
             >
               <FaInstagram size={20} />
             </a>
 
-            <a
-              href="https://www.facebook.com/people/Wines-Nvw/pfbid02GokGEaA8ZzDCsbwijRW4WYCK4hp63H6W31PwmvPtn4yw69onT6w7gjKpnVWweyysl/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-outline border-gray-200 text-gray-600 hover:bg-blue-600 hover:text-white hover:border-transparent transition-all"
-            >
-              <FaFacebook size={20} />
-            </a>
+
           </div>
 
           {error && (!isLoginMode || (!error.toLowerCase().includes("firstname") && !error.toLowerCase().includes("lastname"))) && (

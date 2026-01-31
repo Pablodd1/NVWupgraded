@@ -26,7 +26,10 @@ import axios from "axios";
 import AvailableSlotsWidget from "@/components/winery/AvailableSlotsWidget";
 import Image from "next/image";
 
+import { useAuthStore } from "@/store/authStore";
+
 const WineryDetail = () => {
+  const { user } = useAuthStore();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<GeolocationCoordinates | null>(null);
   const [selectedTastingIndex, setSelectedTastingIndex] = useState<number>(0);
@@ -37,6 +40,50 @@ const WineryDetail = () => {
   const { itinerary, setItinerary } = useItinerary();
   const [winery, setWinery] = useState<Winery>(undefined as any);
   const hasFetchedWinery = useRef(false);
+
+  // Auth Overlay
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center space-y-6">
+          <div className="w-16 h-16 bg-wine-primary/10 rounded-full flex items-center justify-center mx-auto">
+            <FaWineGlass className="text-3xl text-wine-primary" />
+          </div>
+          <h2 className="text-2xl font-serif font-bold text-gray-900">Unlock Exclusive Access</h2>
+          <p className="text-gray-600">
+            Sign up or log in to view exclusive winery details, book tastings, and create your personalized itinerary.
+          </p>
+          <div className="space-y-3">
+            {/* The AuthModal is usually triggered by the Navbar state or we can redirect to login */}
+            <Button
+              className="w-full bg-wine-primary hover:bg-wine-primary/90 text-white py-3 rounded-lg font-bold"
+              onClick={() => {
+                // Trigger global auth modal via event or direct state if possible, or redirect
+                // For now, let's assume we can push to a login route or trigger the modal
+                // Since AuthModal is in Layout/Navbar, we might need a way to open it.
+                // A simple redirect to home with a query param might work if the home page opens the modal.
+                // Or we can just redirect to home
+                router.push('/?login=true');
+              }}
+            >
+              Sign In / Sign Up
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full text-gray-500 hover:text-gray-700"
+              onClick={() => router.push('/')}
+            >
+              Back to Search
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Booking State
+  const [selectedFoodPairings, setSelectedFoodPairings] = useState<{ name: string; price: number }[]>([]);
+  const [selectedTours, setSelectedTours] = useState<{ description: string; price: number }[]>([]);
 
   // Get current tasting info based on selection
   const currentTastingInfo = winery?.tasting_info?.[selectedTastingIndex];
@@ -56,16 +103,60 @@ const WineryDetail = () => {
   };
 
   const addToItinerary = () => {
+    const wineryWithBookingDetails = {
+      ...winery,
+      bookingDetails: {
+        selectedTastingIndex,
+        numberOfGuests: Number(selectedNumberOfPeople),
+        foodPairings: selectedFoodPairings,
+        tours: selectedTours,
+        otherFeature: [],
+        selectedDate: "",
+        selectedTime: "",
+        tasting: true
+      }
+    };
+
     setItinerary(prev => {
       const isAlreadyAdded = prev.some(item => (item._id || item.name) === (winery._id || winery.name));
       if (!isAlreadyAdded) {
-        return [...prev, winery];
+        return [...prev, wineryWithBookingDetails];
       }
       return prev;
     });
 
     toast.success(`${winery?.name} added to your itinerary!`);
     router.push("/itinerary");
+  };
+
+  const handleFoodPairingChange = (pairing: any, qty: number) => {
+    // Remove existing entries for this pairing
+    const otherPairings = selectedFoodPairings.filter(p => p.name !== pairing.name);
+    // Create new entries based on quantity
+    const newEntries = Array(qty).fill({ name: pairing.name, price: pairing.price });
+    setSelectedFoodPairings([...otherPairings, ...newEntries]);
+
+    toast.success(qty === 0 ? `${pairing.name} removed` : `${qty}x ${pairing.name} selected`);
+  };
+
+  const handleTourToggle = (tour: any) => {
+    // Check if tour is already selected (check if any entry matches description)
+    const isSelected = selectedTours.some(t => t.description === tour.description);
+
+    if (isSelected) {
+      // Remove
+      setSelectedTours(prev => prev.filter(t => t.description !== tour.description));
+      toast.info("Tour removed");
+    } else {
+      // Add for all guests (Per Guest policy)
+      const guestCount = Number(selectedNumberOfPeople) || 1;
+      const newEntries = Array(guestCount).fill({
+        description: tour.description,
+        price: tour.cost // Use 'cost' from tour object, map to 'price' 
+      });
+      setSelectedTours(prev => [...prev, ...newEntries]);
+      toast.success("Tour added for all guests");
+    }
   };
 
   const handleLocationPermission = useCallback(() => {
@@ -313,6 +404,12 @@ const WineryDetail = () => {
                         <p className="text-lg font-semibold text-wine-primary">
                           {tour.cost === 0 ? 'Free' : `$${tour.cost.toFixed(2)}`}
                         </p>
+                        <Button
+                          onClick={() => handleTourToggle(tour)}
+                          className={`mt-2 w-full ${selectedTours.some(t => t.description === tour.description) ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-wine-primary text-white hover:bg-wine-primary/90'}`}
+                        >
+                          {selectedTours.some(t => t.description === tour.description) ? 'Remove' : 'Add to Booking'}
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -590,7 +687,7 @@ const WineryDetail = () => {
             <div className="bg-white rounded-xl p-8 shadow-lg">
               <h2 className="font-serif text-3xl mb-2 text-wine-primary">Food Pairings</h2>
               <p className="text-gray-600 mb-6">Enhance your tasting experience with artisanal pairings. Select quantity per party.</p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {currentTastingInfo.food_pairing_options.map((pairing, index) => (
                   <div key={index} className="border-2 border-gray-200 rounded-xl p-6 hover:border-wine-primary transition-all">
@@ -602,7 +699,7 @@ const WineryDetail = () => {
                         </p>
                       </div>
                     </div>
-                    
+
                     {/* Quantity Selector - Click to Select */}
                     <div className="mt-4">
                       <p className="text-sm text-gray-500 mb-2">Quantity for party:</p>
@@ -610,15 +707,16 @@ const WineryDetail = () => {
                         {[0, 1, 2, 3, 4, 5, 6].map((qty) => (
                           <button
                             key={qty}
-                            onClick={() => {
-                              // Store selection (you can integrate with itinerary store)
-                              toast.success(qty === 0 ? `${pairing.name} removed` : `${qty}x ${pairing.name} selected`);
-                            }}
+                            onClick={() => handleFoodPairingChange(pairing, qty)}
                             className={`
                               w-10 h-10 rounded-full border-2 font-bold transition-all
-                              ${qty === 0 
-                                ? 'border-gray-300 text-gray-400 hover:border-red-400 hover:text-red-500' 
-                                : 'border-wine-primary/30 text-wine-primary hover:bg-wine-primary hover:text-white'
+                              ${
+                              // Check if this quantity is currently selected
+                              selectedFoodPairings.filter(p => p.name === pairing.name).length === qty
+                                ? 'bg-wine-primary text-white border-wine-primary'
+                                : qty === 0
+                                  ? 'border-gray-300 text-gray-400 hover:border-red-400 hover:text-red-500'
+                                  : 'border-wine-primary/30 text-wine-primary hover:bg-wine-primary hover:text-white'
                               }
                             `}
                           >
@@ -630,7 +728,7 @@ const WineryDetail = () => {
                   </div>
                 ))}
               </div>
-              
+
               <p className="text-center text-gray-500 text-sm mt-6">
                 Food pairings are per person. Click a number to select quantity for your party.
               </p>
