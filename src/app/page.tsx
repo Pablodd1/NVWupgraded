@@ -179,38 +179,10 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen relative md:top-20 top-[50px] bg-gray-100">
+    <div className="min-h-screen relative pt-24 md:pt-28 pb-32 bg-gray-100">
       {!isAgeVerified && <AgeGateSplash onVerify={() => setIsAgeVerified(true)} />}
       {showPopup && isAgeVerified && <AuthModal setShowPopup={setShowPopup} />}
-      <div className="grid grid-cols-1 lg:grid-cols-4 p-4 max-w-[1600px] mx-auto">
-        <div className="col-span-1 lg:col-span-4 mb-8">
-          {/* Hero Section */}
-          <div className="relative w-full h-[85vh] rounded-3xl overflow-hidden shadow-2xl mb-8">
-            <video
-              src="/media/hero-video.mp4"
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black/20" />
-          </div>
-
-          {/* Our Story Section */}
-          <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl text-center mb-8 border border-gray-100">
-            <h1 className="text-4xl md:text-6xl font-black text-black mb-4 font-serif tracking-tight">
-              OUR STORY
-            </h1>
-            <h2 className="text-2xl md:text-4xl font-bold text-black mb-8 font-serif opacity-90">
-              Capture the Experience
-            </h2>
-            <p className="max-w-4xl mx-auto text-lg md:text-2xl text-black leading-relaxed font-medium">
-              NVW is excited to spotlight Napa Valley’s finest wineries. We create opportunities for wineries to showcase their world-class wines and immersive tasting experiences while inspiring a new generation of wine lovers to discover Napa Valley.
-            </p>
-          </div>
-        </div>
-
+      <div className="grid grid-cols-1 lg:grid-cols-4 px-4 sm:px-6 max-w-[1600px] mx-auto gap-6">
 
         <div className="lg:col-span-1 mb-4 lg:mb-10">
           {/* We pass all loaded wineries to the filter. Client-side filtering applies to "Loaded So Far" */}

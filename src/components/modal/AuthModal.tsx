@@ -77,9 +77,9 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-[100] overflow-y-auto">
-      <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
-        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-lg w-full relative max-h-[95vh] overflow-y-auto border border-gray-100">
+    <div className="fixed inset-0 bg-black bg-opacity-60 z-[100] overflow-y-auto flex items-center justify-center p-2 sm:p-4">
+      <div className="min-h-full sm:min-h-0 w-full flex items-center justify-center">
+        <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full relative sm:max-h-[90vh] overflow-y-auto border border-gray-100">
 
           <div className="flex justify-center mb-4">
             <div className="bg-primary/10 p-3 rounded-full">

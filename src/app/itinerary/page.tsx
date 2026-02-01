@@ -323,7 +323,7 @@ export default function ItineraryPage() {
   }, [itinerary, setItinerary]);
 
   return (
-    <div className="bg-gray-100 min-h-screen py-12 px-4 sm:px-6 lg:px-8 relative md:top-10 top-5">
+    <div className="bg-gray-100 min-h-screen pt-24 md:pt-28 pb-32 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-7xl mx-auto">
         <h1 className="md:text-2xl font-bold text-gray-900">Your Itinerary</h1>
         <p className="text-gray-600 mb-4 md:text-md text-sm">Plan your perfect wine-tasting experience.</p>
