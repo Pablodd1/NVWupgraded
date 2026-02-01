@@ -1,11 +1,3 @@
-import ExcessGuestPreview from '@/components/excess-guests/ExcessGuestPreview';
-import ExcessGuestBookingWidget from '@/components/excess-guests/ExcessGuestBookingWidget';
-import SplitBookingDisplay from '@/components/excess-guests/SplitBookingDisplay';
-
-export {
-  ExcessGuestPreview,
-  ExcessGuestBookingWidget,
-  SplitBookingDisplay
-};
-
-export default ExcessGuestPreview;
+export { ExcessGuestPreview } from './ExcessGuestPreview';
+export { ExcessGuestBookingWidget } from './ExcessGuestBookingWidget';
+export { SplitBookingDisplay } from './SplitBookingDisplay';

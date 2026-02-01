@@ -81,7 +81,7 @@ class ExcessGuestDetectionService {
   async detectExceedingBookings(wineryId?: mongoose.Types.ObjectId): Promise<any[]> {
     try {
       const matchStage = wineryId ? { 'wineries.wineryId': wineryId } : {};
-      
+
       const pipeline = [
         { $match: matchStage },
         { $unwind: '$wineries' },
@@ -147,6 +147,10 @@ class ExcessGuestDetectionService {
         { $match: { isExceeding: true } }
       ];
 
+
+      if (!mongoose.connection.db) {
+        throw new Error('Database connection not established');
+      }
       const results = await mongoose.connection.db.collection('bookings').aggregate(pipeline).toArray();
       return results;
     } catch (error) {
@@ -226,10 +230,10 @@ class ExcessGuestDetectionService {
   private getTimeDifference(time1: string, time2: string): number {
     const [hours1, minutes1] = time1.split(':').map(Number);
     const [hours2, minutes2] = time2.split(':').map(Number);
-    
+
     const totalMinutes1 = hours1 * 60 + minutes1;
     const totalMinutes2 = hours2 * 60 + minutes2;
-    
+
     return Math.abs(totalMinutes2 - totalMinutes1) / 60;
   }
 
@@ -247,7 +251,7 @@ class ExcessGuestDetectionService {
   }> {
     try {
       const exceeding = await this.detectExceedingBookings();
-      
+
       // Find bookings approaching capacity (using 80% threshold)
       const pipeline = [
         { $unwind: '$wineries' },
@@ -315,10 +319,13 @@ class ExcessGuestDetectionService {
         }
       ];
 
+      if (!mongoose.connection.db) {
+        throw new Error('Database connection not established');
+      }
       const approaching = await mongoose.connection.db.collection('bookings').aggregate(pipeline).toArray();
-      
+
       const totalBookings = await mongoose.connection.db.collection('bookings').countDocuments();
-      
+
       return {
         criticalExceedances: exceeding,
         warningBookings: approaching.filter(b => b.capacityUtilization >= 80 && b.capacityUtilization < 100),
