@@ -564,7 +564,7 @@ export default function WineryProfile() {
                     type="email" value={profile.contact_info.email}
                     onChange={(e) => handleInputChange('contact_info.email', e.target.value)}
                     className="input input-bordered input-sm"
-                    placeholder="concierge@winery.com"
+                    placeholder="anabel@nvw.wine"
                     aria-label="Public Email Address"
                   />
                 </div>

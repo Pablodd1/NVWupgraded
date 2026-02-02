@@ -13,7 +13,7 @@ export interface ISlotInventory {
   updatedAt: Date;
 }
 
-export interface ISlotInventoryDocument extends ISlotInventory, Document {}
+export interface ISlotInventoryDocument extends ISlotInventory, Document { }
 
 export interface ISlotInventoryModel extends Model<ISlotInventoryDocument> {
   checkAvailability(
@@ -22,7 +22,7 @@ export interface ISlotInventoryModel extends Model<ISlotInventoryDocument> {
     timeSlot: string,
     requiredCapacity?: number
   ): Promise<{ available: boolean; reason?: string; slot?: ISlotInventoryDocument }>;
-  
+
   reserveCapacity(
     wineryId: mongoose.Types.ObjectId,
     date: Date,
@@ -30,7 +30,7 @@ export interface ISlotInventoryModel extends Model<ISlotInventoryDocument> {
     capacity: number,
     bookingId: mongoose.Types.ObjectId
   ): Promise<ISlotInventoryDocument>;
-  
+
   releaseCapacity(
     wineryId: mongoose.Types.ObjectId,
     date: Date,
@@ -185,6 +185,6 @@ SlotInventorySchema.statics.releaseCapacity = async function (
   return slot;
 };
 
-const SlotInventory = (models.SlotInventory || model<ISlotInventoryDocument, ISlotInventoryModel>("SlotInventory", SlotInventorySchema)) as ISlotInventoryModel;
+const SlotInventory = (models.SlotInventory || model("SlotInventory", SlotInventorySchema)) as ISlotInventoryModel;
 
 export default SlotInventory;

@@ -49,6 +49,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Support for iPhone notches and safe areas */
+    padding-bottom: env(safe-area-inset-bottom);
   }
   h1,
   h2,
@@ -58,6 +60,11 @@
   h6 {
     @apply font-serif;
   }
+}
+
+.min-h-screen {
+  min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile browsers */
 }
 
 .transition-all {

@@ -89,7 +89,7 @@ export const mockWineries = [
         },
         contact_info: {
             phone: "(707) 555-0123",
-            email: "test@premiumwinery.com",
+            email: "anabel@nvw.wine",
             website: "https://www.premiumtestwinery.com",
         },
         description: "A premium test winery showcasing per-person pricing functionality. This winery demonstrates the new pricing model with base fees and additional guest costs.",

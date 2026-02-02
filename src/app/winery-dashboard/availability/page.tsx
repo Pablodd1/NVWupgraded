@@ -3,10 +3,10 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "react-toastify";
-import { 
-  FaPlus, 
-  FaCalendarAlt, 
-  FaChevronLeft, 
+import {
+  FaPlus,
+  FaCalendarAlt,
+  FaChevronLeft,
   FaChevronRight,
   FaClock,
   FaUsers,
@@ -33,33 +33,33 @@ interface DaySlots {
 }
 
 const DEFAULT_TIME_SLOTS = [
-  "Morning (10:00 AM - 12:00 PM)",
-  "Afternoon (12:00 PM - 3:00 PM)",
-  "Evening (3:00 PM - 6:00 PM)"
+  "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+  "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM",
+  "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM", "06:00 PM"
 ];
 
 export default function AvailabilityManagement() {
   const { user, loading, fetchUser } = useAuthStore();
   const router = useRouter();
-  
+
   // Calendar state
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [slots, setSlots] = useState<TimeSlot[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(true);
-  
+
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [showCustomTimeModal, setShowCustomTimeModal] = useState(false);
-  
+
   // Form states
   const [newSlot, setNewSlot] = useState({
     date: "",
     timeSlot: "",
     totalCapacity: 20
   });
-  
+
   const [bulkForm, setBulkForm] = useState({
     startDate: "",
     endDate: "",
@@ -67,13 +67,13 @@ export default function AvailabilityManagement() {
     timeSlots: [...DEFAULT_TIME_SLOTS],
     totalCapacity: 20
   });
-  
+
   const [customTime, setCustomTime] = useState({
     name: "",
     startTime: "10:00",
     endTime: "12:00"
   });
-  
+
   const [customTimeSlots, setCustomTimeSlots] = useState<string[]>([]);
 
   useEffect(() => {
@@ -94,9 +94,9 @@ export default function AvailabilityManagement() {
     try {
       const startDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
       const endDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 2, 0);
-      
+
       const url = `/api/winery-dashboard/slots?startDate=${startDate.toISOString().split('T')[0]}&endDate=${endDate.toISOString().split('T')[0]}`;
-      
+
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
@@ -139,17 +139,17 @@ export default function AvailabilityManagement() {
     const lastDay = new Date(year, month + 1, 0);
     const startPadding = firstDay.getDay();
     const days: (Date | null)[] = [];
-    
+
     // Add padding for previous month
     for (let i = 0; i < startPadding; i++) {
       days.push(null);
     }
-    
+
     // Add days of current month
     for (let i = 1; i <= lastDay.getDate(); i++) {
       days.push(new Date(year, month, i));
     }
-    
+
     return days;
   }, [currentMonth]);
 
@@ -193,14 +193,14 @@ export default function AvailabilityManagement() {
 
     const start = new Date(bulkForm.startDate);
     const end = new Date(bulkForm.endDate);
-    
+
     if (start > end) {
       toast.error("End date must be after start date");
       return;
     }
 
     const slotsToCreate: { date: string; timeSlot: string; totalCapacity: number }[] = [];
-    
+
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       if (bulkForm.selectedDays.includes(d.getDay())) {
         const dateStr = d.toISOString().split('T')[0];
@@ -222,14 +222,14 @@ export default function AvailabilityManagement() {
     try {
       let created = 0;
       let skipped = 0;
-      
+
       for (const slot of slotsToCreate) {
         const response = await fetch("/api/winery-dashboard/slots", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(slot)
         });
-        
+
         if (response.ok) {
           created++;
         } else {
@@ -299,7 +299,7 @@ export default function AvailabilityManagement() {
       toast.error("Please fill in all fields");
       return;
     }
-    
+
     const formatTime = (time: string) => {
       const [hours, minutes] = time.split(':');
       const h = parseInt(hours);
@@ -307,7 +307,7 @@ export default function AvailabilityManagement() {
       const hour12 = h % 12 || 12;
       return `${hour12}:${minutes} ${ampm}`;
     };
-    
+
     const newTimeSlot = `${customTime.name} (${formatTime(customTime.startTime)} - ${formatTime(customTime.endTime)})`;
     setCustomTimeSlots([...customTimeSlots, newTimeSlot]);
     setCustomTime({ name: "", startTime: "10:00", endTime: "12:00" });
@@ -318,7 +318,7 @@ export default function AvailabilityManagement() {
   const getDateStatus = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     const daySlots = slotsByDate[dateStr] || [];
-    
+
     if (daySlots.length === 0) return 'empty';
     if (daySlots.some(s => s.status === 'blocked')) return 'partial';
     if (daySlots.every(s => s.availableCapacity === 0)) return 'full';
@@ -326,8 +326,8 @@ export default function AvailabilityManagement() {
   };
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
-                      'July', 'August', 'September', 'October', 'November', 'December'];
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
 
   if (loading || !user) {
     return (
@@ -373,7 +373,7 @@ export default function AvailabilityManagement() {
             <div className="bg-white rounded-xl shadow-md p-6">
               {/* Calendar Header */}
               <div className="flex justify-between items-center mb-6">
-                <button 
+                <button
                   onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
                   className="btn btn-ghost btn-sm btn-circle"
                 >
@@ -382,7 +382,7 @@ export default function AvailabilityManagement() {
                 <h2 className="text-xl font-bold text-gray-800">
                   {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
                 </h2>
-                <button 
+                <button
                   onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
                   className="btn btn-ghost btn-sm btn-circle"
                 >
@@ -405,7 +405,7 @@ export default function AvailabilityManagement() {
                   if (!day) {
                     return <div key={`empty-${idx}`} className="h-20 bg-gray-50 rounded" />;
                   }
-                  
+
                   const dateStr = day.toISOString().split('T')[0];
                   const isToday = dateStr === new Date().toISOString().split('T')[0];
                   const isSelected = dateStr === selectedDate;
@@ -474,13 +474,13 @@ export default function AvailabilityManagement() {
                 <>
                   <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold">
-                      {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        month: 'short', 
-                        day: 'numeric' 
+                      {new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        month: 'short',
+                        day: 'numeric'
                       })}
                     </h3>
-                    <button 
+                    <button
                       onClick={() => {
                         setNewSlot({ ...newSlot, date: selectedDate });
                         setShowAddModal(true);
@@ -501,7 +501,7 @@ export default function AvailabilityManagement() {
                         <div className="text-center py-8 text-gray-500">
                           <FaClock className="mx-auto text-3xl mb-2 opacity-50" />
                           <p>No slots for this date</p>
-                          <button 
+                          <button
                             onClick={() => {
                               setNewSlot({ ...newSlot, date: selectedDate });
                               setShowAddModal(true);
@@ -513,8 +513,8 @@ export default function AvailabilityManagement() {
                         </div>
                       ) : (
                         (slotsByDate[selectedDate] || []).map((slot) => (
-                          <div 
-                            key={slot._id} 
+                          <div
+                            key={slot._id}
                             className={`
                               p-4 rounded-lg border-2 
                               ${slot.status === 'blocked' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}
@@ -542,7 +542,7 @@ export default function AvailabilityManagement() {
                               />
                             </div>
                             <div className="mt-2 text-xs text-gray-500">
-                              <span className="text-green-600 font-semibold">{slot.availableCapacity}</span> available / 
+                              <span className="text-green-600 font-semibold">{slot.availableCapacity}</span> available /
                               <span className="text-blue-600 font-semibold ml-1">{slot.bookedCapacity}</span> booked
                             </div>
                             {slot.status === 'blocked' && (
@@ -626,7 +626,7 @@ export default function AvailabilityManagement() {
             <p className="text-gray-600 text-sm mb-6">
               Quickly create multiple time slots across a date range
             </p>
-            
+
             <div className="space-y-6">
               {/* Date Range */}
               <div className="grid grid-cols-2 gap-4">
@@ -733,7 +733,7 @@ export default function AvailabilityManagement() {
             <p className="text-gray-600 text-sm mb-6">
               Define a custom time period for your tastings
             </p>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Slot Name</label>

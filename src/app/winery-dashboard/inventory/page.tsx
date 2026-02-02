@@ -16,6 +16,12 @@ interface TimeSlot {
   isBlocked: boolean;
 }
 
+const DEFAULT_TIME_SLOTS = [
+  "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+  "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM",
+  "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM", "06:00 PM"
+];
+
 export default function InventoryManagement() {
   const { user, loading, fetchUser } = useAuthStore();
   const router = useRouter();
@@ -361,9 +367,11 @@ export default function InventoryManagement() {
                   className="select select-bordered w-full"
                 >
                   <option value="">Select time...</option>
-                  <option value="Morning (10:00 AM - 12:00 PM)">Morning (10:00 AM - 12:00 PM)</option>
-                  <option value="Afternoon (12:00 PM - 3:00 PM)">Afternoon (12:00 PM - 3:00 PM)</option>
-                  <option value="Evening (3:00 PM - 6:00 PM)">Evening (3:00 PM - 6:00 PM)</option>
+                  {DEFAULT_TIME_SLOTS.map((time) => (
+                    <option key={time} value={time}>
+                      {time}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>

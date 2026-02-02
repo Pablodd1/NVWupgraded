@@ -129,7 +129,7 @@ export const FilterBlock = ({
       <div className="mt-4">
         <label className="text-sm font-extrabold text-gray-900 flex items-center gap-1">
           American Viticultural Area (AVA)
-         <FaMapMarkerAlt style={{ color: "#5A0C2C" }} />
+          <FaMapMarkerAlt style={{ color: "#5A0C2C" }} />
         </label>
         <Select
           menuPlacement="top"
@@ -156,22 +156,7 @@ export const FilterBlock = ({
         )}
       </div>
 
-      {/* Time Filter */}
-      <div style={{ marginTop: 10 }}>
-        <label className="text-sm text-gray-900 font-extrabold">Preferred Time</label>
-        <select
-          value={filters.time}
-          onChange={(e) => handleFilterChange("time", e.target.value)}
-          className="select select-bordered w-full mt-2 focus:ring-2 focus:ring-indigo-500 text-xs p-2 sm:text-sm"
-        >
-          <option value="">Select Time</option>
-          {timeOptions.map((time) => (
-            <option key={time} value={time}>
-              {time}
-            </option>
-          ))}
-        </select>
-      </div>
+
 
 
       {/* Special Features Filter */}

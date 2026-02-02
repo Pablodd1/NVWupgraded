@@ -179,10 +179,10 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen relative md:top-20 top-[50px] bg-gray-100">
+    <div className="min-h-screen relative pt-24 md:pt-28 pb-32 bg-gray-100">
       {!isAgeVerified && <AgeGateSplash onVerify={() => setIsAgeVerified(true)} />}
       {showPopup && isAgeVerified && <AuthModal setShowPopup={setShowPopup} />}
-      <div className="grid grid-cols-1 lg:grid-cols-4 p-4 max-w-[1600px] mx-auto">
+      <div className="grid grid-cols-1 lg:grid-cols-4 px-4 sm:px-6 max-w-[1600px] mx-auto gap-6">
 
         <div className="lg:col-span-1 mb-4 lg:mb-10">
           {/* We pass all loaded wineries to the filter. Client-side filtering applies to "Loaded So Far" */}

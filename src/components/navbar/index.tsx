@@ -219,27 +219,27 @@ const UserProfile = ({ user, handleLogout, loading, t }: { user: IUser; handleLo
 const MobileBottomNav = ({
   user,
   handleLogout,
-      itineraryCount,
-      totalCost,
-      isProfileMenuOpen,
-      toggleProfileMenu,
-      closeProfileMenu,
-      loading,
-      setShowModal,
-      t
-  }: {
-    user: any;
-    handleLogout: () => void;
-    itineraryCount: number;
-    totalCost: number;
-    isProfileMenuOpen: boolean;
-    toggleProfileMenu: () => void;
-    closeProfileMenu: () => void;
-    loading: boolean;
-    setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
-    t: any;
-  }) => (
-  <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-gray-100 shadow-lg flex justify-center py-1 rounded-t-xl neumorphism-card z-50 border-t-2 border-basic">
+  itineraryCount,
+  totalCost,
+  isProfileMenuOpen,
+  toggleProfileMenu,
+  closeProfileMenu,
+  loading,
+  setShowModal,
+  t
+}: {
+  user: any;
+  handleLogout: () => void;
+  itineraryCount: number;
+  totalCost: number;
+  isProfileMenuOpen: boolean;
+  toggleProfileMenu: () => void;
+  closeProfileMenu: () => void;
+  loading: boolean;
+  setShowModal: React.Dispatch<React.SetStateAction<boolean>>;
+  t: any;
+}) => (
+  <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gradient-to-t from-white to-gray-100 shadow-lg flex justify-center pt-2 pb-[calc(2rem+env(safe-area-inset-bottom))] rounded-t-xl neumorphism-card z-50 border-t-2 border-basic">
     <div className="flex justify-between w-full items-center px-4">
       <NavLink icon={<FaHome size={20} />} href="/" label="Home" />
       <NavLink icon={<FaHistory size={20} />} href="/bookings" label="Bookings" />

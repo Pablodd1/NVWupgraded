@@ -77,9 +77,9 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 z-[100] overflow-y-auto">
-      <div className="flex min-h-full items-center justify-center p-2 sm:p-4">
-        <div className="bg-white p-6 sm:p-8 rounded-3xl shadow-2xl max-w-lg w-full relative max-h-[95vh] overflow-y-auto border border-gray-100">
+    <div className="fixed inset-0 bg-black bg-opacity-60 z-[100] overflow-y-auto flex items-center justify-center p-2 sm:p-4">
+      <div className="min-h-full sm:min-h-0 w-full flex items-center justify-center">
+        <div className="bg-white p-6 sm:p-8 rounded-2xl sm:rounded-3xl shadow-2xl max-w-lg w-full relative sm:max-h-[90vh] overflow-y-auto border border-gray-100">
 
           <div className="flex justify-center mb-4">
             <div className="bg-primary/10 p-3 rounded-full">
@@ -103,19 +103,12 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
               href="https://www.instagram.com/winesnvw/"
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-outline border-gray-200 text-gray-600 hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-red-500 hover:to-purple-500 hover:text-white hover:border-transparent transition-all"
+              className="btn btn-outline border-gray-200 bg-gradient-to-br from-purple-600 to-pink-500 text-white border-transparent hover:scale-105 transition-all"
             >
               <FaInstagram size={20} />
             </a>
 
-            <a
-              href="https://www.facebook.com/people/Wines-Nvw/pfbid02GokGEaA8ZzDCsbwijRW4WYCK4hp63H6W31PwmvPtn4yw69onT6w7gjKpnVWweyysl/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-outline border-gray-200 text-gray-600 hover:bg-blue-600 hover:text-white hover:border-transparent transition-all"
-            >
-              <FaFacebook size={20} />
-            </a>
+
           </div>
 
           {error && (!isLoginMode || (!error.toLowerCase().includes("firstname") && !error.toLowerCase().includes("lastname"))) && (

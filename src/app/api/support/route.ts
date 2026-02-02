@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     // TODO: In production, implement:
     // 1. Save to SupportRequest collection in MongoDB
-    // 2. Send email notification to support@napavalleywineries.com
+    // 2. Send email notification to anabel@nvw.wine
     // 3. Send auto-reply email to customer
 
     // Return success
@@ -86,10 +86,10 @@ export async function POST(req: NextRequest) {
  */
 export async function GET() {
   return NextResponse.json({
-    email: "support@napavalleywineries.com",
+    email: "anabel@nvw.wine",
     responseTime: "24 hours",
     channels: [
-      { type: "email", address: "support@napavalleywineries.com" },
+      { type: "email", address: "anabel@nvw.wine" },
       { type: "chat", description: "AI Concierge - available 24/7" },
       { type: "social", platforms: ["Instagram", "Facebook"] }
     ],
