@@ -16,9 +16,12 @@ import {
   FaLink,
   FaMoneyBillWave,
   FaCheckCircle,
-  FaTimesCircle
+  FaTimesCircle,
+  FaWineBottle
 } from "react-icons/fa";
 import { Winery, TastingInfo, FoodPairingOption } from "@/app/interfaces";
+import Select from "react-select";
+import { wineTypes, specialFeatures, avaOrder } from "@/data/data";
 
 export default function WineryProfile() {
   const { user, loading, fetchUser } = useAuthStore();
@@ -115,6 +118,31 @@ export default function WineryProfile() {
       current[keys[keys.length - 1]] = value;
 
       newProfile.tasting_info = newTastings;
+      return newProfile;
+    });
+  };
+
+  const toggleTastingArrayItem = (index: number, field: 'special_features' | 'wine_types', item: string) => {
+    setProfile(prev => {
+      if (!prev) return prev;
+      const newProfile = JSON.parse(JSON.stringify(prev));
+      const tasting = newProfile.tasting_info[index];
+      const arr = tasting[field] || [];
+      const idx = arr.indexOf(item);
+
+      if (idx > -1) {
+        arr.splice(idx, 1);
+      } else {
+        arr.push(item);
+      }
+
+      tasting[field] = arr;
+
+      // Special handling: if Handicap Accessible is toggled in special_features, sync with amenities
+      if (item === "Handicap Accessible") {
+        newProfile.amenities.handicap_accessible = arr.includes("Handicap Accessible");
+      }
+
       return newProfile;
     });
   };
@@ -370,15 +398,21 @@ export default function WineryProfile() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Wine Types (e.g. Cabernet, Rose)</label>
-                        <input
-                          type="text" value={tasting.wine_types?.join(', ') || ''}
-                          onChange={(e) => handleTastingChange(idx, 'wine_types', e.target.value.split(',').map(s => s.trim()))}
-                          className="input input-bordered input-sm"
-                          placeholder="Red, White, Rosé"
-                          aria-label="Wine Types"
-                        />
+                      <div className="form-control col-span-2">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Wine Types</label>
+                        <div className="flex flex-wrap gap-4 p-3 bg-white rounded-lg border border-gray-100">
+                          {wineTypes.map(type => (
+                            <label key={type} className="flex items-center gap-2 cursor-pointer text-sm">
+                              <input
+                                type="checkbox"
+                                checked={tasting.wine_types?.includes(type)}
+                                onChange={() => toggleTastingArrayItem(idx, 'wine_types', type)}
+                                className="checkbox checkbox-primary checkbox-sm"
+                              />
+                              {type}
+                            </label>
+                          ))}
+                        </div>
                       </div>
                       <div className="form-control">
                         <label className="label text-xs font-bold uppercase text-gray-500">Max Guests</label>
@@ -392,24 +426,30 @@ export default function WineryProfile() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Special Features (e.g. Organic, Sustainable)</label>
-                        <input
-                          type="text" value={tasting.special_features?.join(', ') || ''}
-                          onChange={(e) => handleTastingChange(idx, 'special_features', e.target.value.split(',').map(s => s.trim()))}
-                          className="input input-bordered input-sm"
-                          placeholder="Cave Tour, Great Views"
-                          aria-label="Special Features"
-                        />
+                      <div className="form-control col-span-2">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Special Features (Filtration Tags)</label>
+                        <div className="flex flex-wrap gap-4 p-3 bg-white rounded-lg border border-gray-100">
+                          {specialFeatures.map(feature => (
+                            <label key={feature} className="flex items-center gap-2 cursor-pointer text-sm">
+                              <input
+                                type="checkbox"
+                                checked={tasting.special_features?.includes(feature)}
+                                onChange={() => toggleTastingArrayItem(idx, 'special_features', feature)}
+                                className="checkbox checkbox-primary checkbox-sm"
+                              />
+                              {feature}
+                            </label>
+                          ))}
+                        </div>
                       </div>
                       <div className="form-control">
                         <label className="label text-xs font-bold uppercase text-gray-500">AVA Region</label>
-                        <input
-                          type="text" value={tasting.ava}
-                          onChange={(e) => handleTastingChange(idx, 'ava', e.target.value)}
-                          className="input input-bordered input-sm"
-                          placeholder="e.g. Rutherford"
-                          aria-label="AVA Region"
+                        <Select
+                          options={avaOrder.map(ava => ({ value: ava, label: ava }))}
+                          value={tasting.ava ? { value: tasting.ava, label: tasting.ava } : null}
+                          onChange={(option: any) => handleTastingChange(idx, 'ava', option?.value || '')}
+                          className="text-sm"
+                          placeholder="Select AVA..."
                         />
                       </div>
                     </div>

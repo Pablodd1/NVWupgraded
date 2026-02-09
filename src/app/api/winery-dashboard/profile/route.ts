@@ -8,20 +8,20 @@ import User from "@/models/user.model";
 export async function GET(request: Request) {
   try {
     await dbConnect();
-    
+
     const user = await requireWinery(request);
     if (user instanceof NextResponse) return user; // Error response
-    
+
     // Get winery for this user
     const winery = await Winery.findOne({ owner: user.userId });
-    
+
     if (!winery) {
       return NextResponse.json(
         { error: "No winery found for this account" },
         { status: 404 }
       );
     }
-    
+
     return NextResponse.json({ winery }, { status: 200 });
   } catch (error: any) {
     console.error("Get winery profile error:", error);
@@ -33,22 +33,22 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     await dbConnect();
-    
+
     const user = await requireWinery(request);
     if (user instanceof NextResponse) return user; // Error response
-    
+
     const updates = await request.json();
-    
+
     // Find winery owned by this user
     const winery = await Winery.findOne({ owner: user.userId });
-    
+
     if (!winery) {
       return NextResponse.json(
         { error: "No winery found for this account" },
         { status: 404 }
       );
     }
-    
+
     // Update allowed fields
     const allowedUpdates = [
       'name',
@@ -58,17 +58,18 @@ export async function PUT(request: Request) {
       'tasting_info',
       'amenities',
       'transportation',
-      'payment_method'
+      'payment_method',
+      'other_features'
     ];
-    
+
     allowedUpdates.forEach(field => {
       if (updates[field] !== undefined) {
         winery[field] = updates[field];
       }
     });
-    
+
     await winery.save();
-    
+
     return NextResponse.json({
       success: true,
       message: "Winery profile updated successfully",

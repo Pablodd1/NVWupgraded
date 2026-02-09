@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { Winery } from "@/app/interfaces";
+import { mountainAVAs } from "@/data/data";
 import BottomSheet from "../bottom-sheet";
 import { FilterIcon, SearchIcon } from "lucide-react";
 import { MdRestore } from "react-icons/md";
@@ -171,6 +172,16 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
         // Check if any tasting has tours available
         return winery.tasting_info.some(tasting =>
           tasting.tours && tasting.tours.available
+        );
+      });
+    }
+
+    // Filter by mountain location
+    if (filters.mountainLocation) {
+      filtered = filtered.filter((winery) => {
+        if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
+        return winery.tasting_info.some(tasting =>
+          mountainAVAs.includes(tasting.ava)
         );
       });
     }
