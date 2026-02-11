@@ -66,17 +66,64 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "No winery found" }, { status: 404 });
     }
 
-    const { date, timeSlot, totalCapacity } = await request.json();
+    const body = await request.json();
+    const { date, dates, timeSlot, timeSlots, totalCapacity } = body;
 
-    // Validation
-    if (!date || !timeSlot || !totalCapacity) {
+    if (!totalCapacity) {
+      return NextResponse.json({ error: "totalCapacity is required" }, { status: 400 });
+    }
+
+    // Handle Bulk Creation
+    if (Array.isArray(dates) && Array.isArray(timeSlots)) {
+      const results = [];
+      const errors = [];
+
+      for (const d of dates) {
+        for (const ts of timeSlots) {
+          try {
+            const slotDate = new Date(d);
+            // Check if exists
+            const existing = await SlotInventory.findOne({
+              wineryId: winery._id,
+              date: slotDate,
+              timeSlot: ts
+            });
+
+            if (!existing) {
+              const newSlot = await SlotInventory.create({
+                wineryId: winery._id,
+                date: slotDate,
+                timeSlot: ts,
+                totalCapacity,
+                bookedCapacity: 0,
+                availableCapacity: totalCapacity,
+                status: 'available',
+                bookings: []
+              });
+              results.push(newSlot);
+            }
+          } catch (e: any) {
+            errors.push({ date: d, timeSlot: ts, error: e.message });
+          }
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: `Processed ${dates.length * timeSlots.length} slots. Created ${results.length} new slots.`,
+        created: results.length,
+        errors: errors.length > 0 ? errors : undefined
+      }, { status: 201 });
+    }
+
+    // Single Creation (maintained for backward compatibility)
+    if (!date || !timeSlot) {
       return NextResponse.json(
-        { error: "date, timeSlot, and totalCapacity are required" },
+        { error: "date and timeSlot are required (or dates and timeSlots for bulk)" },
         { status: 400 }
       );
     }
 
-    // Check if slot already exists
     const existing = await SlotInventory.findOne({
       wineryId: winery._id,
       date: new Date(date),
@@ -84,13 +131,9 @@ export async function POST(request: Request) {
     });
 
     if (existing) {
-      return NextResponse.json(
-        { error: "Slot already exists for this date and time" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Slot already exists" }, { status: 400 });
     }
 
-    // Create new slot
     const slot = await SlotInventory.create({
       wineryId: winery._id,
       date: new Date(date),
@@ -102,11 +145,7 @@ export async function POST(request: Request) {
       bookings: []
     });
 
-    return NextResponse.json({
-      success: true,
-      message: "Slot created successfully",
-      slot
-    }, { status: 201 });
+    return NextResponse.json({ success: true, slot }, { status: 201 });
   } catch (error: any) {
     console.error("Create slot error (Checking Demo/Mock):", error);
     try {

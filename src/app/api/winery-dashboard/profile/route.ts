@@ -80,3 +80,46 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+// POST create new winery profile
+export async function POST(request: Request) {
+  try {
+    await dbConnect();
+
+    const user = await requireWinery(request);
+    if (user instanceof NextResponse) return user; // Error response
+
+    // Check if winery already exists
+    const existingWinery = await Winery.findOne({ owner: user.userId });
+    if (existingWinery) {
+      return NextResponse.json(
+        { error: "Winery profile already exists. Use PUT to update." },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+
+    // Create new winery
+    const newWinery = await Winery.create({
+      ...body,
+      owner: user.userId,
+      // Ensure required fields have defaults if missing
+      tasting_info: body.tasting_info || [],
+      amenities: body.amenities || {},
+      transportation: body.transportation || {}
+    });
+
+    // Update user to link wineryId
+    await User.findByIdAndUpdate(user.userId, { wineryId: newWinery._id });
+
+    return NextResponse.json({
+      success: true,
+      message: "Winery created successfully",
+      winery: newWinery
+    }, { status: 201 });
+
+  } catch (error: any) {
+    console.error("Create winery profile error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

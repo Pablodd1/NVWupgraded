@@ -175,15 +175,17 @@ export async function POST(req: NextRequest) {
 
           // Calculation: Base Fee + (Additional Guest Fee * (Guests - 1))
           // OR if legacy: tasting_price
+          // Calculation: Base Fee + (Additional Guest Fee * Math.max(0, Guests - FreeGuests))
+          // OR if legacy: tasting_price
           const baseFee = Number(tasting.base_booking_fee) || 0;
           const additionalGuestFee = Number(tasting.additional_guest_fee) || 0;
+          const freeGuestsIncluded = Number(tasting.free_guests_included) || 1; // Default to 1 if not set
 
           if (baseFee > 0) {
             // Use per-person pricing
-            wineryTotal += baseFee; // Base fee for first person
-            if (guests > 1) {
-              wineryTotal += (guests - 1) * additionalGuestFee; // Additional fee for extra guests
-            }
+            wineryTotal += baseFee;
+            const guestsToCharge = Math.max(0, guests - freeGuestsIncluded);
+            wineryTotal += guestsToCharge * additionalGuestFee;
           } else {
             // Use legacy pricing
             const legacyPrice = Number(tasting.tasting_price) || 0;
@@ -210,13 +212,14 @@ export async function POST(req: NextRequest) {
     booking.wineries = data.map((winery: any) => {
       const wineryDetails = wineries.find(w => w._id.toString() === winery.wineryId.toString());
       const tasting = wineryDetails?.tasting_info?.find((t: any) => t.tasting_title === winery.tastingTitle) || wineryDetails?.tasting_info?.[0];
-      
+
       return {
         wineryId: winery.wineryId,
         datetime: winery.dateTime,
         tasting: winery.tasting,
         baseBookingFee: tasting?.base_booking_fee || 0,
         additionalGuestFee: tasting?.additional_guest_fee || 0,
+        freeGuestsIncluded: tasting?.free_guests_included || 0,
         tours: winery.tours || [],
         foodPairings: winery.foodPairings || [],
         otherFeatures: winery.otherFeature || [],

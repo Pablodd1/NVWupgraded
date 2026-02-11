@@ -199,50 +199,41 @@ export default function AvailabilityManagement() {
       return;
     }
 
-    const slotsToCreate: { date: string; timeSlot: string; totalCapacity: number }[] = [];
-
+    const datesToCreate: string[] = [];
     for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
       if (bulkForm.selectedDays.includes(d.getDay())) {
-        const dateStr = d.toISOString().split('T')[0];
-        for (const timeSlot of bulkForm.timeSlots) {
-          slotsToCreate.push({
-            date: dateStr,
-            timeSlot,
-            totalCapacity: bulkForm.totalCapacity
-          });
-        }
+        datesToCreate.push(d.toISOString().split('T')[0]);
       }
     }
 
-    if (slotsToCreate.length === 0) {
-      toast.error("No slots to create with the selected criteria");
+    if (datesToCreate.length === 0) {
+      toast.error("No dates match the selected days of the week");
       return;
     }
 
     try {
-      let created = 0;
-      let skipped = 0;
+      const response = await fetch("/api/winery-dashboard/slots", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dates: datesToCreate,
+          timeSlots: bulkForm.timeSlots,
+          totalCapacity: bulkForm.totalCapacity
+        })
+      });
 
-      for (const slot of slotsToCreate) {
-        const response = await fetch("/api/winery-dashboard/slots", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(slot)
-        });
+      const data = await response.json();
 
-        if (response.ok) {
-          created++;
-        } else {
-          skipped++;
-        }
+      if (response.ok) {
+        toast.success(data.message || "Slots created correctly!");
+        setShowBulkModal(false);
+        fetchSlots();
+      } else {
+        toast.error(data.error || "Failed to create slots");
       }
-
-      toast.success(`Created ${created} slots (${skipped} skipped - already exist)`);
-      setShowBulkModal(false);
-      fetchSlots();
     } catch (error) {
       console.error("Failed to bulk create slots:", error);
-      toast.error("Error creating slots");
+      toast.error("Error connecting to server");
     }
   };
 
@@ -678,23 +669,25 @@ export default function AvailabilityManagement() {
 
               {/* Time Slots */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Time Slots</label>
-                <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Select Time Slots</label>
+                <div className="flex flex-wrap gap-2">
                   {allTimeSlots.map((slot, idx) => (
-                    <label key={idx} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={bulkForm.timeSlots.includes(slot)}
-                        onChange={(e) => {
-                          const newSlots = e.target.checked
-                            ? [...bulkForm.timeSlots, slot]
-                            : bulkForm.timeSlots.filter(s => s !== slot);
-                          setBulkForm({ ...bulkForm, timeSlots: newSlots });
-                        }}
-                        className="checkbox checkbox-primary checkbox-sm"
-                      />
-                      <span className="text-sm">{slot}</span>
-                    </label>
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => {
+                        const newSlots = bulkForm.timeSlots.includes(slot)
+                          ? bulkForm.timeSlots.filter(s => s !== slot)
+                          : [...bulkForm.timeSlots, slot];
+                        setBulkForm({ ...bulkForm, timeSlots: newSlots });
+                      }}
+                      className={`
+                        btn btn-xs rounded-full h-auto py-2 px-4 normal-case
+                        ${bulkForm.timeSlots.includes(slot) ? 'btn-primary' : 'btn-outline border-gray-300'}
+                      `}
+                    >
+                      {slot}
+                    </button>
                   ))}
                 </div>
               </div>

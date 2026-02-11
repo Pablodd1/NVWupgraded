@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { FaInstagram, FaEye, FaEyeSlash, FaWineBottle, FaFacebook } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { SessionStorageService } from "@/lib/localstorage.config";
 import { toast } from "react-toastify";
@@ -11,6 +12,7 @@ interface ModalProps {
 }
 
 const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
+  const router = useRouter();
   const [isLoginMode, setIsLoginMode] = useState(showLoginForm);
   const [isWineryRegistration, setIsWineryRegistration] = useState(false);
   const [formData, setFormData] = useState({
@@ -49,6 +51,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
       if (response.success) {
         toast.success("Welcome aboard! Your winery account has been created.");
         setShowPopup(false);
+        router.push("/winery-dashboard");
       }
       return;
     }

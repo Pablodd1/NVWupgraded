@@ -22,6 +22,8 @@ import {
 import { Winery, TastingInfo, FoodPairingOption } from "@/app/interfaces";
 import Select from "react-select";
 import { wineTypes, specialFeatures, avaOrder } from "@/data/data";
+import { APIProvider } from "@vis.gl/react-google-maps";
+import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
 
 export default function WineryProfile() {
   const { user, loading, fetchUser } = useAuthStore();
@@ -273,13 +275,18 @@ export default function WineryProfile() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="form-control">
                     <label className="label font-bold text-gray-700">Address</label>
-                    <input
-                      type="text" value={profile.location.address}
-                      onChange={(e) => handleInputChange('location.address', e.target.value)}
-                      className="input input-bordered focus:border-wine-primary"
-                      placeholder="123 Wine Way, St. Helena, CA"
-                      aria-label="Street Address"
-                    />
+                    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+                      <AddressAutocomplete
+                        value={profile.location.address}
+                        onChange={(address, lat, lng) => {
+                          handleInputChange('location.address', address);
+                          if (lat !== undefined) handleInputChange('location.latitude', lat);
+                          if (lng !== undefined) handleInputChange('location.longitude', lng);
+                        }}
+                        className="input input-bordered focus:border-wine-primary"
+                        placeholder="123 Wine Way, St. Helena, CA"
+                      />
+                    </APIProvider>
                   </div>
                   <div className="flex items-center gap-4 mt-8">
                     <label className="label cursor-pointer flex gap-3">
@@ -341,7 +348,7 @@ export default function WineryProfile() {
                       <FaTrash size={18} />
                     </button>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div className="form-control">
                         <label className="label text-xs font-bold uppercase text-gray-500">Base Booking Fee ($)</label>
                         <input
@@ -360,6 +367,16 @@ export default function WineryProfile() {
                           className="input input-bordered input-sm"
                           placeholder="0"
                           aria-label="Additional Guest Fee"
+                        />
+                      </div>
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Free Guests Included</label>
+                        <input
+                          type="number" value={tasting.free_guests_included || 0}
+                          onChange={(e) => handleTastingChange(idx, 'free_guests_included', Number(e.target.value))}
+                          className="input input-bordered input-sm"
+                          placeholder="0"
+                          title="Guests included in base fee"
                         />
                       </div>
                     </div>
