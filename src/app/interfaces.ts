@@ -111,6 +111,7 @@ export interface Winery {
   location: Location;
   contact_info: ContactInfo;
   description: string;
+  images?: string[];
   tasting_info: TastingInfo[];
   amenities: Amenities;
   user_reviews: UserReview[];

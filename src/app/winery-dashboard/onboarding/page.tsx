@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "react-toastify";
-import { FaWineGlassAlt, FaMapMarkerAlt, FaPhone, FaCheckCircle } from "react-icons/fa";
+import { FaWineGlassAlt, FaMapMarkerAlt, FaPhone, FaCheckCircle, FaImage, FaPlus, FaTrash } from "react-icons/fa";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
 
@@ -19,6 +19,38 @@ export default function WineryOnboarding() {
         phone: "",
         website: ""
     });
+    const [images, setImages] = useState<string[]>([]);
+    const [uploading, setUploading] = useState(false);
+
+    const handleImageUpload = async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        setUploading(true);
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setImages(prev => [...prev, data.url]);
+                toast.success('Image uploaded!');
+            } else {
+                toast.error('Failed to upload image');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error('Error uploading image');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const removeImage = (index: number) => {
+        setImages(prev => prev.filter((_, i) => i !== index));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,6 +72,7 @@ export default function WineryOnboarding() {
                     email: user?.email || "",
                     website: formData.website
                 },
+                images: images,
                 // Initialize with one default empty tasting so it's not empty
                 tasting_info: [{
                     tasting_title: "Signature Tasting",
@@ -180,6 +213,51 @@ export default function WineryOnboarding() {
                                     className="focus:ring-primary focus:border-primary block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
                                     placeholder="+1 (707) 555-0123"
                                 />
+                            </div>
+                        </div>
+
+                        {/* Images */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Winery Photos
+                            </label>
+
+                            {images.length > 0 && (
+                                <div className="grid grid-cols-3 gap-2 mb-3">
+                                    {images.map((img, idx) => (
+                                        <div key={idx} className="relative group aspect-square">
+                                            <img src={img} className="w-full h-full object-cover rounded-md border" />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeImage(idx)}
+                                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <FaTrash size={10} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="file"
+                                    id="onboarding-upload"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleImageUpload(file);
+                                    }}
+                                />
+                                <label
+                                    htmlFor="onboarding-upload"
+                                    className={`btn btn-outline btn-sm gap-2 ${uploading ? 'loading' : ''}`}
+                                >
+                                    <FaPlus size={12} />
+                                    {uploading ? 'Uploading...' : 'Add Photo'}
+                                </label>
+                                <span className="text-xs text-gray-500 italic">Recommended for your landing page.</span>
                             </div>
                         </div>
 

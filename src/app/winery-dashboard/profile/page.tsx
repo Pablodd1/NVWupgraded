@@ -17,7 +17,8 @@ import {
   FaMoneyBillWave,
   FaCheckCircle,
   FaTimesCircle,
-  FaWineBottle
+  FaWineBottle,
+  FaImage
 } from "react-icons/fa";
 import { Winery, TastingInfo, FoodPairingOption } from "@/app/interfaces";
 import Select from "react-select";
@@ -69,6 +70,7 @@ export default function WineryProfile() {
           if (!winery.amenities) winery.amenities = { handicap_accessible: false };
           if (!winery.transportation) winery.transportation = { uber_availability: false, lyft_availability: false, distance_from_user: 0 };
           if (!winery.payment_method) winery.payment_method = { type: 'pay_winery' };
+          if (!winery.images) winery.images = [];
           if (!winery.tasting_info) winery.tasting_info = [];
 
           setProfile(winery);
@@ -100,6 +102,70 @@ export default function WineryProfile() {
         current = current[keys[i]];
       }
       current[keys[keys.length - 1]] = value;
+
+      return newProfile;
+    });
+  };
+
+  const handleImageUpload = async (file: File, tastingIndex?: number) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const imageUrl = data.url;
+
+        setProfile(prev => {
+          if (!prev) return prev;
+          const newProfile = { ...prev };
+
+          if (tastingIndex !== undefined) {
+            // Tasting-specific image
+            const newTastings = [...newProfile.tasting_info];
+            if (!newTastings[tastingIndex].images) newTastings[tastingIndex].images = [];
+            newTastings[tastingIndex].images.push(imageUrl);
+            newProfile.tasting_info = newTastings;
+          } else {
+            // Main winery image
+            if (!newProfile.images) newProfile.images = [];
+            newProfile.images.push(imageUrl);
+          }
+
+          return newProfile;
+        });
+
+        toast.success('Image uploaded successfully!');
+      } else {
+        toast.error('Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast.error('Error uploading image');
+    }
+  };
+
+  const removeImage = (imageIndex: number, tastingIndex?: number) => {
+    setProfile(prev => {
+      if (!prev) return prev;
+      const newProfile = { ...prev };
+
+      if (tastingIndex !== undefined) {
+        // Tasting-specific image
+        const newTastings = [...newProfile.tasting_info];
+        newTastings[tastingIndex].images.splice(imageIndex, 1);
+        newProfile.tasting_info = newTastings;
+      } else {
+        // Main winery image
+        if (newProfile.images) {
+          newProfile.images.splice(imageIndex, 1);
+        }
+      }
 
       return newProfile;
     });
@@ -321,6 +387,58 @@ export default function WineryProfile() {
                     />
                   </div>
                 </div>
+
+                {/* Main Winery Images */}
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <label className="label font-bold text-gray-700 mb-2 flex items-center gap-2">
+                    <FaImage className="text-wine-secondary" />
+                    Main Winery Photos (Landing Page)
+                  </label>
+
+                  {/* Image Preview Grid */}
+                  {profile.images && profile.images.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-4">
+                      {profile.images.map((img, imgIdx) => (
+                        <div key={imgIdx} className="relative group aspect-video">
+                          <img
+                            src={img}
+                            alt={`Winery ${imgIdx + 1}`}
+                            className="w-full h-full object-cover rounded-xl border border-gray-100 shadow-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(imgIdx)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label="Remove image"
+                          >
+                            <FaTrash size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="main-image-upload"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(file);
+                      }}
+                    />
+                    <label
+                      htmlFor="main-image-upload"
+                      className="btn btn-outline btn-primary gap-2"
+                    >
+                      <FaPlus size={14} />
+                      Upload Winery Photo
+                    </label>
+                    <p className="text-sm text-gray-500 italic">These images will show up on your public profile landing page.</p>
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -492,6 +610,61 @@ export default function WineryProfile() {
                           />
                         </div>
                       )}
+                    </div>
+
+                    {/* Image Upload Section */}
+                    <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
+                      <label className="label text-xs font-bold uppercase text-gray-500 mb-2">
+                        <FaImage className="inline mr-2" />
+                        Tasting Experience Images
+                      </label>
+
+                      {/* Image Preview Grid */}
+                      {tasting.images && tasting.images.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                          {tasting.images.map((img, imgIdx) => (
+                            <div key={imgIdx} className="relative group">
+                              <img
+                                src={img}
+                                alt={`Tasting ${idx + 1} - Image ${imgIdx + 1}`}
+                                className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(imgIdx, idx)}
+                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                aria-label="Remove image"
+                              >
+                                <FaTrash size={10} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Upload Button */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          id={`image-upload-${idx}`}
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleImageUpload(file, idx);
+                          }}
+                        />
+                        <label
+                          htmlFor={`image-upload-${idx}`}
+                          className="btn btn-sm btn-outline gap-2 cursor-pointer"
+                        >
+                          <FaPlus size={12} />
+                          Add Image
+                        </label>
+                        <span className="text-xs text-gray-500">
+                          {tasting.images?.length || 0} image(s)
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}

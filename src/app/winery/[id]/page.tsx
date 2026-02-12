@@ -88,8 +88,10 @@ const WineryDetail = () => {
   // Get current tasting info based on selection
   const currentTastingInfo = winery?.tasting_info?.[selectedTastingIndex];
 
-  // Get images from the current tasting or fallback to first tasting
-  const currentImages = currentTastingInfo?.images || winery?.tasting_info?.[0]?.images || [];
+  // Get images from the main winery profile or fallback to current tasting/first tasting
+  const currentImages = (winery?.images && winery.images.length > 0)
+    ? winery.images
+    : (currentTastingInfo?.images || winery?.tasting_info?.[0]?.images || []);
 
   // Check if this winery uses external booking
   const hasExternalBooking = currentTastingInfo?.booking_info?.external_booking_link;

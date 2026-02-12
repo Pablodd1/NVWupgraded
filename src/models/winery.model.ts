@@ -86,6 +86,7 @@ const WinerySchema = new mongoose.Schema({
     website: { type: String },
   },
   description: { type: String },
+  images: [{ type: String }],
   tasting_info: [TastingInfoSchema],
   amenities: {
     virtual_sommelier: { type: Boolean, default: false },

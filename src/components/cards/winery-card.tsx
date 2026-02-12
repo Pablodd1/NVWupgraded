@@ -38,20 +38,23 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
     <div className="flex flex-col sm:flex-row items-stretch rounded-2xl bg-white transition-all hover:shadow-xl hover:shadow-gray-200/50 border border-transparent hover:border-gray-100 ease-in-out duration-300 overflow-hidden mb-4">
       <div className="w-full sm:w-1/3 h-48 sm:h-auto overflow-hidden relative">
         <Link href={`/winery/${winery._id}`}>
-          {winery.tasting_info?.[0]?.images?.[0] ? (
-            <Image
-              src={winery.tasting_info?.[0]?.images?.[0]}
-              alt={winery.name}
-              fill
-              priority={priority}
-              className="object-cover transform hover:scale-105 transition-all duration-500"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
-          ) : (
-            <div className="w-full h-full bg-gray-100 flex items-center justify-center">
-              <span className="text-gray-400 text-sm">No image</span>
-            </div>
-          )}
+          {(() => {
+            const displayImage = winery.images?.[0] || winery.tasting_info?.[0]?.images?.[0];
+            return displayImage ? (
+              <Image
+                src={displayImage}
+                alt={winery.name}
+                fill
+                priority={priority}
+                className="object-cover transform hover:scale-105 transition-all duration-500"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                <span className="text-gray-400 text-sm">No image</span>
+              </div>
+            );
+          })()}
         </Link>
       </div>
 
