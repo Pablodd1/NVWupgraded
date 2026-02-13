@@ -23,12 +23,15 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
 
         // Calculate tasting cost using per-person pricing if available, otherwise use legacy pricing
         const numberOfGuests = bookingDetails?.numberOfGuests || 1;
-        if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
-          // Use per-person (tiered) pricing
-          wineryCost += currentTastingInfo.base_booking_fee; // Base fee covers 'free_guests_included'
-          const freeGuests = currentTastingInfo.free_guests_included || 1;
+        const hasTieredPricing = currentTastingInfo?.base_booking_fee !== undefined &&
+          (currentTastingInfo.base_booking_fee > 0 || (currentTastingInfo.additional_guest_fee ?? 0) > 0);
+
+        if (hasTieredPricing) {
+          // Use tiered pricing (Base + Additional)
+          wineryCost += currentTastingInfo?.base_booking_fee || 0;
+          const freeGuests = currentTastingInfo?.free_guests_included || 0;
           const guestsToCharge = Math.max(0, numberOfGuests - freeGuests);
-          wineryCost += guestsToCharge * (currentTastingInfo.additional_guest_fee || 0);
+          wineryCost += guestsToCharge * (currentTastingInfo?.additional_guest_fee || 0);
         } else if (currentTastingInfo?.tasting_price) {
           // Use legacy pricing
           wineryCost += currentTastingInfo.tasting_price;
@@ -135,12 +138,15 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
               // Calculate winery subtotal
               let winerySubtotal = 0;
               const numberOfGuests = bookingDetails?.numberOfGuests || 1;
-              if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
-                // Use per-person (tiered) pricing
-                winerySubtotal += currentTastingInfo.base_booking_fee; // Base fee covers 'free_guests_included'
-                const freeGuests = currentTastingInfo.free_guests_included || 1;
+              const hasTieredPricing = currentTastingInfo?.base_booking_fee !== undefined &&
+                (currentTastingInfo.base_booking_fee > 0 || (currentTastingInfo.additional_guest_fee ?? 0) > 0);
+
+              if (hasTieredPricing) {
+                // Use tiered pricing
+                winerySubtotal += currentTastingInfo?.base_booking_fee || 0;
+                const freeGuests = currentTastingInfo?.free_guests_included || 0;
                 const guestsToCharge = Math.max(0, numberOfGuests - freeGuests);
-                winerySubtotal += guestsToCharge * (currentTastingInfo.additional_guest_fee || 0);
+                winerySubtotal += guestsToCharge * (currentTastingInfo?.additional_guest_fee || 0);
               } else if (currentTastingInfo?.tasting_price) {
                 // Use legacy pricing
                 winerySubtotal += currentTastingInfo.tasting_price;

@@ -223,6 +223,9 @@ export default function WineryProfile() {
       tasting_description: "",
       ava: "",
       tasting_price: 0,
+      base_booking_fee: 0,
+      additional_guest_fee: 0,
+      free_guests_included: 0,
       available_times: [],
       wine_types: [],
       number_of_wines_per_tasting: 0,
@@ -233,10 +236,12 @@ export default function WineryProfile() {
       wine_details: [],
       booking_info: {
         booking_enabled: true,
-        max_guests_per_slot: 0,
+        max_guests_per_slot: 8,
         number_of_people: [],
         dynamic_pricing: { enabled: false, weekend_multiplier: 1.0 },
-        available_slots: []
+        available_slots: [],
+        allow_excess_guests: false,
+        excess_guest_multiplier: 1.5
       },
       other_features: []
     };
@@ -558,6 +563,26 @@ export default function WineryProfile() {
                           placeholder="e.g. 8"
                         />
                       </div>
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500 flex justify-between">
+                          <span>Allow Excess?</span>
+                          <input
+                            type="checkbox" checked={tasting.booking_info?.allow_excess_guests || false}
+                            onChange={(e) => handleTastingChange(idx, 'booking_info.allow_excess_guests', e.target.checked)}
+                            className="checkbox checkbox-xs"
+                          />
+                        </label>
+                        {tasting.booking_info?.allow_excess_guests && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-[10px] font-bold text-gray-400">MULTIPLIER (X)</span>
+                            <input
+                              type="number" step="0.1" value={tasting.booking_info?.excess_guest_multiplier || 1.5}
+                              onChange={(e) => handleTastingChange(idx, 'booking_info.excess_guest_multiplier', parseFloat(e.target.value))}
+                              className="input input-bordered input-xs w-16"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -589,27 +614,166 @@ export default function WineryProfile() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-6 p-3 bg-white rounded-lg border border-gray-100">
-                      <label className="flex items-center gap-2 cursor-pointer font-bold text-xs uppercase text-gray-500">
-                        <input
-                          type="checkbox" checked={tasting.tours?.available}
-                          onChange={(e) => handleTastingChange(idx, 'tours.available', e.target.checked)}
-                          className="checkbox checkbox-xs"
-                        />
-                        Tour Included?
-                      </label>
-                      {tasting.tours?.available && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold uppercase text-gray-500">Tour Price ($)</span>
+                    <div className="flex flex-col gap-4 p-4 bg-white rounded-lg border border-gray-100 mb-4">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 cursor-pointer font-bold text-xs uppercase text-gray-500">
                           <input
-                            type="number" value={tasting.tours.tour_price}
-                            onChange={(e) => handleTastingChange(idx, 'tours.tour_price', Number(e.target.value))}
-                            className="input input-bordered input-xs w-20"
-                            placeholder="0"
-                            aria-label="Tour Price"
+                            type="checkbox" checked={tasting.tours?.available}
+                            onChange={(e) => handleTastingChange(idx, 'tours.available', e.target.checked)}
+                            className="checkbox checkbox-xs"
                           />
+                          Tours Available?
+                        </label>
+                        {tasting.tours?.available && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase">Default Tour Price ($)</span>
+                            <input
+                              type="number" value={tasting.tours.tour_price}
+                              onChange={(e) => handleTastingChange(idx, 'tours.tour_price', Number(e.target.value))}
+                              className="input input-bordered input-xs w-16"
+                              placeholder="0"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {tasting.tours?.available && (
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase">Specific Tour Options</p>
+                          {(tasting.tours.tour_options || []).map((tour, tIdx) => (
+                            <div key={tIdx} className="flex gap-2 items-center">
+                              <input
+                                type="text" value={tour.description}
+                                onChange={(e) => {
+                                  const newOptions = [...tasting.tours.tour_options];
+                                  newOptions[tIdx].description = e.target.value;
+                                  handleTastingChange(idx, 'tours.tour_options', newOptions);
+                                }}
+                                className="input input-bordered input-xs flex-grow"
+                                placeholder="Tour name..."
+                              />
+                              <input
+                                type="number" value={tour.cost}
+                                onChange={(e) => {
+                                  const newOptions = [...tasting.tours.tour_options];
+                                  newOptions[tIdx].cost = Number(e.target.value);
+                                  handleTastingChange(idx, 'tours.tour_options', newOptions);
+                                }}
+                                className="input input-bordered input-xs w-16"
+                                placeholder="$"
+                              />
+                              <button
+                                onClick={() => {
+                                  const newOptions = tasting.tours.tour_options.filter((_, i) => i !== tIdx);
+                                  handleTastingChange(idx, 'tours.tour_options', newOptions);
+                                }}
+                                className="text-red-500 p-1"
+                              ><FaTrash size={10} /></button>
+                            </div>
+                          ))}
+                          <button
+                            onClick={() => {
+                              const newOptions = [...(tasting.tours.tour_options || []), { description: "", cost: 0 }];
+                              handleTastingChange(idx, 'tours.tour_options', newOptions);
+                            }}
+                            className="btn btn-xs btn-ghost gap-1 text-[10px]"
+                          ><FaPlus /> Add Tour Option</button>
                         </div>
                       )}
+                    </div>
+
+                    {/* Food Pairings Manager */}
+                    <div className="bg-white p-4 rounded-lg border border-gray-100 mb-4">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+                        <FaWineBottle /> Food Pairing Options (Per Person)
+                      </p>
+                      <div className="space-y-2">
+                        {(tasting.food_pairing_options || []).map((pairing, fIdx) => (
+                          <div key={fIdx} className="flex gap-2 items-center">
+                            <input
+                              type="text" value={pairing.name}
+                              onChange={(e) => {
+                                const newOptions = [...tasting.food_pairing_options];
+                                newOptions[fIdx].name = e.target.value;
+                                handleTastingChange(idx, 'food_pairing_options', newOptions);
+                              }}
+                              className="input input-bordered input-xs flex-grow"
+                              placeholder="Pairing name..."
+                            />
+                            <input
+                              type="number" value={pairing.price}
+                              onChange={(e) => {
+                                const newOptions = [...tasting.food_pairing_options];
+                                newOptions[fIdx].price = Number(e.target.value);
+                                handleTastingChange(idx, 'food_pairing_options', newOptions);
+                              }}
+                              className="input input-bordered input-xs w-16"
+                              placeholder="$"
+                            />
+                            <button
+                              onClick={() => {
+                                const newOptions = tasting.food_pairing_options.filter((_, i) => i !== fIdx);
+                                handleTastingChange(idx, 'food_pairing_options', newOptions);
+                              }}
+                              className="text-red-500 p-1"
+                            ><FaTrash size={10} /></button>
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => {
+                            const newOptions = [...(tasting.food_pairing_options || []), { id: Math.random().toString(36).substr(2, 9), name: "", price: 0 }];
+                            handleTastingChange(idx, 'food_pairing_options', newOptions);
+                          }}
+                          className="btn btn-xs btn-ghost gap-1 text-[10px]"
+                        ><FaPlus /> Add Food Pairing</button>
+                      </div>
+                    </div>
+
+                    {/* Other Features Manager */}
+                    <div className="bg-white p-4 rounded-lg border border-gray-100 mb-4">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+                        <FaPlus /> Other Features / Add-ons (Per Person)
+                      </p>
+                      <div className="space-y-2">
+                        {(tasting.other_features || []).map((feature, oIdx) => (
+                          <div key={oIdx} className="flex gap-2 items-center">
+                            <input
+                              type="text" value={feature.description}
+                              onChange={(e) => {
+                                const newOptions = [...tasting.other_features];
+                                newOptions[oIdx].description = e.target.value;
+                                handleTastingChange(idx, 'other_features', newOptions);
+                              }}
+                              className="input input-bordered input-xs flex-grow"
+                              placeholder="Feature name..."
+                            />
+                            <input
+                              type="number" value={feature.cost}
+                              onChange={(e) => {
+                                const newOptions = [...tasting.other_features];
+                                newOptions[oIdx].cost = Number(e.target.value);
+                                handleTastingChange(idx, 'other_features', newOptions);
+                              }}
+                              className="input input-bordered input-xs w-16"
+                              placeholder="$"
+                            />
+                            <button
+                              onClick={() => {
+                                const newOptions = tasting.other_features.filter((_, i) => i !== oIdx);
+                                handleTastingChange(idx, 'other_features', newOptions);
+                              }}
+                              className="text-red-500 p-1"
+                            ><FaTrash size={10} /></button>
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => {
+                            const newOptions = [...(tasting.other_features || []), { description: "", cost: 0, feature_id: Math.random().toString(36).substr(2, 9) }];
+                            handleTastingChange(idx, 'other_features', newOptions);
+                          }}
+                          className="btn btn-xs btn-ghost gap-1 text-[10px]"
+                        ><FaPlus /> Add Feature</button>
+                      </div>
                     </div>
 
                     {/* Image Upload Section */}

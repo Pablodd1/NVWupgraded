@@ -297,9 +297,15 @@ const WineryDetail = () => {
                   <h3 className="font-serif text-xl mb-3 text-wine-primary">{tasting.tasting_title}</h3>
                   <p className="text-gray-600 mb-4 text-sm">{tasting.tasting_description}</p>
                   <div className="space-y-2 text-sm">
-                    <p className="font-semibold text-lg">${tasting.tasting_price.toFixed(2)}</p>
+                    {tasting.base_booking_fee !== undefined && tasting.base_booking_fee > 0 ? (
+                      <p className="font-semibold text-lg">${tasting.base_booking_fee.toFixed(2)} Base</p>
+                    ) : (
+                      <p className="font-semibold text-lg">${tasting.tasting_price.toFixed(2)}</p>
+                    )}
                     <p className="text-gray-500">{tasting.number_of_wines_per_tasting} wines included</p>
-                    <p className="text-gray-500">{tasting.ava}</p>
+                    {tasting.free_guests_included && tasting.free_guests_included > 0 ? (
+                      <p className="text-gray-500 font-medium">Includes first {tasting.free_guests_included} guest{tasting.free_guests_included > 1 ? 's' : ''}</p>
+                    ) : null}
                   </div>
                 </Card>
               ))}
@@ -341,7 +347,12 @@ const WineryDetail = () => {
               </div>
               <div>
                 <h3 className="font-serif text-lg mb-1">Price</h3>
-                <p className="text-gray-600 text-sm">${currentTastingInfo?.tasting_price?.toFixed(2) ?? "N/A"}</p>
+                <p className="text-gray-600 text-sm">
+                  {currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo.base_booking_fee > 0
+                    ? `$${currentTastingInfo.base_booking_fee.toFixed(2)} (Base)`
+                    : `$${currentTastingInfo?.tasting_price?.toFixed(2) ?? "N/A"}`
+                  }
+                </p>
               </div>
             </div>
           </Card>

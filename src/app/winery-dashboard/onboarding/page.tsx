@@ -78,15 +78,17 @@ export default function WineryOnboarding() {
                     tasting_title: "Signature Tasting",
                     tasting_description: "Our flagship wine tasting experience.",
                     tasting_price: 50,
-                    base_booking_fee: 0,
-                    additional_guest_fee: 0,
+                    base_booking_fee: 50,
+                    additional_guest_fee: 25,
+                    free_guests_included: 1,
                     available_times: ["11:00", "13:00", "15:00"],
                     wine_types: ["Red", "White"],
-                    max_guests_per_slot: 8,
                     booking_info: {
                         booking_enabled: true,
                         max_guests_per_slot: 8,
-                        available_slots: []
+                        available_slots: [],
+                        allow_excess_guests: false,
+                        excess_guest_multiplier: 1.5
                     }
                 }]
             };
