@@ -267,6 +267,7 @@ interface BookingNotificationData {
   bookingTime: string;
   numberOfGuests: number;
   specialRequests?: string;
+  paymentStatus?: string;
 }
 
 function getCustomerBookingConfirmationEmail(data: BookingNotificationData) {
@@ -299,6 +300,10 @@ function getCustomerBookingConfirmationEmail(data: BookingNotificationData) {
         <tr>
           <td style="padding:8px 0;"><strong>Guests:</strong></td>
           <td style="padding:8px 0;">${data.numberOfGuests}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;"><strong>Payment Status:</strong></td>
+          <td style="padding:8px 0;"><span style="color: #2E7D32; font-weight: bold; background: #E8F5E9; padding: 2px 8px; border-radius: 4px;">PAID (MOCK)</span></td>
         </tr>
       </table>
     </div>
@@ -379,6 +384,10 @@ function getWineryBookingNotificationEmail(data: BookingNotificationData) {
           <td style="padding:8px 0;"><strong>Guests:</strong></td>
           <td style="padding:8px 0;">${data.numberOfGuests}</td>
         </tr>
+         <tr>
+          <td style="padding:8px 0;"><strong>Payment:</strong></td>
+          <td style="padding:8px 0;"><span style="color: #2E7D32; font-weight: bold;">PAID & SECURED</span></td>
+        </tr>
       </table>
     </div>
     
@@ -439,6 +448,10 @@ function getAdminBookingNotificationEmail(data: BookingNotificationData) {
           <td style="padding:8px 0;"><strong>Guests:</strong></td>
           <td style="padding:8px 0;">${data.numberOfGuests}</td>
         </tr>
+        <tr>
+          <td style="padding:8px 0;"><strong>Payment Status:</strong></td>
+          <td style="padding:8px 0;">PAID (MOCK CHECKOUT)</td>
+        </tr>
       </table>
     </div>
     
@@ -467,28 +480,31 @@ function getMasterItineraryEmail(data: {
       <p style="margin: 5px 0; font-size: 14px;">
         <strong>Guests:</strong> ${w.numberOfGuests}
       </p>
+      <p style="margin: 5px 0; font-size: 12px; color: #2E7D32;">
+        <strong>Status:</strong> Confirmed & Paid
+      </p>
     </div>
   `).join('');
 
   const content = `
     <h2 style="color:#6B1E23;">Your Napa Day-Trip Itinerary 🍇</h2>
-    <p>Hi ${data.customerName}, your itinerary has been received! Our partner wineries have been notified and will confirm your slots shortly.</p>
+    <p>Hi ${data.customerName}, your itinerary has been <strong>Paid and Confirmed</strong>! Your slots are locked in with our partner wineries.</p>
     
     <div style="margin: 30px 0;">
-      <h3 style="border-bottom: 2px solid #EEE; padding-bottom: 10px;">The Plan:</h3>
+      <h3 style="border-bottom: 2px solid #EEE; padding-bottom: 10px;">Your Confirmed Schedule:</h3>
       ${wineriesList}
     </div>
 
     <p style="font-size: 14px; color: #666;">
-      <strong>Note:</strong> Each winery manages its own bookings. You will receive a separate confirmation once each winery approves your request. 
+      <strong>Note:</strong> Your payment has been processed successfully. You're all set! Just show up and enjoy the experience.
     </p>
     
     <div style="margin-top: 30px; text-align: center;">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="button">Track Your Requests</a>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="button">View My Itinerary</a>
     </div>
   `;
 
-  return EmailTemplate({ content, subject: "Your Napa Valley Itinerary - Request Received" });
+  return EmailTemplate({ content, subject: "Your Napa Valley Itinerary - Confirmed & Paid 🍷" });
 }
 
 export async function sendMasterItineraryNotification(booking: any, customer: any) {
@@ -535,6 +551,7 @@ export interface SendBookingNotificationsParams {
   bookingDateTime: string; // ISO string
   numberOfGuests?: number;
   specialRequests?: string;
+  paymentStatus?: string;
 }
 
 // ========================================
@@ -807,7 +824,8 @@ export async function sendWineryNotification(params: SendBookingNotificationsPar
         minute: '2-digit'
       }),
       numberOfGuests: params.numberOfGuests || 1,
-      specialRequests: params.specialRequests
+      specialRequests: params.specialRequests,
+      paymentStatus: params.paymentStatus
     };
 
     const from = process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app";

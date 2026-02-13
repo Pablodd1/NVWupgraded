@@ -206,7 +206,9 @@ export async function POST(req: NextRequest) {
       userId,
       payment_method: paymentMethod,
       totalPrice: totalPrice,
-      status: "pending" // Initial Master Status
+      status: "confirmed", // Mark as confirmed for mock checkout
+      paymentStatus: "paid", // Mark as paid for mock checkout
+      paymentMethod: "stripe" // Simulation
     });
 
     booking.wineries = data.map((winery: any) => {
@@ -224,7 +226,7 @@ export async function POST(req: NextRequest) {
         foodPairings: winery.foodPairings || [],
         otherFeatures: winery.otherFeature || [],
         numberOfGuests: winery.numberOfGuests || 1,
-        status: "pending" // Initial Individual Status
+        status: "confirmed" // Mark individual wineries as confirmed
       };
     });
     await booking.save();
@@ -258,7 +260,8 @@ export async function POST(req: NextRequest) {
             wineryPhone: wineryDetails.contact_info?.phone,
             bookingDateTime: winery.dateTime,
             numberOfGuests: winery.numberOfGuests || 1,
-            specialRequests: booking.specialRequests
+            specialRequests: booking.specialRequests,
+            paymentStatus: "paid"
           });
 
           notificationResults.push({
