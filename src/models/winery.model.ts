@@ -1,8 +1,16 @@
 import mongoose from "mongoose";
 
+// Helper for unique IDs (safe for different Node versions)
+const generateId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+};
+
 // FoodPairingOption Schema
 const FoodPairingOptionSchema = new mongoose.Schema({
-  id: { type: String, required: true, default: () => crypto.randomUUID() },
+  id: { type: String, required: true, default: generateId },
   name: { type: String, required: true },
   price: { type: Number, default: 0, min: 0 }, // Allow $0 (free) food pairings
 });
@@ -22,7 +30,7 @@ const ToursSchema = new mongoose.Schema({
 
 // WineDetail Schema
 const WineDetailSchema = new mongoose.Schema({
-  id: { type: String, required: true, default: () => crypto.randomUUID() },
+  id: { type: String, required: true, default: generateId },
   name: { type: String, required: true },
   description: { type: String, required: true },
   year: { type: Number },
