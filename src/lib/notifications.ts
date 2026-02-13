@@ -2,18 +2,17 @@ import { Resend } from 'resend';
 import UserModel from "@/models/user.model";
 
 // Initialize Resend safely to prevent build errors if env var is missing
-// SAFETY SWITCH: Temporarily disabled (mock only) until domain is verified
-const resend = {
-  emails: {
-    send: async () => {
-      console.warn("Resend email SKIPPED (Safety Mode)");
-      return { id: "mock_id", error: null };
+// Initialize Resend safely
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : {
+    emails: {
+      send: async () => {
+        console.warn("Resend not configured (RESEND_API_KEY missing)");
+        return { error: "Resend key missing" };
+      }
     }
-  }
-} as any;
-// const resend = process.env.RESEND_API_KEY
-//   ? new Resend(process.env.RESEND_API_KEY)
-//   : { emails: { send: async () => { console.warn("Resend not configured"); return { error: "Resend key missing" }; } } } as any;
+  } as any;
 
 // ========================================
 // EMAIL CONFIGURATION
