@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbConnect";
 import User from "@/models/user.model";
+import Winery from "@/models/winery.model"; // Ensure model is registered for populate
 import { createToken, setTokenCookie } from "@/lib/auth";
 
 export async function POST(req: Request) {
