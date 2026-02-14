@@ -16,6 +16,8 @@ export default function WineryOnboarding() {
         name: "",
         description: "",
         address: "",
+        latitude: 0,
+        longitude: 0,
         phone: "",
         website: ""
     });
@@ -63,8 +65,8 @@ export default function WineryOnboarding() {
                 description: formData.description,
                 location: {
                     address: formData.address,
-                    latitude: 0, // Will need geocoding later, default for now
-                    longitude: 0,
+                    latitude: formData.latitude || 0,
+                    longitude: formData.longitude || 0,
                     is_mountain_location: false
                 },
                 contact_info: {
@@ -184,15 +186,25 @@ export default function WineryOnboarding() {
                                     <AddressAutocomplete
                                         value={formData.address}
                                         onChange={(address, lat, lng) => {
-                                            setFormData({ ...formData, address });
-                                            if (lat && lng) {
-                                                // Handle coordinates if needed
-                                            }
+                                            setFormData({
+                                                ...formData,
+                                                address,
+                                                latitude: lat || 0,
+                                                longitude: lng || 0
+                                            });
                                         }}
                                         className="focus:ring-primary focus:border-primary block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border"
                                         placeholder="123 Main St, Napa, CA"
                                     />
                                 </APIProvider>
+                                {formData.latitude !== 0 && formData.longitude !== 0 && (
+                                    <p className="mt-2 text-sm text-green-600 flex items-center">
+                                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a 1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        Location confirmed: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
