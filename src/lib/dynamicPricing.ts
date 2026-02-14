@@ -137,17 +137,30 @@ class DynamicPricingService {
     capacityUtilization: number,
     bookingDate: Date,
     bookingTime: string,
-    isSpecialEvent: boolean = false
+    isSpecialEvent: boolean = false,
+    customMultiplier?: number
   ): Promise<PricingCalculationResult> {
     try {
       // Start with base calculation
       const baseFee = baseBookingFee;
       const guestFees = totalGuests > 1 ? additionalGuestFee * (totalGuests - 1) : 0;
       let currentPrice = baseFee + guestFees;
-      
+
       const appliedRules: string[] = [];
       const dynamicAdjustments: { ruleName: string; adjustment: number; amount: number }[] = [];
-      
+
+      if (excessGuests > 0 && customMultiplier && customMultiplier > 1) {
+        const excessAdjustment = currentPrice * (customMultiplier - 1);
+        currentPrice += excessAdjustment;
+
+        dynamicAdjustments.push({
+          ruleName: "Winery Excess Guest Premium",
+          adjustment: customMultiplier,
+          amount: excessAdjustment
+        });
+        appliedRules.push("Winery Excess Guest Premium");
+      }
+
       // Sort rules by priority (higher first)
       const activeRules = this.pricingRules
         .filter(rule => rule.active)
@@ -164,7 +177,7 @@ class DynamicPricingService {
         })) {
           const adjustment = this.calculateRuleAdjustment(rule, currentPrice, excessGuests);
           currentPrice += adjustment.amount;
-          
+
           appliedRules.push(rule.name);
           dynamicAdjustments.push({
             ruleName: rule.name,
@@ -228,7 +241,7 @@ class DynamicPricingService {
       const bookingHour = this.parseTimeToHours(bookingTime);
       const startHour = this.parseTimeToHours(conditions.timeOfDay.start);
       const endHour = this.parseTimeToHours(conditions.timeOfDay.end);
-      
+
       if (bookingHour < startHour || bookingHour > endHour) return false;
     }
 

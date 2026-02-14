@@ -49,6 +49,8 @@ const BookingInfoSchema = new mongoose.Schema({
   },
   available_slots: [{ type: String }],
   external_booking_link: { type: String },
+  allow_excess_guests: { type: Boolean, default: false },
+  excess_guest_multiplier: { type: Number, default: 1.5, min: 1 },
 });
 
 // OtherFeature Schema

@@ -169,7 +169,10 @@ export async function POST(req: NextRequest) {
         if (tasting) {
           // Check max guests condition
           const maxGuests = tasting.booking_info?.max_guests_per_slot || 20;
-          if (guests > maxGuests) {
+          const allowExcess = tasting.booking_info?.allow_excess_guests || false;
+          const excessMultiplier = tasting.booking_info?.excess_guest_multiplier || 1.5;
+
+          if (guests > maxGuests && !allowExcess) {
             throw new Error(`Winery ${winery.name} only allows up to ${maxGuests} guests per slot.`);
           }
 
@@ -186,6 +189,11 @@ export async function POST(req: NextRequest) {
             wineryTotal += baseFee;
             const guestsToCharge = Math.max(0, guests - freeGuestsIncluded);
             wineryTotal += guestsToCharge * additionalGuestFee;
+
+            // Apply excess guest premium if applicable
+            if (guests > maxGuests && allowExcess) {
+              wineryTotal *= excessMultiplier;
+            }
           } else {
             // Use legacy pricing
             const legacyPrice = Number(tasting.tasting_price) || 0;

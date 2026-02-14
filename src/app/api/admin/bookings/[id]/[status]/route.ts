@@ -5,8 +5,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id: bookingId, status } = await params;
   console.log({ bookingId, status });
 
-  if (!["confirm", "cancel"].includes(status)) {
-    return NextResponse.json({ error: 'Invalid status parameter. Use "confirm" or "cancel".' }, { status: 400 });
+  if (!["confirm", "cancel", "complete"].includes(status)) {
+    return NextResponse.json({ error: 'Invalid status parameter. Use "confirm", "cancel", or "complete".' }, { status: 400 });
   }
 
   try {
@@ -15,11 +15,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Booking not found." }, { status: 404 });
     }
 
-    if (booking.status !== "pending") {
+    if (status === "complete") {
+      if (booking.status !== "confirmed") {
+        return NextResponse.json({ error: "Only confirmed bookings can be completed." }, { status: 400 });
+      }
+    } else if (booking.status !== "pending") {
       return NextResponse.json({ error: "Only pending bookings can be updated." }, { status: 400 });
     }
 
-    const newStatus = status === "confirm" ? "confirmed" : "cancelled";
+    const newStatus = status === "confirm" ? "confirmed" :
+      status === "cancel" ? "cancelled" : "completed";
     booking.status = newStatus;
     await booking.save();
 
