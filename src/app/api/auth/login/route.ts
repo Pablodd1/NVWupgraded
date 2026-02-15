@@ -89,10 +89,13 @@ export async function POST(req: Request) {
     });
 
     // DEMO MODE FALLBACK: Allow login even if DB is offline
+    // NOTE: These credentials MUST match the actual database users
+    // Passwords are hashed in DB but plaintext here for demo fallback
     const demoCreds = [
       { email: "admin@napawineries.com", pass: "admin123", role: "admin", name: "System Admin" },
       { email: "owner@napawineries.com", pass: "owner123", role: "winery", name: "Winery Owner", wineryId: "657999acac9c9c0012345671" },
-      { email: "customer@test.com", pass: "customer123", role: "customer", name: "Test Customer" }
+      { email: "customer@test.com", pass: "customer123", role: "customer", name: "Test Customer" },
+      { email: "customer@example.com", pass: "customer123", role: "customer", name: "Example Customer" }
     ];
 
     try {
@@ -136,6 +139,9 @@ export async function POST(req: Request) {
     }
 
     console.error("❌ Login failed: Database offline and invalid demo credentials");
-    return NextResponse.json({ error: "Database offline and invalid demo credentials." }, { status: 400 });
+    return NextResponse.json({
+      error: "Login failed. Database may be offline or credentials are invalid.",
+      hint: "Try demo credentials: admin@napawineries.com/admin123, owner@napawineries.com/owner123, or customer@test.com/customer123"
+    }, { status: 400 });
   }
 }
