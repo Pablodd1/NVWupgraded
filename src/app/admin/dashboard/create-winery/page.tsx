@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FaUser,
   FaEnvelope,
@@ -12,14 +13,20 @@ import {
   FaMapMarkerAlt,
   FaGlobe,
   FaArrowLeft,
+  FaArrowRight,
+  FaMagic,
+  FaCheckCircle,
 } from "react-icons/fa";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { PremiumInput } from "@/components/ui/PremiumInput";
+import { cn } from "@/lib/utils";
 
 export default function CreateWineryAccount() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState(1); // 1: User Account, 2: Winery Profile
+  const [step, setStep] = useState(1);
 
   const [userData, setUserData] = useState({
     firstName: "",
@@ -40,454 +47,306 @@ export default function CreateWineryAccount() {
     wineryDescription: "",
   });
 
-  // Auto-generate password
   const generatePassword = () => {
-    const chars =
-      "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
     let password = "";
     for (let i = 0; i < 12; i++) {
       password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     setUserData({ ...userData, password });
-    toast.info("Password generated! Copy it before proceeding.");
+    toast.info("Secure password generated!");
   };
 
-  const handleNext = () => {
-    // Validate step 1
+  const validateStep1 = () => {
     if (!userData.firstName || !userData.lastName || !userData.email || !userData.password || !userData.phone) {
       toast.error("Please fill all user account fields");
-      return;
+      return false;
     }
-
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(userData.email)) {
       toast.error("Invalid email format");
-      return;
+      return false;
     }
-
-    // Validate phone format
-    const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-    if (!phoneRegex.test(userData.phone.replace(/[\s-()]/g, ""))) {
-      toast.error("Invalid phone format. Use international format: +1-234-567-8900");
-      return;
-    }
-
-    setStep(2);
+    return true;
   };
 
-  const handleBack = () => {
-    setStep(1);
+  const handleNext = () => {
+    if (validateStep1()) setStep(2);
   };
+
+  const handleBack = () => setStep(1);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    // Validate step 2
     if (!wineryData.wineryName || !wineryData.wineryAddress) {
       toast.error("Winery name and address are required");
-      setLoading(false);
       return;
     }
 
+    setLoading(true);
     try {
       const response = await fetch("/api/admin/create-winery-account", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...userData,
-          ...wineryData,
-        }),
+        body: JSON.stringify({ ...userData, ...wineryData }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         toast.success("Winery account created successfully!");
-
-        // Show credentials
-        const credentials = `
-📧 Email: ${userData.email}
-🔑 Password: ${userData.password}
-🏰 Winery: ${wineryData.wineryName}
-        `;
-
-        alert(`✅ Account Created!\n\n${credentials}\n\nMake sure to save these credentials!`);
-
-        // Reset form
-        setUserData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          password: "",
-          phone: "",
-        });
-        setWineryData({
-          wineryName: "",
-          wineryAddress: "",
-          wineryLat: 0,
-          wineryLong: 0,
-          wineryPhone: "",
-          wineryEmail: "",
-          wineryWebsite: "",
-          wineryDescription: "",
-        });
-        setStep(1);
-
+        alert(`✅ Account Created!\n\nEmail: ${userData.email}\nPassword: ${userData.password}\n\nCredentials are active.`);
+        router.push("/admin/dashboard");
       } else {
         toast.error(data.message || "Failed to create winery account");
       }
     } catch (error) {
       console.error("Error creating winery account:", error);
-      toast.error("Something went wrong. Please try again.");
+      toast.error("An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <FaWineGlassAlt className="mx-auto h-12 w-12 text-primary" />
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Create Winery Account
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Step {step} of 2: {step === 1 ? "User Account" : "Winery Profile"}
-          </p>
+    <div className="min-h-screen bg-neutral-50 premium-gradient-bg py-12 px-4 sm:px-6 lg:px-8">
+      {/* Background Decoration */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-20">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary rounded-full blur-[120px]" />
+        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-secondary rounded-full blur-[120px]" />
+      </div>
+
+      <div className="max-w-2xl mx-auto relative z-10">
+        <div className="text-center mb-10">
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="inline-block p-4 bg-white rounded-2xl shadow-premium mb-4"
+          >
+            <FaWineGlassAlt className="h-10 w-10 text-primary" />
+          </motion.div>
+          <motion.h2
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="text-4xl font-bold text-neutral-900 tracking-tight"
+          >
+            Onboard New Winery
+          </motion.h2>
+          <motion.p
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="mt-3 text-neutral-600 font-medium"
+          >
+            Deploy a premium digital storefront in minutes
+          </motion.p>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center">
-            <div className={`flex-1 h-2 rounded-l-full ${step >= 1 ? "bg-primary" : "bg-gray-200"}`}></div>
-            <div className={`flex-1 h-2 rounded-r-full ${step >= 2 ? "bg-primary" : "bg-gray-200"}`}></div>
-          </div>
-          <div className="flex justify-between mt-2 text-xs text-gray-600">
-            <span>Owner Info</span>
-            <span>Winery Details</span>
+        {/* Step Progress */}
+        <div className="mb-10 px-4">
+          <div className="flex items-center justify-between mb-4">
+            {[1, 2].map((i) => (
+              <div key={i} className="flex flex-col items-center">
+                <div className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 shadow-sm",
+                  step >= i ? "bg-primary text-white scale-110" : "bg-white text-neutral-400 border border-neutral-200"
+                )}>
+                  {step > i ? <FaCheckCircle /> : i}
+                </div>
+                <span className={cn(
+                  "mt-2 text-xs font-semibold uppercase tracking-wider",
+                  step >= i ? "text-primary" : "text-neutral-400"
+                )}>
+                  {i === 1 ? "Owner" : "Winery"}
+                </span>
+              </div>
+            ))}
+            <div className="absolute left-[50%] top-[20px] -translate-x-1/2 w-[120px] h-[2px] bg-neutral-200 -z-10">
+              <motion.div
+                className="h-full bg-primary"
+                initial={{ width: 0 }}
+                animate={{ width: step === 2 ? "100%" : "0%" }}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Form Card */}
-        <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Step 1: User Account */}
-            {step === 1 && (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  {/* First Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      First Name *
-                    </label>
-                    <div className="mt-1 relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaUser className="text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        value={userData.firstName}
-                        onChange={(e) =>
-                          setUserData({ ...userData, firstName: e.target.value })
-                        }
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                        placeholder="John"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Last Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Last Name *
-                    </label>
-                    <div className="mt-1 relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaUser className="text-gray-400" />
-                      </div>
-                      <input
-                        type="text"
-                        required
-                        value={userData.lastName}
-                        onChange={(e) =>
-                          setUserData({ ...userData, lastName: e.target.value })
-                        }
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                        placeholder="Doe"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Email Address *
-                  </label>
-                  <div className="mt-1 relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaEnvelope className="text-gray-400" />
-                    </div>
-                    <input
-                      type="email"
-                      required
-                      value={userData.email}
-                      onChange={(e) =>
-                        setUserData({ ...userData, email: e.target.value })
-                      }
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                      placeholder="owner@winery.com"
+        <GlassCard className="p-0 overflow-hidden bg-white/70">
+          <form onSubmit={handleSubmit}>
+            <AnimatePresence mode="wait">
+              {step === 1 ? (
+                <motion.div
+                  key="step1"
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -20, opacity: 0 }}
+                  className="p-8 space-y-6"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <PremiumInput
+                      label="First Name"
+                      placeholder="e.g. Robert"
+                      icon={<FaUser />}
+                      value={userData.firstName}
+                      onChange={(e) => setUserData({ ...userData, firstName: e.target.value })}
+                    />
+                    <PremiumInput
+                      label="Last Name"
+                      placeholder="e.g. Mondavi"
+                      icon={<FaUser />}
+                      value={userData.lastName}
+                      onChange={(e) => setUserData({ ...userData, lastName: e.target.value })}
                     />
                   </div>
-                </div>
 
-                {/* Phone */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Phone Number *
-                  </label>
-                  <div className="mt-1 relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaPhone className="text-gray-400" />
-                    </div>
-                    <input
-                      type="tel"
-                      required
-                      value={userData.phone}
-                      onChange={(e) =>
-                        setUserData({ ...userData, phone: e.target.value })
-                      }
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                      placeholder="+1-707-555-0123"
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    International format: +1-234-567-8900
-                  </p>
-                </div>
+                  <PremiumInput
+                    label="Email Address"
+                    type="email"
+                    placeholder="owner@estates.com"
+                    icon={<FaEnvelope />}
+                    value={userData.email}
+                    onChange={(e) => setUserData({ ...userData, email: e.target.value })}
+                  />
 
-                {/* Password */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Password *
-                  </label>
-                  <div className="mt-1 flex space-x-2">
-                    <div className="flex-1 relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FaLock className="text-gray-400" />
-                      </div>
-                      <input
+                  <PremiumInput
+                    label="Phone Number"
+                    placeholder="+1 (707) 000-0000"
+                    icon={<FaPhone />}
+                    value={userData.phone}
+                    onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
+                    helperText="International format preferred for SMS automation"
+                  />
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-gray-700 ml-1">Password</label>
+                    <div className="flex space-x-2">
+                      <PremiumInput
+                        label=""
                         type="text"
-                        required
+                        placeholder="••••••••••••"
+                        icon={<FaLock />}
+                        className="font-mono"
                         value={userData.password}
-                        onChange={(e) =>
-                          setUserData({ ...userData, password: e.target.value })
-                        }
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary font-mono"
-                        placeholder="Enter or generate password"
+                        onChange={(e) => setUserData({ ...userData, password: e.target.value })}
                       />
+                      <button
+                        type="button"
+                        onClick={generatePassword}
+                        className="h-[46px] px-6 bg-neutral-800 text-white rounded-xl hover:bg-black transition-colors flex items-center shadow-lg"
+                      >
+                        <FaMagic className="mr-2" /> Magic
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={generatePassword}
-                      className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                    >
-                      Generate
-                    </button>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">
-                    ⚠️ Make sure to copy and save the password before proceeding!
-                  </p>
-                </div>
 
-                {/* Next Button */}
-                <div>
                   <button
                     type="button"
                     onClick={handleNext}
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    className="w-full py-4 bg-primary text-white rounded-2xl font-bold shadow-premium hover:bg-primary/90 transition-all flex items-center justify-center text-lg"
                   >
-                    Next: Winery Profile →
+                    Next Details <FaArrowRight className="ml-2" />
                   </button>
-                </div>
-              </>
-            )}
-
-            {/* Step 2: Winery Profile */}
-            {step === 2 && (
-              <>
-                {/* Winery Name */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Winery Name *
-                  </label>
-                  <div className="mt-1 relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaWineGlassAlt className="text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      required
-                      value={wineryData.wineryName}
-                      onChange={(e) =>
-                        setWineryData({ ...wineryData, wineryName: e.target.value })
-                      }
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                      placeholder="Napa Valley Estate Winery"
-                    />
-                  </div>
-                </div>
-
-                {/* Address with Autocomplete */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Winery Address *
-                  </label>
-                  <div className="mt-1 relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
-                      <FaMapMarkerAlt className="text-gray-400" />
-                    </div>
-                    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}>
-                      <AddressAutocomplete
-                        value={wineryData.wineryAddress}
-                        onChange={(address, lat, lng) => {
-                          setWineryData({
-                            ...wineryData,
-                            wineryAddress: address,
-                            wineryLat: lat || 0,
-                            wineryLong: lng || 0,
-                          });
-                        }}
-                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                        placeholder="123 Vineyard Rd, Napa, CA 94558"
-                      />
-                    </APIProvider>
-                  </div>
-                  {wineryData.wineryLat !== 0 && wineryData.wineryLong !== 0 && (
-                    <p className="mt-1 text-xs text-green-600">
-                      ✓ Coordinates: {wineryData.wineryLat.toFixed(4)}, {wineryData.wineryLong.toFixed(4)}
-                    </p>
-                  )}
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Description
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={wineryData.wineryDescription}
-                    onChange={(e) =>
-                      setWineryData({
-                        ...wineryData,
-                        wineryDescription: e.target.value,
-                      })
-                    }
-                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-primary focus:border-primary"
-                    placeholder="Tell us about the winery's history, specialties, and unique features..."
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="step2"
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -20, opacity: 0 }}
+                  className="p-8 space-y-6"
+                >
+                  <PremiumInput
+                    label="Winery Name"
+                    placeholder="The Napa Collection"
+                    icon={<FaWineGlassAlt />}
+                    value={wineryData.wineryName}
+                    onChange={(e) => setWineryData({ ...wineryData, wineryName: e.target.value })}
                   />
-                </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Winery Phone */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Winery Phone
-                    </label>
-                    <input
-                      type="tel"
-                      value={wineryData.wineryPhone}
-                      onChange={(e) =>
-                        setWineryData({ ...wineryData, wineryPhone: e.target.value })
-                      }
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-primary focus:border-primary"
-                      placeholder="(707) 555-0456"
-                    />
-                  </div>
-
-                  {/* Winery Email */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Winery Email
-                    </label>
-                    <input
-                      type="email"
-                      value={wineryData.wineryEmail}
-                      onChange={(e) =>
-                        setWineryData({ ...wineryData, wineryEmail: e.target.value })
-                      }
-                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-primary focus:border-primary"
-                      placeholder="info@winery.com"
-                    />
-                  </div>
-                </div>
-
-                {/* Website */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Website
-                  </label>
-                  <div className="mt-1 relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <FaGlobe className="text-gray-400" />
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-gray-700 ml-1">Physical Address</label>
+                    <div className="relative flex items-center">
+                      <div className="absolute left-3 z-[1] text-gray-400">
+                        <FaMapMarkerAlt />
+                      </div>
+                      <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}>
+                        <AddressAutocomplete
+                          value={wineryData.wineryAddress}
+                          onChange={(address, lat, lng) => {
+                            setWineryData({
+                              ...wineryData,
+                              wineryAddress: address,
+                              wineryLat: lat || 0,
+                              wineryLong: lng || 0,
+                            });
+                          }}
+                          className="w-full pl-10 pr-4 py-2.5 bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                        />
+                      </APIProvider>
                     </div>
-                    <input
-                      type="url"
-                      value={wineryData.wineryWebsite}
-                      onChange={(e) =>
-                        setWineryData({ ...wineryData, wineryWebsite: e.target.value })
-                      }
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                      placeholder="https://winery.com"
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <PremiumInput
+                      label="Public Phone"
+                      placeholder="(707) 123-4567"
+                      icon={<FaPhone />}
+                      value={wineryData.wineryPhone}
+                      onChange={(e) => setWineryData({ ...wineryData, wineryPhone: e.target.value })}
+                    />
+                    <PremiumInput
+                      label="Public Email"
+                      placeholder="info@winery.com"
+                      icon={<FaEnvelope />}
+                      value={wineryData.wineryEmail}
+                      onChange={(e) => setWineryData({ ...wineryData, wineryEmail: e.target.value })}
                     />
                   </div>
-                </div>
 
-                {/* Action Buttons */}
-                <div className="flex space-x-4">
-                  <button
-                    type="button"
-                    onClick={handleBack}
-                    className="flex-1 flex items-center justify-center py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                  >
-                    <FaArrowLeft className="mr-2" />
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="flex-1 flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
-                  >
-                    {loading ? (
-                      <>
-                        <span className="loading loading-spinner loading-sm mr-2"></span>
-                        Creating...
-                      </>
-                    ) : (
-                      "Create Winery Account"
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
+                  <PremiumInput
+                    label="Official Website"
+                    placeholder="https://www.winery.com"
+                    icon={<FaGlobe />}
+                    value={wineryData.wineryWebsite}
+                    onChange={(e) => setWineryData({ ...wineryData, wineryWebsite: e.target.value })}
+                  />
+
+                  <div className="flex space-x-4">
+                    <button
+                      type="button"
+                      onClick={handleBack}
+                      className="px-8 py-4 bg-white border border-neutral-200 text-neutral-600 rounded-2xl font-bold hover:bg-neutral-50 transition-all flex items-center shadow-md"
+                    >
+                      <FaArrowLeft className="mr-2" /> Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 py-4 bg-primary text-white rounded-2xl font-bold shadow-premium hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center justify-center text-lg"
+                    >
+                      {loading ? "Onboarding..." : "Instantiate Estate"}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </form>
-        </div>
+        </GlassCard>
 
-        {/* Back to Dashboard Link */}
-        <div className="mt-6 text-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-8 text-center"
+        >
           <button
             onClick={() => router.push("/admin/dashboard")}
-            className="text-sm text-primary hover:text-primary/80"
+            className="text-neutral-500 hover:text-primary font-semibold transition-colors flex items-center justify-center mx-auto group"
           >
-            ← Back to Admin Dashboard
+            <FaArrowLeft className="mr-2 transform group-hover:-translate-x-1 transition-transform" />
+            Exit to Dashboard
           </button>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
