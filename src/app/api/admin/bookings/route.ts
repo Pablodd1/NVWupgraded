@@ -1,11 +1,20 @@
 import { dbConnect } from "@/lib/dbConnect";
 import BookingModel from "@/models/booking.model";
+import User from "@/models/user.model";
+import Winery from "@/models/winery.model";
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/rbac";
 
 export async function GET(request: Request) {
   try {
     await dbConnect();
+
+    // Ensure models are registered
+    console.log("Models loaded:", {
+      User: !!User,
+      Winery: !!Winery,
+      Booking: !!BookingModel
+    });
 
     // Require admin role
     const adminUser = await requireAdmin(request);
@@ -18,8 +27,8 @@ export async function GET(request: Request) {
     // Admin sees all bookings
     const bookings = await BookingModel.find()
       .sort({ createdAt: -1 })
-      .populate({ path: "userId", model: "User", select: "name email role createdAt" })
-      .populate({ path: "wineries.wineryId", model: "Winery" })
+      .populate({ path: "userId", model: User, select: "firstName lastName email role createdAt" })
+      .populate({ path: "wineries.wineryId", model: Winery })
       .skip(skip)
       .limit(limit);
     const totalBookings = await BookingModel.countDocuments();
