@@ -10,7 +10,8 @@
     "seed": "tsx --env-file=.env.local scripts/seed.ts && tsx --env-file=.env.local scripts/seed-slots.ts",
     "seed:slots": "tsx --env-file=.env.local scripts/seed-slots.ts",
     "create:accounts": "tsx --env-file=.env.local scripts/create-test-accounts.ts",
-    "setup:env": "tsx scripts/setup-env.ts"
+    "setup:env": "tsx scripts/setup-env.ts",
+    "audit": "node scripts/audit-nvw.js"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.4",

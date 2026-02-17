@@ -78,7 +78,10 @@ export default function CreateWineryAccount() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting Create Winery Form...", { userData, wineryData });
+
     if (!wineryData.wineryName || !wineryData.wineryAddress) {
+      console.error("Validation Failed: Name or Address missing");
       toast.error("Winery name and address are required");
       return;
     }

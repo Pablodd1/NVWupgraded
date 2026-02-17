@@ -28,26 +28,35 @@ export const AddressAutocomplete = ({
     useEffect(() => {
         if (!places || !inputRef.current) return;
 
-        const options = {
-            fields: ['address_components', 'geometry', 'formatted_address'],
-            types: ['address'],
-        };
+        try {
+            const options = {
+                fields: ['address_components', 'geometry', 'formatted_address'],
+                types: ['address'],
+            };
 
-        autoCompleteRef.current = new places.Autocomplete(inputRef.current, options);
+            // @ts-ignore - Google Maps types might conflict
+            autoCompleteRef.current = new places.Autocomplete(inputRef.current, options);
 
-        autoCompleteRef.current.addListener('place_changed', () => {
-            const place = autoCompleteRef.current?.getPlace();
-            if (place?.formatted_address) {
-                setInputValue(place.formatted_address);
-                const lat = place.geometry?.location?.lat();
-                const lng = place.geometry?.location?.lng();
-                onChange(place.formatted_address, lat, lng);
-            }
-        });
+            autoCompleteRef.current.addListener('place_changed', () => {
+                const place = autoCompleteRef.current?.getPlace();
+                if (place?.formatted_address) {
+                    setInputValue(place.formatted_address);
+                    const lat = place.geometry?.location?.lat();
+                    const lng = place.geometry?.location?.lng();
+                    onChange(place.formatted_address, lat, lng);
+                }
+            });
+        } catch (error) {
+            console.warn("Google Maps Autocomplete failed to initialize (likely invalid API key):", error);
+        }
 
         return () => {
             if (autoCompleteRef.current) {
-                google.maps.event.clearInstanceListeners(autoCompleteRef.current);
+                try {
+                    google.maps.event.clearInstanceListeners(autoCompleteRef.current);
+                } catch (e) {
+                    // Ignore cleanup errors
+                }
             }
         };
     }, [places]);
