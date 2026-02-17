@@ -11,13 +11,17 @@ export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormD
   const handleChange = (e: any) => {
     const { name, value, type, checked } = e.target;
     const val = type === "checkbox" ? checked : value;
+    // console.log(`BasicInfoForm change: ${name} = ${val}`);
     setFormData((prev) => ({ ...prev, [name]: val }));
   };
 
   const handleNestedChange = (e: any, parent: keyof Winery, field: string) => {
     const { value, type, checked } = e.target;
     const val = type === "checkbox" ? checked : value;
-    setFormData({ ...formData, [parent]: { ...(formData[parent] as any), [field]: val } });
+    setFormData((prev) => ({
+      ...prev,
+      [parent]: { ...(prev[parent] as any), [field]: val },
+    }));
   };
 
   const updateLocation = (lat: number, lng: number, address: string) => {

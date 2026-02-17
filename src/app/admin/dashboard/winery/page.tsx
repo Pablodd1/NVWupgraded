@@ -69,15 +69,15 @@ export default function WineryAdminStepperPage() {
         .then((res) => {
           if (res.data && res.data.winery) {
             const wineryData = res.data.winery;
-            
+
             // Migrate old payment_method format to new format
             if (typeof wineryData.payment_method === 'string') {
-              wineryData.payment_method = { 
+              wineryData.payment_method = {
                 type: wineryData.payment_method,
                 external_booking_link: ''
               };
             }
-            
+
             setFormData(wineryData);
           }
         })
@@ -88,32 +88,36 @@ export default function WineryAdminStepperPage() {
 
   const validateBasicInfo = () => {
     const { name, description, contact_info, location } = formData;
-    
+
+    // console.log("validateBasicInfo:", { name, description, contact_info, location });
+
     if (!name || name.trim() === "") {
       toast.error("Winery name is required");
       return false;
     }
-    
-    if (!description || description.trim() === "") {
+
+    // Ensure description is treated as string
+    const safeDesc = description || "";
+    if (!safeDesc || safeDesc.trim() === "") {
       toast.error("Description is required");
       return false;
     }
-    
+
     if (!contact_info.email || contact_info.email.trim() === "") {
       toast.error("Email is required");
       return false;
     }
-    
+
     if (!contact_info.phone || contact_info.phone.trim() === "") {
       toast.error("Phone number is required");
       return false;
     }
-    
+
     if (!location.address || location.address.trim() === "") {
       toast.error("Address is required");
       return false;
     }
-    
+
     return true;
   };
 
@@ -125,47 +129,47 @@ export default function WineryAdminStepperPage() {
 
     for (let i = 0; i < formData.tasting_info.length; i++) {
       const tasting = formData.tasting_info[i];
-      
+
       if (!tasting.tasting_title || tasting.tasting_title.trim() === "") {
         toast.error(`Tasting #${i + 1}: Tasting title is required`);
         return false;
       }
-      
+
       if (!tasting.tasting_description || tasting.tasting_description.trim() === "") {
         toast.error(`Tasting #${i + 1}: Tasting description is required`);
         return false;
       }
-      
+
       if (!tasting.tasting_price || tasting.tasting_price <= 0) {
         toast.error(`Tasting #${i + 1}: Tasting price must be greater than 0`);
         return false;
       }
-      
+
       if (!tasting.available_times || tasting.available_times.length === 0) {
         toast.error(`Tasting #${i + 1}: At least one available time must be selected`);
         return false;
       }
-      
+
       if (!tasting.wine_types || tasting.wine_types.length === 0) {
         toast.error(`Tasting #${i + 1}: At least one wine type must be selected`);
         return false;
       }
-      
+
       if (!tasting.ava || tasting.ava.trim() === "") {
         toast.error(`Tasting #${i + 1}: AVA selection is required`);
         return false;
       }
-      
+
       // Check if there are any images (either existing or newly uploaded)
       const hasExistingImages = tasting.images && tasting.images.length > 0;
       const hasNewImages = tastingImages[i] && tastingImages[i].length > 0;
-      
+
       if (!hasExistingImages && !hasNewImages) {
         toast.error(`Tasting #${i + 1}: At least one image is required`);
         return false;
       }
     }
-    
+
     return true;
   };
 
@@ -175,7 +179,7 @@ export default function WineryAdminStepperPage() {
     }
     setActiveStep((prev) => prev + 1);
   };
-  
+
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
   const handleSubmit = async () => {
@@ -183,39 +187,39 @@ export default function WineryAdminStepperPage() {
     if (!validateBasicInfo()) {
       return;
     }
-    
+
     if (!validateTastingInfo()) {
       return;
     }
-    
+
     setLoading(true);
     try {
       // Collect all files from global uploads and individual tastings
       const allFiles: File[] = [...uploadedFiles];
-      
+
       // Add files from individual tastings
       Object.values(tastingImages).forEach(files => {
         allFiles.push(...files);
       });
-      
+
       // Upload all files to ImgBB
       const filesUrls = await fileUpload(allFiles);
-      
+
       const updatedFormData = { ...formData };
-      
+
       if (filesUrls.length > 0) {
         // Distribute URLs properly to each tasting
         let urlIndex = 0;
         updatedFormData.tasting_info = updatedFormData.tasting_info.map((tasting, index) => {
           const filesForThisTasting = tastingImages[index] || [];
           const urlsForThisTasting: string[] = [];
-          
+
           // Get URLs for this tasting's files
           for (let i = 0; i < filesForThisTasting.length && urlIndex < filesUrls.length; i++) {
             urlsForThisTasting.push(filesUrls[urlIndex]);
             urlIndex++;
           }
-          
+
           // Combine with existing images
           const existingImages = tasting.images || [];
           return {
