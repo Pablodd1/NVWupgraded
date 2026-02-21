@@ -370,6 +370,40 @@ export default function WineryProfile() {
                     </label>
                   </div>
                 </div>
+
+                {/* New Amenities Toggles */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 bg-gray-50 p-4 rounded-xl">
+                  <label className="label cursor-pointer flex gap-3">
+                    <input
+                      type="checkbox" checked={profile.amenities?.allows_children}
+                      onChange={(e) => handleInputChange('amenities.allows_children', e.target.checked)}
+                      className="checkbox checkbox-primary"
+                    />
+                    <span className="label-text font-bold text-gray-700">Allows Children</span>
+                  </label>
+                  <label className="label cursor-pointer flex gap-3">
+                    <input
+                      type="checkbox" checked={profile.amenities?.allows_non_drinkers}
+                      onChange={(e) => handleInputChange('amenities.allows_non_drinkers', e.target.checked)}
+                      className="checkbox checkbox-primary"
+                    />
+                    <span className="label-text font-bold text-gray-700">Non-Drinker Friendly</span>
+                  </label>
+                </div>
+
+                {/* Featured Status (Admin Only Mock) */}
+                {user?.role === 'admin' && (
+                  <div className="mt-4 p-4 border-2 border-primary/20 rounded-xl bg-primary/5">
+                    <label className="label cursor-pointer flex justify-between">
+                      <span className="label-text font-black text-primary uppercase">Feature this Winery (Paid Status)</span>
+                      <input
+                        type="checkbox" checked={profile.is_featured}
+                        onChange={(e) => handleInputChange('is_featured', e.target.checked)}
+                        className="toggle toggle-primary"
+                      />
+                    </label>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="form-control">
                     <label className="label font-bold text-gray-700">Latitude</label>
@@ -523,6 +557,27 @@ export default function WineryProfile() {
                           className="input input-bordered input-sm opacity-50"
                           placeholder="0"
                           aria-label="Legacy Tasting Price"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Child Price ($)</label>
+                        <input
+                          type="number" value={tasting.child_price || 0}
+                          onChange={(e) => handleTastingChange(idx, 'child_price', Number(e.target.value))}
+                          className="input input-bordered input-sm"
+                          placeholder="Default 0"
+                        />
+                      </div>
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Non-Drinker Price ($)</label>
+                        <input
+                          type="number" value={tasting.non_drinker_price || 0}
+                          onChange={(e) => handleTastingChange(idx, 'non_drinker_price', Number(e.target.value))}
+                          className="input input-bordered input-sm"
+                          placeholder="Default 0"
                         />
                       </div>
                     </div>

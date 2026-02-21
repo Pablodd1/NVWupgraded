@@ -7,6 +7,8 @@ import WineLoader from "@/components/loader/wine-loader";
 import AgeGate from "@/components/AgeGate";
 import { LanguageProvider } from "@/context/LanguageContext";
 import ChatWidget from "@/components/chat/ChatWidget";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function ClientWrapper({ children }: { children: React.ReactNode }) {
     const [isAppLoading, setAppLoading] = useState(true);
@@ -54,6 +56,7 @@ export default function ClientWrapper({ children }: { children: React.ReactNode 
                 <Navbar />
                 {children}
                 <ChatWidget />
+                <ToastContainer position="bottom-right" theme="colored" />
             </ItineraryProvider>
         </LanguageProvider>
     );

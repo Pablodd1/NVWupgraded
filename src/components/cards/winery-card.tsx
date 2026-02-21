@@ -35,7 +35,7 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
   }, [winery.tasting_info]);
 
   return (
-    <div className="flex flex-col sm:flex-row items-stretch rounded-2xl bg-white transition-all hover:shadow-xl hover:shadow-gray-200/50 border border-transparent hover:border-gray-100 ease-in-out duration-300 overflow-hidden mb-4">
+    <div className={`flex flex-col sm:flex-row items-stretch rounded-2xl bg-white transition-all hover:shadow-xl hover:shadow-gray-200/50 border ease-in-out duration-300 overflow-hidden mb-4 ${winery.is_featured ? 'border-primary/30 ring-1 ring-primary/10' : 'border-transparent hover:border-gray-100'}`}>
       <div className="w-full sm:w-1/3 h-48 sm:h-auto overflow-hidden relative">
         <Link href={`/winery/${winery._id}`}>
           {(() => {
@@ -56,6 +56,14 @@ const WineryCard: FC<WineryCardProps> = memo(({ winery, addToItinerary, priority
             );
           })()}
         </Link>
+        {winery.is_featured && (
+          <div className="absolute top-3 left-3 z-20 flex flex-col gap-1">
+            <span className="flex items-center gap-1.5 px-3 py-1 bg-primary text-white text-[10px] font-black rounded-full shadow-lg animate-pulse border border-white/20 whitespace-nowrap">
+              <span className="w-1.5 h-1.5 bg-yellow-300 rounded-full shadow-[0_0_8px_rgba(253,224,71,0.8)]"></span>
+              FEATURED PARTNER
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="p-6 flex flex-col justify-between w-full sm:w-2/3">

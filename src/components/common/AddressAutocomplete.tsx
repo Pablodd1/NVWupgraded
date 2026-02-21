@@ -8,13 +8,15 @@ interface AddressAutocompleteProps {
     onChange: (address: string, lat?: number, lng?: number) => void;
     placeholder?: string;
     className?: string;
+    required?: boolean;
 }
 
 export const AddressAutocomplete = ({
     value,
     onChange,
     placeholder = "Enter address...",
-    className = ""
+    className = "",
+    required = false
 }: AddressAutocompleteProps) => {
     const [inputValue, setInputValue] = useState(value);
     const autoCompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
@@ -75,6 +77,7 @@ export const AddressAutocomplete = ({
             onChange={handleInputChange}
             placeholder={placeholder}
             className={className}
+            required={required}
         />
     );
 };

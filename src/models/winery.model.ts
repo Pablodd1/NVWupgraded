@@ -73,6 +73,8 @@ const TastingInfoSchema = new mongoose.Schema({
   wine_types: [{ type: String }],
   number_of_wines_per_tasting: { type: Number, min: 1, default: 1 },
   special_features: [{ type: String }],
+  child_price: { type: Number, default: 0, min: 0 },
+  non_drinker_price: { type: Number, default: 0, min: 0 },
   images: [{ type: String }],
   food_pairing_options: [FoodPairingOptionSchema],
   tours: ToursSchema,
@@ -102,6 +104,8 @@ const WinerySchema = new mongoose.Schema({
     virtual_sommelier: { type: Boolean, default: false },
     augmented_reality_tours: { type: Boolean, default: false },
     handicap_accessible: { type: Boolean, default: false },
+    allows_children: { type: Boolean, default: false },
+    allows_non_drinkers: { type: Boolean, default: false },
   },
   user_reviews: [
     {
@@ -120,6 +124,7 @@ const WinerySchema = new mongoose.Schema({
     type: { type: String, enum: ['pay_winery', 'pay_stripe', 'external_booking'], default: 'pay_winery' },
     external_booking_link: { type: String },
   },
+  is_featured: { type: Boolean, default: false },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 });
 

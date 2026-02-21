@@ -186,6 +186,16 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
       });
     }
 
+    // Filter by children allowed
+    if (filters.allowsChildren) {
+      filtered = filtered.filter((winery) => winery.amenities?.allows_children === true);
+    }
+
+    // Filter by non-drinker friendly
+    if (filters.allowsNonDrinkers) {
+      filtered = filtered.filter((winery) => winery.amenities?.allows_non_drinkers === true);
+    }
+
 
     onFilterApply(filtered);
     setIsLoading(false);

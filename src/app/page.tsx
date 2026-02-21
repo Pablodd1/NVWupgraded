@@ -138,6 +138,13 @@ export default function Home() {
     // So just updating `wineries` should automatically update `filteredWineries` via the Filter component!
   }, [wineries]); // Redundant comment, just verifying logic.
 
+  // Sort by featured status - featured wineries appear first
+  const sortedFilteredWineries = [...filteredWineries].sort((a, b) => {
+    if (a.is_featured && !b.is_featured) return -1;
+    if (!a.is_featured && b.is_featured) return 1;
+    return 0;
+  });
+
   const addToItinerary = (winery: Winery) => {
     setItinerary(prev => {
       const isAlreadyAdded = prev.some(item => (item._id || item.name) === (winery._id || winery.name));
@@ -247,6 +254,29 @@ export default function Home() {
             <VoiceSearchPanel onFiltersApplied={handleVoiceFilters} className="mb-8 border-2 border-primary/20 animate-in fade-in slide-in-from-top-4 duration-300" />
           )}
 
+          {/* Marketing Showcase Sector */}
+          <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-berry-900 rounded-3xl p-8 mb-8 relative overflow-hidden shadow-2xl group border border-white/10">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl transition-transform group-hover:scale-110 duration-700"></div>
+            <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-1 text-center md:text-left">
+                <span className="inline-block px-3 py-1 bg-yellow-400/90 text-black text-[10px] font-black rounded-full uppercase tracking-tighter mb-4 shadow-xl">Promoted Partner</span>
+                <h3 className="text-3xl font-serif font-black text-white leading-tight">
+                  Premium Transit & <br />Exclusive Stay
+                </h3>
+                <p className="text-white/70 mt-3 max-w-md text-sm leading-relaxed">
+                  Book your elite winery tour with our certified partners today. Luxury limousines and boutique hotels waiting for your arrival.
+                </p>
+                <div className="flex gap-4 mt-6 justify-center md:justify-start">
+                  <button className="px-6 py-2 bg-white text-berry-900 font-bold rounded-xl hover:bg-berry-50 transition-colors shadow-lg">Limo Services</button>
+                  <button className="px-6 py-2 border border-white/30 text-white font-bold rounded-xl hover:bg-white/10 transition-colors">Hotel Suites</button>
+                </div>
+              </div>
+              <div className="w-full md:w-64 aspect-video md:aspect-square bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 backdrop-blur-sm">
+                <span className="text-white/30 font-serif italic text-lg">Your Brand Here</span>
+              </div>
+            </div>
+          </div>
+
           {/* Winery List */}
           {isLoading && page === 1 ? (
             <div className="flex justify-center py-8">
@@ -275,8 +305,8 @@ export default function Home() {
             </div>
           ) : (
             <>
-              {filteredWineries.map((winery, index) => (
-                <WineryCard key={`${winery._id}-${index}`} winery={winery} addToItinerary={addToItinerary} />
+              {sortedFilteredWineries.map((winery, index) => (
+                <WineryCard key={`${winery._id || winery.name}-${index}`} winery={winery} addToItinerary={addToItinerary} />
               ))}
 
               {/* Loader for Infinite Scroll */}

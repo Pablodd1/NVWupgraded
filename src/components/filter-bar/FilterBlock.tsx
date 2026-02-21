@@ -19,6 +19,8 @@ type Filters = {
   specialFeatures: string[];
   numberOfPeople: [number, number];
   mountainLocation: boolean;
+  allowsChildren: boolean;
+  allowsNonDrinkers: boolean;
 };
 
 interface FilterBlockProps {
@@ -198,12 +200,30 @@ export const FilterBlock = ({
             />
             <span>Only show mountain AVAs</span>
           </label>
-          {filters.mountainLocation && (
-            <div className="mt-2 text-[11px] sm:text-xs text-gray-600">
-              Mountain AVAs: {mountainAVAs.join(", ")}
-            </div>
           )}
         </div>
+      </div>
+
+      {/* Family & Non-Drinker Friendly Filters */}
+      <div className="mt-6 flex flex-wrap gap-4 mb-5 border-t border-gray-100 pt-6">
+        <label className="flex items-center space-x-2 text-xs sm:text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            className="checkbox checkbox-primary checkbox-sm"
+            checked={filters.allowsChildren}
+            onChange={(e) => handleFilterChange("allowsChildren", e.target.checked)}
+          />
+          <span className="font-bold text-gray-700">Allows Children</span>
+        </label>
+        <label className="flex items-center space-x-2 text-xs sm:text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            className="checkbox checkbox-primary checkbox-sm"
+            checked={filters.allowsNonDrinkers}
+            onChange={(e) => handleFilterChange("allowsNonDrinkers", e.target.checked)}
+          />
+          <span className="font-bold text-gray-700">Non-Drinker Friendly</span>
+        </label>
       </div>
     </>
   );

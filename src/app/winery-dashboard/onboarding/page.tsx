@@ -19,7 +19,11 @@ export default function WineryOnboarding() {
         latitude: 0,
         longitude: 0,
         phone: "",
-        website: ""
+        website: "",
+        allows_children: false,
+        allows_non_drinkers: false,
+        child_price: 0,
+        non_drinker_price: 0
     });
     const [images, setImages] = useState<string[]>([]);
     const [uploading, setUploading] = useState(false);
@@ -67,7 +71,9 @@ export default function WineryOnboarding() {
                     address: formData.address,
                     latitude: formData.latitude || 0,
                     longitude: formData.longitude || 0,
-                    is_mountain_location: false
+                    is_mountain_location: false,
+                    allows_children: formData.allows_children,
+                    allows_non_drinkers: formData.allows_non_drinkers
                 },
                 contact_info: {
                     phone: formData.phone,
@@ -85,6 +91,8 @@ export default function WineryOnboarding() {
                     free_guests_included: 1,
                     available_times: ["11:00", "13:00", "15:00"],
                     wine_types: ["Red", "White"],
+                    child_price: formData.child_price,
+                    non_drinker_price: formData.non_drinker_price,
                     booking_info: {
                         booking_enabled: true,
                         max_guests_per_slot: 8,
@@ -195,6 +203,7 @@ export default function WineryOnboarding() {
                                         }}
                                         className="focus:ring-primary focus:border-primary block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border"
                                         placeholder="123 Main St, Napa, CA"
+                                        required
                                     />
                                 </APIProvider>
                                 {formData.latitude !== 0 && formData.longitude !== 0 && (
@@ -227,6 +236,75 @@ export default function WineryOnboarding() {
                                     className="focus:ring-primary focus:border-primary block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
                                     placeholder="+1 (707) 555-0123"
                                 />
+                            </div>
+                        </div>
+
+                        {/* Website */}
+                        <div>
+                            <label htmlFor="website" className="block text-sm font-medium text-gray-700">
+                                Website (Optional)
+                            </label>
+                            <div className="mt-1 relative rounded-md shadow-sm">
+                                <input
+                                    id="website"
+                                    name="website"
+                                    type="url"
+                                    value={formData.website}
+                                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                    className="focus:ring-primary focus:border-primary block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm"
+                                    placeholder="https://yourwinery.com"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Children & Non-Drinker Settings */}
+                        <div className="space-y-4 pt-4 border-t border-gray-100">
+                            <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.allows_children}
+                                        onChange={(e) => setFormData({ ...formData, allows_children: e.target.checked })}
+                                        className="checkbox checkbox-primary checkbox-sm"
+                                    />
+                                    Allows Children
+                                </label>
+                                {formData.allows_children && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500">Child Price ($)</span>
+                                        <input
+                                            type="number"
+                                            value={formData.child_price}
+                                            onChange={(e) => setFormData({ ...formData, child_price: Number(e.target.value) })}
+                                            className="input input-bordered input-xs w-20"
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.allows_non_drinkers}
+                                        onChange={(e) => setFormData({ ...formData, allows_non_drinkers: e.target.checked })}
+                                        className="checkbox checkbox-primary checkbox-sm"
+                                    />
+                                    Non-Drinker Friendly
+                                </label>
+                                {formData.allows_non_drinkers && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500">Price ($)</span>
+                                        <input
+                                            type="number"
+                                            value={formData.non_drinker_price}
+                                            onChange={(e) => setFormData({ ...formData, non_drinker_price: Number(e.target.value) })}
+                                            className="input input-bordered input-xs w-20"
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
 

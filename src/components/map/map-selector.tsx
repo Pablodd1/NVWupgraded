@@ -13,6 +13,7 @@ L.Icon.Default.mergeOptions({
 type MapSelectorProps = {
   latitude: number;
   longitude: number;
+  address?: string;
   onChange: (lat: number, lng: number, address: string) => void;
 };
 
@@ -25,9 +26,15 @@ function ChangeMapView({ coords }: { coords: [number, number] }) {
   return null;
 }
 
-export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, onChange }) => {
-  const [query, setQuery] = useState("");
+export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, address = "", onChange }) => {
+  const [query, setQuery] = useState(address);
   const [suggestions, setSuggestions] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (address && !query) {
+      setQuery(address);
+    }
+  }, [address]);
 
   // Fetch suggestions using hybrid approach (Nominatim + Google Places fallback)
   const fetchSuggestions = async () => {
@@ -37,20 +44,20 @@ export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, o
     }
     try {
       const searchQuery = query.trim();
-      
+
       // First try Nominatim API
       const nominatimResults = await fetchNominatimSuggestions(searchQuery);
-      
+
       // Check if we have a house number in the query
       const words = searchQuery.split(' ');
       const hasHouseNumber = words.length > 1 && /^\d+/.test(words[0]);
-      
+
       if (hasHouseNumber) {
         // Check if Nominatim results include the house number
-        const resultsIncludeHouseNumber = nominatimResults.some((result: any) => 
+        const resultsIncludeHouseNumber = nominatimResults.some((result: any) =>
           result.display_name.toLowerCase().includes(words[0].toLowerCase())
         );
-        
+
         if (!resultsIncludeHouseNumber && nominatimResults.length > 0) {
           // Enhance Nominatim results with house number
           const enhancedData = nominatimResults.map((result: any) => ({
@@ -70,7 +77,7 @@ export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, o
             setSuggestions(googleResults);
             return;
           }
-          
+
           // If Google also fails, try broader Nominatim search
           const broaderQuery = words.slice(1).join(' ');
           const broaderResults = await fetchNominatimSuggestions(broaderQuery);
@@ -86,7 +93,7 @@ export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, o
           return;
         }
       }
-      
+
       // If no house number or Nominatim results are good, use them
       if (nominatimResults.length > 0) {
         setSuggestions(nominatimResults);
@@ -111,7 +118,7 @@ export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, o
       limit: '10',
       dedupe: '1'
     });
-    
+
     const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
     return await response.json();
   };
@@ -129,7 +136,7 @@ export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, o
       if (data.results) {
         return data.results;
       }
-      
+
       return [];
     } catch (error) {
       console.error('Google Places API error:', error);
@@ -152,11 +159,11 @@ export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, o
   // Handle manual geocoding for exact addresses
   const handleManualGeocode = async () => {
     if (!query.trim()) return;
-    
+
     try {
       // First try Nominatim
       const nominatimResults = await fetchNominatimSuggestions(query.trim());
-      
+
       if (nominatimResults.length > 0) {
         const result = nominatimResults[0];
         const lat = parseFloat(result.lat);
@@ -165,7 +172,7 @@ export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, o
         setSuggestions([]);
         return;
       }
-      
+
       // If Nominatim fails, try Google Places
       const googleResults = await fetchGooglePlacesSuggestions(query.trim());
       if (googleResults.length > 0) {
@@ -174,7 +181,7 @@ export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, o
           const placeId = googleResults[0].place_id;
           const geocodeResponse = await fetch(`/api/places/geocode?place_id=${placeId}`);
           const geocodeData = await geocodeResponse.json();
-          
+
           if (geocodeData.lat && geocodeData.lon) {
             onChange(geocodeData.lat, geocodeData.lon, geocodeData.address);
             setSuggestions([]);
@@ -184,13 +191,13 @@ export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, o
           console.error('Google geocoding error:', error);
         }
       }
-      
+
       // If both fail, try broader Nominatim search
       const words = query.trim().split(' ');
       if (words.length > 1) {
         const broaderQuery = words.slice(1).join(' ');
         const broaderResults = await fetchNominatimSuggestions(broaderQuery);
-        
+
         if (broaderResults.length > 0) {
           const result = broaderResults[0];
           const lat = parseFloat(result.lat);
@@ -201,7 +208,7 @@ export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, o
           return;
         }
       }
-      
+
       // If all else fails, keep the address as entered
       console.log('No match found, but keeping the address as entered');
       onChange(0, 0, query.trim());
@@ -218,7 +225,7 @@ export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, o
       try {
         const geocodeResponse = await fetch(`/api/places/geocode?place_id=${suggestion.place_id}`);
         const geocodeData = await geocodeResponse.json();
-        
+
         if (geocodeData.lat && geocodeData.lon) {
           setQuery(suggestion.display_name);
           setSuggestions([]);
@@ -257,7 +264,11 @@ export const MapSelector: React.FC<MapSelectorProps> = ({ latitude, longitude, o
             type="text"
             placeholder="Search location..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setQuery(val);
+              onChange(latitude, longitude, val);
+            }}
             className="input input-bordered flex-1"
           />
           <button

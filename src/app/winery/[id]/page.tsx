@@ -35,6 +35,9 @@ const WineryDetail = () => {
   const [selectedTastingIndex, setSelectedTastingIndex] = useState<number>(0);
   const [selectedFoodPairingOption, setSelectedFoodPairingOption] = useState<string | null>(null);
   const [selectedNumberOfPeople, setSelectedNumberOfPeople] = useState<number | string>(1);
+  const [selectedChildren, setSelectedChildren] = useState<number>(0);
+  const [selectedNonDrinkers, setSelectedNonDrinkers] = useState<number>(0);
+  const [selectedFoodQty, setSelectedFoodQty] = useState<number>(1);
   const { id } = useParams() as { id: string };
   const router = useRouter();
   const { itinerary, setItinerary } = useItinerary();
@@ -110,7 +113,10 @@ const WineryDetail = () => {
       bookingDetails: {
         selectedTastingIndex,
         numberOfGuests: Number(selectedNumberOfPeople),
+        numberOfChildren: selectedChildren,
+        numberOfNonDrinkers: selectedNonDrinkers,
         foodPairings: selectedFoodPairings,
+        foodPairingQty: selectedFoodQty,
         tours: selectedTours,
         otherFeature: [],
         selectedDate: "",
@@ -132,10 +138,12 @@ const WineryDetail = () => {
   };
 
   const handleFoodPairingChange = (pairing: any, qty: number) => {
-    // Remove existing entries for this pairing
+    setSelectedFoodPairingOption(pairing.id);
+    setSelectedFoodQty(qty);
+
+    // Update selectedFoodPairings for itinerary
     const otherPairings = selectedFoodPairings.filter(p => p.name !== pairing.name);
-    // Create new entries based on quantity
-    const newEntries = Array(qty).fill({ name: pairing.name, price: pairing.price });
+    const newEntries = qty > 0 ? [{ name: pairing.name, price: pairing.price }] : [];
     setSelectedFoodPairings([...otherPairings, ...newEntries]);
 
     toast.success(qty === 0 ? `${pairing.name} removed` : `${qty}x ${pairing.name} selected`);
@@ -218,6 +226,25 @@ const WineryDetail = () => {
       </div>
     );
   }
+
+  // Calculate Total Price
+  const totalSummary = (() => {
+    const adults = Number(selectedNumberOfPeople) || 0;
+    const baseFee = currentTastingInfo?.base_booking_fee || 0;
+    const freeGuests = currentTastingInfo?.free_guests_included || 0;
+    const extraAdults = Math.max(0, adults - freeGuests);
+    const extraAdultFee = (currentTastingInfo?.additional_guest_fee || 0) * extraAdults;
+
+    const childrenFee = (currentTastingInfo?.child_price || 0) * selectedChildren;
+    const nonDrinkerFee = (currentTastingInfo?.non_drinker_price || 0) * selectedNonDrinkers;
+
+    const foodFee = selectedFoodPairings.reduce((sum, p) => sum + (p.price * selectedFoodQty), 0);
+    const tourFee = selectedTours.reduce((sum, t) => sum + t.price, 0);
+
+    const total = baseFee + extraAdultFee + childrenFee + nonDrinkerFee + foodFee + tourFee;
+
+    return { baseFee, extraAdultFee, childrenFee, nonDrinkerFee, foodFee, tourFee, total };
+  })();
 
   return (
     <div className="min-h-screen bg-wine-background md:top-20 top-16 relative">
@@ -568,6 +595,90 @@ const WineryDetail = () => {
                   }}
                   className="input input-bordered w-full mt-2 text-sm"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Children Selection */}
+                {winery.amenities?.allows_children && (
+                  <div>
+                    <label className="text-sm text-gray-900 font-extrabold flex justify-between">
+                      <span>Number of Children</span>
+                      <span className="text-primary">${currentTastingInfo?.child_price || 0} ea</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={selectedChildren}
+                      onChange={(e) => setSelectedChildren(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="input input-bordered w-full mt-2 text-sm"
+                    />
+                  </div>
+                )}
+
+                {/* Non-Drinkers Selection */}
+                {winery.amenities?.allows_non_drinkers && (
+                  <div>
+                    <label className="text-sm text-gray-900 font-extrabold flex justify-between">
+                      <span>Non-Drinkers</span>
+                      <span className="text-primary">${currentTastingInfo?.non_drinker_price || 0} ea</span>
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={selectedNonDrinkers}
+                      onChange={(e) => setSelectedNonDrinkers(Math.max(0, parseInt(e.target.value) || 0))}
+                      className="input input-bordered w-full mt-2 text-sm"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Price Summary Breakdown */}
+              <div className="mt-8 border-t border-gray-100 pt-6">
+                <h3 className="font-serif text-xl mb-4 text-wine-primary">Price Breakdown</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Base Booking Fee</span>
+                    <span className="font-bold">${totalSummary.baseFee.toFixed(2)}</span>
+                  </div>
+                  {totalSummary.extraAdultFee > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Additional Adults</span>
+                      <span className="font-bold">+${totalSummary.extraAdultFee.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {totalSummary.childrenFee > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Children ({selectedChildren})</span>
+                      <span className="font-bold">+${totalSummary.childrenFee.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {totalSummary.nonDrinkerFee > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Non-Drinkers ({selectedNonDrinkers})</span>
+                      <span className="font-bold">+${totalSummary.nonDrinkerFee.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {totalSummary.foodFee > 0 && (
+                    <div className="flex justify-between text-indigo-600 font-medium">
+                      <span>Food Pairings ({selectedFoodQty}x)</span>
+                      <span>+${totalSummary.foodFee.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-lg font-black border-t-2 border-primary/10 pt-4 mt-2">
+                    <span>Estimated Total</span>
+                    <span className="text-primary underline decoration-berry-500 underline-offset-4">${totalSummary.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 flex gap-4">
+                <Button
+                  className="flex-1 bg-wine-primary hover:bg-wine-primary/90 text-white font-black py-6 rounded-2xl shadow-xl shadow-wine-primary/20 transition-all hover:scale-[1.02]"
+                  onClick={addToItinerary}
+                >
+                  Confirm & Add to Itinerary
+                </Button>
               </div>
             </div>
           )}

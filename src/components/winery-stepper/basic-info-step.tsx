@@ -105,7 +105,12 @@ export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormD
         <label className="label">
           <span className="label-text">Address</span>
         </label>
-        <MapSelector latitude={formData.location.latitude} longitude={formData.location.longitude} onChange={updateLocation} />
+        <MapSelector
+          latitude={formData.location.latitude}
+          longitude={formData.location.longitude}
+          address={formData.location.address}
+          onChange={updateLocation}
+        />
         <div className="form-control">
           <label className="cursor-pointer label">
             <span className="label-text">Is Mountain Location?</span>

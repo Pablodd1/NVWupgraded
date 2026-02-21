@@ -60,6 +60,8 @@ export interface Amenities {
   virtual_sommelier: boolean;
   augmented_reality_tours: boolean;
   handicap_accessible: boolean;
+  allows_children: boolean;
+  allows_non_drinkers: boolean;
 }
 
 // UserReview.ts
@@ -90,6 +92,8 @@ export interface TastingInfo {
   wine_types: string[];
   number_of_wines_per_tasting: number;
   special_features: string[];
+  child_price?: number;
+  non_drinker_price?: number;
   images: string[];
   food_pairing_options: FoodPairingOption[];
   tours: Tours;
@@ -117,6 +121,7 @@ export interface Winery {
   user_reviews: UserReview[];
   transportation: Transportation;
   payment_method: PaymentMethod;
+  is_featured?: boolean;
   food_pairing_options?: FoodPairingOption[];
   tours?: Tours;
   wine_details?: WineDetail[];
