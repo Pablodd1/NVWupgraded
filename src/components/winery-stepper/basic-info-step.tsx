@@ -111,13 +111,31 @@ export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormD
           address={formData.location.address}
           onChange={updateLocation}
         />
-        <div className="form-control">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <label className="cursor-pointer label">
             <span className="label-text">Is Mountain Location?</span>
             <input
               type="checkbox"
               checked={formData.location.is_mountain_location}
               onChange={(e) => handleNestedChange(e, "location", "is_mountain_location")}
+              className="checkbox"
+            />
+          </label>
+          <label className="cursor-pointer label">
+            <span className="label-text">Allows Children?</span>
+            <input
+              type="checkbox"
+              checked={formData.amenities.allows_children}
+              onChange={(e) => handleNestedChange(e, "amenities", "allows_children")}
+              className="checkbox"
+            />
+          </label>
+          <label className="cursor-pointer label">
+            <span className="label-text">Non-Drinker Friendly?</span>
+            <input
+              type="checkbox"
+              checked={formData.amenities.allows_non_drinkers}
+              onChange={(e) => handleNestedChange(e, "amenities", "allows_non_drinkers")}
               className="checkbox"
             />
           </label>

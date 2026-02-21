@@ -32,7 +32,7 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
   const [newTour, setNewTour] = useState<{ description: string; cost: number }>({ description: "", cost: 0 });
   const [otherFeature, setOtherFeature] = useState<{ description: string; cost: number }>({ description: "", cost: 0 });
   const [tastingWinePhotos, setTastingWinePhotos] = useState<{ [key: number]: File[] }>({});
-  
+
   // Local state for input values to allow empty inputs
   const [inputValues, setInputValues] = useState<{
     [key: string]: string;
@@ -60,6 +60,11 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
         available_slots: [],
       },
       other_features: [],
+      base_booking_fee: 0,
+      additional_guest_fee: 0,
+      free_guests_included: 1,
+      child_price: 0,
+      non_drinker_price: 0,
     };
 
     setFormData((prev) => {
@@ -69,7 +74,7 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
     });
     setUploadedFiles([]);
     setAvailableSlotDates([]);
-    
+
     // Clear input values for the new tasting
     setInputValues(prev => {
       const newInputValues = { ...prev };
@@ -103,6 +108,11 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
         available_slots: [],
       },
       other_features: [],
+      base_booking_fee: 0,
+      additional_guest_fee: 0,
+      free_guests_included: 1,
+      child_price: 0,
+      non_drinker_price: 0,
     };
 
     setFormData((prev) => ({
@@ -111,7 +121,7 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
     }));
     setUploadedFiles([]);
     setAvailableSlotDates([]);
-    
+
     // Clear input values for the new tasting
     setInputValues(prev => {
       const newInputValues = { ...prev };
@@ -127,7 +137,7 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
       ...prev,
       tasting_info: prev.tasting_info.filter((_, i) => i !== index),
     }));
-    
+
     // Clear input values for the removed tasting
     setInputValues(prev => {
       const newInputValues = { ...prev };
@@ -306,22 +316,22 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
   const handleNumberOfWinesChange = (index: number) => (e: ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     const key = `wines_${index}`;
-    
+
     // Update local input state
     setInputValues(prev => ({
       ...prev,
       [key]: inputValue
     }));
-    
+
     if (inputValue === "") {
       return;
     }
-    
+
     const parsedValue = parseInt(inputValue);
     if (isNaN(parsedValue)) {
       return;
     }
-    
+
     const value = Math.max(1, parsedValue);
     handleTastingChange(index, "number_of_wines_per_tasting", value);
   };
@@ -329,36 +339,36 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
   const handleNumberOfPeopleChange = (index: number, position: 0 | 1) => (e: ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     const key = `people_${index}_${position}`;
-    
+
     // Update local input state
     setInputValues(prev => ({
       ...prev,
       [key]: inputValue
     }));
-    
+
     if (inputValue === "") {
       return;
     }
-    
+
     const parsedValue = parseInt(inputValue);
     if (isNaN(parsedValue)) {
       return;
     }
-    
+
     const value = Math.max(1, parsedValue);
-    
+
     setFormData((prev) => {
       const updatedTastings = [...prev.tasting_info];
       const newNumberOfPeople = [...updatedTastings[index].booking_info.number_of_people];
       newNumberOfPeople[position] = value;
-      
+
       // Ensure max is greater than min
       if (position === 0 && newNumberOfPeople[1] <= value) {
         newNumberOfPeople[1] = value + 1;
       } else if (position === 1 && newNumberOfPeople[0] >= value) {
         newNumberOfPeople[0] = Math.max(1, value - 1);
       }
-      
+
       updatedTastings[index] = {
         ...updatedTastings[index],
         booking_info: { ...updatedTastings[index].booking_info, number_of_people: newNumberOfPeople as [number, number] },
@@ -372,7 +382,7 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
       ...prev,
       [index]: files
     }));
-    
+
     // Don't create blob URLs here - we'll upload to ImgBB later
     // Just store the files for now
   };
@@ -536,7 +546,7 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
                   />
                   <span className="ml-2">Allow bookings exceeding maximum guests (will be split)</span>
                 </label>
-                
+
                 {tasting.booking_info.allow_excess_guests && (
                   <div className="ml-6 space-y-2">
                     <input
@@ -560,12 +570,12 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="form-control">
                 <label className="label">Base Booking Fee (First Person)</label>
                 <input
                   type="number"
-                  placeholder="Base fee for first guest"
+                  placeholder="Base fee"
                   className="input input-bordered"
                   value={tasting.base_booking_fee || ""}
                   onChange={(e) => handleTastingChange(index, "base_booking_fee", parseFloat(e.target.value) || 0)}
@@ -577,10 +587,48 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
                 <label className="label">Additional Guest Fee</label>
                 <input
                   type="number"
-                  placeholder="Fee per additional guest"
+                  placeholder="Fee per extra guest"
                   className="input input-bordered"
                   value={tasting.additional_guest_fee || ""}
                   onChange={(e) => handleTastingChange(index, "additional_guest_fee", parseFloat(e.target.value) || 0)}
+                  min={0}
+                  step="0.01"
+                />
+              </div>
+              <div className="form-control">
+                <label className="label">Free Guests Included</label>
+                <input
+                  type="number"
+                  placeholder="Guests included in base fee"
+                  className="input input-bordered"
+                  value={tasting.free_guests_included || ""}
+                  onChange={(e) => handleTastingChange(index, "free_guests_included", parseInt(e.target.value) || 1)}
+                  min={1}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="form-control">
+                <label className="label">Child Price</label>
+                <input
+                  type="number"
+                  placeholder="Price for children"
+                  className="input input-bordered"
+                  value={tasting.child_price || ""}
+                  onChange={(e) => handleTastingChange(index, "child_price", parseFloat(e.target.value) || 0)}
+                  min={0}
+                  step="0.01"
+                />
+              </div>
+              <div className="form-control">
+                <label className="label">Non-Drinker Price</label>
+                <input
+                  type="number"
+                  placeholder="Price for non-drinkers"
+                  className="input input-bordered"
+                  value={tasting.non_drinker_price || ""}
+                  onChange={(e) => handleTastingChange(index, "non_drinker_price", parseFloat(e.target.value) || 0)}
                   min={0}
                   step="0.01"
                 />
@@ -648,36 +696,36 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
                 min={1}
               />
             </div>
- <div className="grid grid-cols-2 gap-4">
-            <div className="form-control">
-              <label className="label">Special Features</label>
-              <Select
-                isMulti
-                options={specialFeatures.map((feature) => ({ value: feature, label: feature }))}
-                value={tasting.special_features?.map((feature) => ({ value: feature, label: feature }))}
-                onChange={handleSelectChange(index, "special_features")}
-              />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="form-control">
+                <label className="label">Special Features</label>
+                <Select
+                  isMulti
+                  options={specialFeatures.map((feature) => ({ value: feature, label: feature }))}
+                  value={tasting.special_features?.map((feature) => ({ value: feature, label: feature }))}
+                  onChange={handleSelectChange(index, "special_features")}
+                />
+              </div>
+              <div className="form-control">
+                <label className="label flex items-center gap-1">
+                  Select AVA
+                  <FaMapMarkerAlt style={{ color: "#5A0C2C" }} />
+                </label>
+                <select
+                  className="select select-bordered"
+                  value={tasting.ava || ""}
+                  onChange={e => handleTastingChange(index, "ava", e.target.value)}
+                >
+                  <option value="">Select AVA</option>
+                  {regions.map((ava) => (
+                    <option key={ava} value={ava}>
+                      {ava}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
             </div>
-            <div className="form-control">
-          <label className="label flex items-center gap-1">
-            Select AVA
-            <FaMapMarkerAlt style={{ color: "#5A0C2C" }} />
-          </label>
-          <select
-            className="select select-bordered"
-            value={tasting.ava || ""}
-            onChange={e => handleTastingChange(index, "ava", e.target.value)}
-          >
-            <option value="">Select AVA</option>
-            {regions.map((ava) => (
-              <option key={ava} value={ava}>
-                {ava}
-              </option>
-            ))}
-          </select>
-        </div>
-    
-                        </div>
 
             <div className="form-control">
               <label className="label">
@@ -692,7 +740,7 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div className="form-control">
                 <label className="label">
-                  Wine 
+                  Wine
                 </label>
                 <div className="space-y-2">
                   <input
@@ -723,12 +771,12 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
                     value={newWine.tasting_notes || ""}
                     onChange={(e) => setNewWine({ ...newWine, tasting_notes: e.target.value })}
                   />
-                  <MultipleImageUpload 
-                    files={tastingWinePhotos[index] || []} 
+                  <MultipleImageUpload
+                    files={tastingWinePhotos[index] || []}
                     onChange={(files) => setTastingWinePhotos(prev => ({
                       ...prev,
                       [index]: files
-                    }))} 
+                    }))}
                   />
                   <button type="button" className="btn btn-primary" onClick={addWine(index)}>
                     Add Wine
@@ -740,8 +788,8 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
                       <div className="flex items-center gap-2">
                         {wine.photo && (
                           <div className="relative">
-                            <img 
-                              src={wine.photo} 
+                            <img
+                              src={wine.photo}
                               alt={wine.name}
                               className="w-8 h-8 object-cover rounded"
                             />
@@ -906,8 +954,8 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
               name="paymentMethod"
               value="pay_winery"
               checked={formData.payment_method?.type === "pay_winery"}
-              onChange={(e) => setFormData((prev) => ({ 
-                ...prev, 
+              onChange={(e) => setFormData((prev) => ({
+                ...prev,
                 payment_method: { type: e.target.value as 'pay_winery' | 'pay_stripe' | 'external_booking' }
               }))}
               className="radio"
@@ -920,8 +968,8 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
               name="paymentMethod"
               value="pay_stripe"
               checked={formData.payment_method?.type === "pay_stripe"}
-              onChange={(e) => setFormData((prev) => ({ 
-                ...prev, 
+              onChange={(e) => setFormData((prev) => ({
+                ...prev,
                 payment_method: { type: e.target.value as 'pay_winery' | 'pay_stripe' | 'external_booking' }
               }))}
               className="radio"
@@ -934,9 +982,9 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
               name="paymentMethod"
               value="external_booking"
               checked={formData.payment_method?.type === "external_booking"}
-              onChange={(e) => setFormData((prev) => ({ 
-                ...prev, 
-                payment_method: { 
+              onChange={(e) => setFormData((prev) => ({
+                ...prev,
+                payment_method: {
                   type: e.target.value as 'pay_winery' | 'pay_stripe' | 'external_booking',
                   external_booking_link: prev.payment_method?.external_booking_link || ''
                 }
@@ -946,7 +994,7 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
             <span className="ml-2">External Booking Link</span>
           </label>
         </div>
-        
+
         {/* External Booking Link Input - Only show when external_booking is selected */}
         {formData.payment_method?.type === "external_booking" && (
           <div className="mt-4">
