@@ -94,7 +94,10 @@ export async function POST(req: Request) {
                         wineryPhone: wineryDetails.contact_info?.phone,
                         bookingDateTime: wineryItem.datetime,
                         numberOfGuests: wineryItem.numberOfGuests || 1,
-                        specialRequests: booking.specialRequests
+                        numberOfChildren: wineryItem.numberOfChildren || 0,
+                        numberOfNonDrinkers: wineryItem.numberOfNonDrinkers || 0,
+                        specialRequests: booking.specialRequests,
+                        paymentStatus: "paid"
                     });
                 } catch (e) {
                     console.error("Failed to send winery notification:", e);

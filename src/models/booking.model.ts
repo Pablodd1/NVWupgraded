@@ -71,6 +71,8 @@ interface Booking {
   tastingTitle?: string;
   bookingDate?: Date;
   numberOfGuests?: number;
+  numberOfChildren?: number;
+  numberOfNonDrinkers?: number;
   customerFirstName?: string;
   customerLastName?: string;
   customerEmail?: string;
@@ -95,6 +97,8 @@ const bookingSchema = new Schema<Booking>(
     tastingTitle: { type: String },
     bookingDate: { type: Date },
     numberOfGuests: { type: Number },
+    numberOfChildren: { type: Number, default: 0 },
+    numberOfNonDrinkers: { type: Number, default: 0 },
     customerFirstName: { type: String },
     customerLastName: { type: String },
     customerEmail: { type: String },
