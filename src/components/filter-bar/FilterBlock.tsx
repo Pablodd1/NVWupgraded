@@ -200,7 +200,6 @@ export const FilterBlock = ({
             />
             <span>Only show mountain AVAs</span>
           </label>
-          )}
         </div>
       </div>
 
