@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
     const reservedSlots: any[] = [];
 
     for (const wineryBooking of data) {
-      const { wineryId, dateTime, numberOfGuests = 1 } = wineryBooking;
+      const { wineryId, dateTime, numberOfGuests = 1, numberOfChildren = 0, numberOfNonDrinkers = 0 } = wineryBooking;
+      const totalCapacityNeeded = numberOfGuests + numberOfChildren + numberOfNonDrinkers;
 
       if (!dateTime) {
         reservationErrors.push(`Missing booking date/time for winery ${wineryId}`);
@@ -58,10 +59,10 @@ export async function POST(req: NextRequest) {
           date,
           timeSlot,
           status: { $ne: "blocked" },
-          availableCapacity: { $gte: numberOfGuests }
+          availableCapacity: { $gte: totalCapacityNeeded }
         },
         {
-          $inc: { bookedCapacity: numberOfGuests, availableCapacity: -numberOfGuests }
+          $inc: { bookedCapacity: totalCapacityNeeded, availableCapacity: -totalCapacityNeeded }
         },
         { new: true }
       );
@@ -83,8 +84,8 @@ export async function POST(req: NextRequest) {
               date,
               timeSlot,
               totalCapacity: 20, // Default capacity
-              bookedCapacity: numberOfGuests,
-              availableCapacity: 20 - numberOfGuests,
+              bookedCapacity: totalCapacityNeeded,
+              availableCapacity: 20 - totalCapacityNeeded,
               status: "available"
             });
           } catch (createError: any) {
@@ -97,10 +98,10 @@ export async function POST(req: NextRequest) {
                   date,
                   timeSlot,
                   status: { $ne: "blocked" },
-                  availableCapacity: { $gte: numberOfGuests }
+                  availableCapacity: { $gte: totalCapacityNeeded }
                 },
                 {
-                  $inc: { bookedCapacity: numberOfGuests, availableCapacity: -numberOfGuests }
+                  $inc: { bookedCapacity: totalCapacityNeeded, availableCapacity: -totalCapacityNeeded }
                 },
                 { new: true }
               );
@@ -123,7 +124,7 @@ export async function POST(req: NextRequest) {
           wineryId,
           date,
           timeSlot,
-          guestsReserved: numberOfGuests
+          guestsReserved: totalCapacityNeeded
         });
       }
     }
@@ -159,6 +160,9 @@ export async function POST(req: NextRequest) {
     const totalPrice = data.reduce((acc: number, item: any) => {
       let wineryTotal = 0;
       const guests = Number(item.numberOfGuests) || 1;
+      const children = Number(item.numberOfChildren) || 0;
+      const nonDrinkers = Number(item.numberOfNonDrinkers) || 0;
+      const foodQty = Number(item.foodPairingQty) || 1;
       const winery = wineries.find(w => w._id.toString() === item.wineryId.toString());
 
       if (winery) {
@@ -199,11 +203,15 @@ export async function POST(req: NextRequest) {
             const legacyPrice = Number(tasting.tasting_price) || 0;
             wineryTotal += legacyPrice;
           }
+
+          // Add children and non-drinkers pricing
+          wineryTotal += (Number(tasting.child_price) || 0) * children;
+          wineryTotal += (Number(tasting.non_drinker_price) || 0) * nonDrinkers;
         }
       }
 
-      // Add features, food, tours (assuming these are per guest)
-      item.foodPairings?.forEach((fp: any) => wineryTotal += (Number(fp.price) || 0) * guests);
+      // Add features, food, tours
+      item.foodPairings?.forEach((fp: any) => wineryTotal += (Number(fp.price) || 0) * foodQty);
       item.tours?.forEach((t: any) => wineryTotal += (Number(t.price) || 0) * guests);
       item.otherFeatures?.forEach((of: any) => wineryTotal += (Number(of.price) || 0) * guests);
 
@@ -230,10 +238,15 @@ export async function POST(req: NextRequest) {
         baseBookingFee: tasting?.base_booking_fee || 0,
         additionalGuestFee: tasting?.additional_guest_fee || 0,
         freeGuestsIncluded: tasting?.free_guests_included || 0,
+        childPrice: tasting?.child_price || 0,
+        nonDrinkerPrice: tasting?.non_drinker_price || 0,
         tours: winery.tours || [],
         foodPairings: winery.foodPairings || [],
+        foodPairingQty: winery.foodPairingQty || 1,
         otherFeatures: winery.otherFeature || [],
         numberOfGuests: winery.numberOfGuests || 1,
+        numberOfChildren: winery.numberOfChildren || 0,
+        numberOfNonDrinkers: winery.numberOfNonDrinkers || 0,
         status: "confirmed" // Mark individual wineries as confirmed
       };
     });
@@ -268,6 +281,8 @@ export async function POST(req: NextRequest) {
             wineryPhone: wineryDetails.contact_info?.phone,
             bookingDateTime: winery.dateTime,
             numberOfGuests: winery.numberOfGuests || 1,
+            numberOfChildren: winery.numberOfChildren || 0,
+            numberOfNonDrinkers: winery.numberOfNonDrinkers || 0,
             specialRequests: booking.specialRequests,
             paymentStatus: "paid"
           });

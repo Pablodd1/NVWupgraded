@@ -150,10 +150,13 @@ export default function ItineraryPage() {
         wineryId: winery._id,
         dateTime: winery.bookingDetails?.selectedTime,
         numberOfGuests: winery.bookingDetails?.numberOfGuests || 1,
+        numberOfChildren: winery.bookingDetails?.numberOfChildren || 0,
+        numberOfNonDrinkers: winery.bookingDetails?.numberOfNonDrinkers || 0,
         tastingTitle: currentTastingInfo?.tasting_title,
         tastingIndex: selectedTastingIndex,
         tasting: winery.bookingDetails?.tasting ? (currentTastingInfo?.tasting_price ?? 0) : null,
         foodPairings: winery.bookingDetails?.foodPairings || [],
+        foodPairingQty: winery.bookingDetails?.foodPairingQty || 1,
         tours: winery.bookingDetails?.tours || [],
         otherFeatures: winery.bookingDetails?.otherFeature || [],
         payment_method: winery.payment_method,
@@ -173,17 +176,25 @@ export default function ItineraryPage() {
           const selectedTastingIndex = winery.bookingDetails?.selectedTastingIndex || 0;
           const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
           const guests = winery.bookingDetails?.numberOfGuests || 1;
+          const children = winery.bookingDetails?.numberOfChildren || 0;
+          const nonDrinkers = winery.bookingDetails?.numberOfNonDrinkers || 0;
+          const foodQty = winery.bookingDetails?.foodPairingQty || 1;
 
           if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
             wineryTotal += currentTastingInfo.base_booking_fee;
             if (guests > 1) {
-              wineryTotal += (guests - 1) * (currentTastingInfo.additional_guest_fee || 0);
+              const freeIncluded = currentTastingInfo.free_guests_included || 1;
+              wineryTotal += Math.max(0, guests - freeIncluded) * (currentTastingInfo.additional_guest_fee || 0);
             }
           } else if (currentTastingInfo?.tasting_price) {
             wineryTotal += currentTastingInfo.tasting_price;
           }
 
-          winery.bookingDetails?.foodPairings?.forEach(p => wineryTotal += ((p.price || 0) * guests));
+          // Guest type pricing
+          wineryTotal += (currentTastingInfo?.child_price || 0) * children;
+          wineryTotal += (currentTastingInfo?.non_drinker_price || 0) * nonDrinkers;
+
+          winery.bookingDetails?.foodPairings?.forEach(p => wineryTotal += ((p.price || 0) * foodQty));
           winery.bookingDetails?.tours?.forEach(t => wineryTotal += ((t.price || 0) * guests));
           winery.bookingDetails?.otherFeature?.forEach(f => wineryTotal += ((Number(f.price) || 0) * guests));
 

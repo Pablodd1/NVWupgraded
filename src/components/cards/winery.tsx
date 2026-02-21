@@ -19,6 +19,9 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
   const [selections, setSelections] = useState({
     tasting: true, // Auto-select tasting by default
     numberOfGuests: 1,
+    numberOfChildren: 0,
+    numberOfNonDrinkers: 0,
+    foodPairingQty: 1,
     foodPairings: [] as { name: string; price: number }[],
     tours: [] as { description: string; price: number }[],
     otherFeature: [] as { description: string; price: number }[],
@@ -79,7 +82,10 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
       selectedTastingIndex,
       tasting: selections.tasting,
       numberOfGuests: selections.numberOfGuests,
+      numberOfChildren: selections.numberOfChildren,
+      numberOfNonDrinkers: selections.numberOfNonDrinkers,
       foodPairings: selections.foodPairings,
+      foodPairingQty: selections.foodPairingQty,
       tours: selections.tours || [],
       otherFeature: selections.otherFeature || [],
     });
@@ -169,7 +175,10 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
         selectedTastingIndex,
         tasting: selections.tasting,
         numberOfGuests: selections.numberOfGuests,
+        numberOfChildren: selections.numberOfChildren,
+        numberOfNonDrinkers: selections.numberOfNonDrinkers,
         foodPairings: selections.foodPairings,
+        foodPairingQty: selections.foodPairingQty,
         tours: selections.tours || [],
         otherFeature: selections.otherFeature || [],
       });
@@ -315,11 +324,27 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
             <span className="text-sm text-green-800 font-bold">
               ${(() => {
                 let tastingPrice = 0;
+                const guests = selections.numberOfGuests;
+                const children = selections.numberOfChildren || 0;
+                const nonDrinkers = selections.numberOfNonDrinkers || 0;
+                const foodQty = selections.foodPairingQty || 1;
+
                 if (currentTastingInfo?.base_booking_fee) {
-                  tastingPrice = currentTastingInfo.base_booking_fee + (selections.numberOfGuests > 1 ? (selections.numberOfGuests - 1) * (currentTastingInfo.additional_guest_fee || 0) : 0);
+                  const freeIncluded = currentTastingInfo.free_guests_included || 1;
+                  tastingPrice = currentTastingInfo.base_booking_fee + (guests > freeIncluded ? (guests - freeIncluded) * (currentTastingInfo.additional_guest_fee || 0) : 0);
                 } else {
                   tastingPrice = (currentTastingInfo?.tasting_price || 0);
                 }
+
+                // Add children and non-drinkers
+                tastingPrice += (currentTastingInfo?.child_price || 0) * children;
+                tastingPrice += (currentTastingInfo?.non_drinker_price || 0) * nonDrinkers;
+
+                // Add food pairings (based on foodQty)
+                selections.foodPairings.forEach(p => tastingPrice += (p.price * foodQty));
+                selections.tours.forEach(t => tastingPrice += (t.price * guests));
+                selections.otherFeature.forEach(f => tastingPrice += (f.price * guests));
+
                 return tastingPrice.toFixed(2);
               })()}
             </span>
@@ -433,6 +458,38 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
             </select>
           </div>
 
+          {/* Children and Non-Drinkers Selection */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {winery.amenities?.allows_children && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Children (+${currentTastingInfo?.child_price || 0})
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500"
+                  value={selections.numberOfChildren}
+                  onChange={(e) => setSelections(prev => ({ ...prev, numberOfChildren: Math.max(0, parseInt(e.target.value) || 0) }))}
+                />
+              </div>
+            )}
+            {winery.amenities?.allows_non_drinkers && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Non-Drinkers (+${currentTastingInfo?.non_drinker_price || 0})
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500"
+                  value={selections.numberOfNonDrinkers}
+                  onChange={(e) => setSelections(prev => ({ ...prev, numberOfNonDrinkers: Math.max(0, parseInt(e.target.value) || 0) }))}
+                />
+              </div>
+            )}
+          </div>
+
           {/* Food Pairings and Tours Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Food Pairing */}
@@ -477,28 +534,30 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
           </div>
 
           {/* Other Features Row */}
-          {currentTastingInfo?.other_features && currentTastingInfo.other_features.length > 0 && (
-            <div>
-              <label htmlFor={`other-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">Other Features (Optional)</label>
-              <select
-                id={`other-${winery._id}`}
-                className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
-                onChange={handleChangeOther}
-                defaultValue=""
-              >
-                <option value="">No additional features</option>
-                {currentTastingInfo.other_features.map((option) => (
-                  <option key={option.description} value={option.description} data-price={option.cost}>
-                    {option.description} (+${option.cost.toFixed(2)})
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
+          {
+            currentTastingInfo?.other_features && currentTastingInfo.other_features.length > 0 && (
+              <div>
+                <label htmlFor={`other-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">Other Features (Optional)</label>
+                <select
+                  id={`other-${winery._id}`}
+                  className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
+                  onChange={handleChangeOther}
+                  defaultValue=""
+                >
+                  <option value="">No additional features</option>
+                  {currentTastingInfo.other_features.map((option) => (
+                    <option key={option.description} value={option.description} data-price={option.cost}>
+                      {option.description} (+${option.cost.toFixed(2)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )
+          }
+        </div >
 
 
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

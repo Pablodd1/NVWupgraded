@@ -20,10 +20,15 @@ interface WineryBooking {
   baseBookingFee?: number; // Base fee for first person
   additionalGuestFee?: number; // Fee per additional guest
   freeGuestsIncluded?: number; // Number of guests included in base fee
+  childPrice?: number;
+  nonDrinkerPrice?: number;
   tours: any[]; // Support detailed tour info
   foodPairings: FoodPairing[];
+  foodPairingQty?: number;
   otherFeatures: any[]; // Support detailed feature info
   numberOfGuests: number;
+  numberOfChildren?: number;
+  numberOfNonDrinkers?: number;
   status: "pending" | "confirmed" | "declined" | "completed";
 }
 
@@ -35,10 +40,15 @@ const wineryBookingSchema = new Schema<WineryBooking>(
     baseBookingFee: { type: Number, default: 0 },
     additionalGuestFee: { type: Number, default: 0 },
     freeGuestsIncluded: { type: Number, default: 0 },
+    childPrice: { type: Number, default: 0 },
+    nonDrinkerPrice: { type: Number, default: 0 },
     tours: { type: [Object], default: [] },
     foodPairings: { type: [foodPairingSchema], default: [] },
+    foodPairingQty: { type: Number, default: 1 },
     otherFeatures: { type: [Object], default: [] },
     numberOfGuests: { type: Number, default: 1, min: 1 },
+    numberOfChildren: { type: Number, default: 0 },
+    numberOfNonDrinkers: { type: Number, default: 0 },
     status: {
       type: String,
       enum: ["pending", "confirmed", "declined", "completed"],

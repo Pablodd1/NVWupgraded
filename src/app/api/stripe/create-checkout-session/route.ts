@@ -40,7 +40,8 @@ export async function POST(req: Request) {
     const reservedSlots = [];
 
     for (const wineryBooking of bookData) {
-      const { wineryId, dateTime, numberOfGuests = 1 } = wineryBooking;
+      const { wineryId, dateTime, numberOfGuests = 1, numberOfChildren = 0, numberOfNonDrinkers = 0 } = wineryBooking;
+      const totalCapacityNeeded = numberOfGuests + numberOfChildren + numberOfNonDrinkers;
 
       if (!dateTime) {
         reservationErrors.push(`Missing booking date/time for winery ${wineryId}`);
@@ -80,19 +81,19 @@ export async function POST(req: Request) {
         }
       }
 
-      if (!slot || slot.availableCapacity < numberOfGuests) {
+      if (!slot || slot.availableCapacity < totalCapacityNeeded) {
         reservationErrors.push(`Insufficient capacity for ${wineryBooking.wineryId}`);
         continue;
       }
 
-      slot.bookedCapacity += numberOfGuests;
-      slot.availableCapacity -= numberOfGuests;
+      slot.bookedCapacity += totalCapacityNeeded;
+      slot.availableCapacity -= totalCapacityNeeded;
       await slot.save();
 
       reservedSlots.push({
         slotId: slot._id,
         wineryId,
-        guestsReserved: numberOfGuests
+        guestsReserved: totalCapacityNeeded
       });
     }
 
@@ -120,6 +121,9 @@ export async function POST(req: Request) {
     const totalPrice = bookData.reduce((acc: number, item: any) => {
       let wineryTotal = 0;
       const guests = Number(item.numberOfGuests) || 1;
+      const children = Number(item.numberOfChildren) || 0;
+      const nonDrinkers = Number(item.numberOfNonDrinkers) || 0;
+      const foodQty = Number(item.foodPairingQty) || 1;
       const winery = wineries.find(w => w._id.toString() === item.wineryId.toString());
 
       if (winery) {
@@ -133,18 +137,23 @@ export async function POST(req: Request) {
           const additionalGuestFee = Number(tasting.additional_guest_fee) || 0;
 
           if (baseFee > 0) {
-            wineryTotal += baseFee; // Base fee for first person
-            if (guests > 1) {
-              wineryTotal += (guests - 1) * additionalGuestFee; // Additional fee for extra guests
+            wineryTotal += baseFee;
+            const freeGuests = Number(tasting.free_guests_included) || 1;
+            if (guests > freeGuests) {
+              wineryTotal += (guests - freeGuests) * additionalGuestFee;
             }
           } else {
             wineryTotal += (Number(tasting.tasting_price) || 0);
           }
+
+          // Add guest type pricing
+          wineryTotal += (Number(tasting.child_price) || 0) * children;
+          wineryTotal += (Number(tasting.non_drinker_price) || 0) * nonDrinkers;
         }
       }
 
-      // Add features, food, tours (per guest)
-      item.foodPairings?.forEach((fp: any) => wineryTotal += (Number(fp.price) || 0) * guests);
+      // Add features, food, tours
+      item.foodPairings?.forEach((fp: any) => wineryTotal += (Number(fp.price) || 0) * foodQty);
       item.tours?.forEach((t: any) => wineryTotal += (Number(t.price) || 0) * guests);
       item.otherFeatures?.forEach((of: any) => wineryTotal += (Number(of.price) || 0) * guests);
 
@@ -170,10 +179,16 @@ export async function POST(req: Request) {
           tasting: winery.tasting,
           baseBookingFee: tasting?.base_booking_fee || 0,
           additionalGuestFee: tasting?.additional_guest_fee || 0,
+          freeGuestsIncluded: tasting?.free_guests_included || 0,
+          childPrice: tasting?.child_price || 0,
+          nonDrinkerPrice: tasting?.non_drinker_price || 0,
           tours: winery.tours || [],
           foodPairings: winery.foodPairings || [],
+          foodPairingQty: winery.foodPairingQty || 1,
           otherFeatures: winery.otherFeature || [],
-          numberOfGuests: winery.numberOfGuests || 1
+          numberOfGuests: winery.numberOfGuests || 1,
+          numberOfChildren: winery.numberOfChildren || 0,
+          numberOfNonDrinkers: winery.numberOfNonDrinkers || 0,
         };
       })
     });
