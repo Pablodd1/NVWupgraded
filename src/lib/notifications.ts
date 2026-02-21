@@ -266,6 +266,25 @@ interface BookingNotificationData {
   bookingDate: string;
   bookingTime: string;
   numberOfGuests: number;
+  numberOfChildren?: number;
+  numberOfNonDrinkers?: number;
+  specialRequests?: string;
+  paymentStatus?: string;
+}
+
+export interface SendBookingNotificationsParams {
+  bookingId: string;
+  customerFirstName: string;
+  customerLastName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  wineryName: string;
+  wineryEmail: string;
+  wineryPhone?: string;
+  bookingDateTime: string; // ISO string
+  numberOfGuests?: number;
+  numberOfChildren?: number;
+  numberOfNonDrinkers?: number;
   specialRequests?: string;
   paymentStatus?: string;
 }
@@ -299,7 +318,7 @@ function getCustomerBookingConfirmationEmail(data: BookingNotificationData) {
         </tr>
         <tr>
           <td style="padding:8px 0;"><strong>Guests:</strong></td>
-          <td style="padding:8px 0;">${data.numberOfGuests}</td>
+          <td style="padding:8px 0;">${data.numberOfGuests} Adults${data.numberOfChildren ? `, ${data.numberOfChildren} Children` : ''}${data.numberOfNonDrinkers ? `, ${data.numberOfNonDrinkers} Non-Drinkers` : ''}</td>
         </tr>
         <tr>
           <td style="padding:8px 0;"><strong>Payment Status:</strong></td>
@@ -382,7 +401,7 @@ function getWineryBookingNotificationEmail(data: BookingNotificationData) {
         </tr>
         <tr>
           <td style="padding:8px 0;"><strong>Guests:</strong></td>
-          <td style="padding:8px 0;">${data.numberOfGuests}</td>
+          <td style="padding:8px 0;">${data.numberOfGuests} Adults${data.numberOfChildren ? `, ${data.numberOfChildren} Children` : ''}${data.numberOfNonDrinkers ? `, ${data.numberOfNonDrinkers} Non-Drinkers` : ''}</td>
         </tr>
          <tr>
           <td style="padding:8px 0;"><strong>Payment:</strong></td>
@@ -446,7 +465,7 @@ function getAdminBookingNotificationEmail(data: BookingNotificationData) {
         </tr>
         <tr>
           <td style="padding:8px 0;"><strong>Guests:</strong></td>
-          <td style="padding:8px 0;">${data.numberOfGuests}</td>
+          <td style="padding:8px 0;">${data.numberOfGuests} Adults${data.numberOfChildren ? `, ${data.numberOfChildren} Children` : ''}${data.numberOfNonDrinkers ? `, ${data.numberOfNonDrinkers} Non-Drinkers` : ''}</td>
         </tr>
         <tr>
           <td style="padding:8px 0;"><strong>Payment Status:</strong></td>
@@ -478,7 +497,7 @@ function getMasterItineraryEmail(data: {
         <strong>Date & Time:</strong> ${new Date(w.datetime).toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
       </p>
       <p style="margin: 5px 0; font-size: 14px;">
-        <strong>Guests:</strong> ${w.numberOfGuests}
+        <strong>Guests:</strong> ${w.numberOfGuests} Adults${w.numberOfChildren ? `, ${w.numberOfChildren} Children` : ''}${w.numberOfNonDrinkers ? `, ${w.numberOfNonDrinkers} Non-Drinkers` : ''}
       </p>
       <p style="margin: 5px 0; font-size: 12px; color: #2E7D32;">
         <strong>Status:</strong> Confirmed & Paid
@@ -514,7 +533,9 @@ export async function sendMasterItineraryNotification(booking: any, customer: an
     const winerySummaries = booking.wineries.map((w: any) => ({
       wineryName: w.wineryId?.name || "Premium Winery",
       datetime: w.datetime,
-      numberOfGuests: w.numberOfGuests
+      numberOfGuests: w.numberOfGuests,
+      numberOfChildren: w.numberOfChildren,
+      numberOfNonDrinkers: w.numberOfNonDrinkers
     }));
 
     await resend.emails.send({
@@ -539,20 +560,7 @@ export async function sendMasterItineraryNotification(booking: any, customer: an
   }
 }
 
-export interface SendBookingNotificationsParams {
-  bookingId: string;
-  customerFirstName: string;
-  customerLastName: string;
-  customerEmail: string;
-  customerPhone?: string;
-  wineryName: string;
-  wineryEmail: string;
-  wineryPhone?: string;
-  bookingDateTime: string; // ISO string
-  numberOfGuests?: number;
-  specialRequests?: string;
-  paymentStatus?: string;
-}
+// Interface consolidated at line 275
 
 // ========================================
 // PASSWORD RESET NOTIFICATION
@@ -787,19 +795,7 @@ export async function sendErrorNotification(params: ErrorNotificationParams) {
 // SEND INITIAL BOOKING NOTIFICATIONS
 // ========================================
 
-export interface SendBookingNotificationsParams {
-  bookingId: string;
-  customerFirstName: string;
-  customerLastName: string;
-  customerEmail: string;
-  customerPhone?: string;
-  wineryName: string;
-  wineryEmail: string;
-  wineryPhone?: string;
-  bookingDateTime: string; // ISO string
-  numberOfGuests?: number;
-  specialRequests?: string;
-}
+// Duplicate removed
 
 export async function sendWineryNotification(params: SendBookingNotificationsParams) {
   try {
@@ -824,6 +820,8 @@ export async function sendWineryNotification(params: SendBookingNotificationsPar
         minute: '2-digit'
       }),
       numberOfGuests: params.numberOfGuests || 1,
+      numberOfChildren: params.numberOfChildren || 0,
+      numberOfNonDrinkers: params.numberOfNonDrinkers || 0,
       specialRequests: params.specialRequests,
       paymentStatus: params.paymentStatus
     };
