@@ -249,7 +249,7 @@ const WineryDetail = () => {
   return (
     <div className="min-h-screen bg-wine-background md:top-20 top-16 relative">
       {/* Hero Section */}
-      <div className="relative h-[80vh] overflow-hidden">
+      <div className="relative h-[60vh] sm:h-[80vh] overflow-hidden">
         {currentImages.length > 0 ? (
           <Image
             src={currentImages[currentImageIndex]}
@@ -266,8 +266,8 @@ const WineryDetail = () => {
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/50 flex items-center justify-center">
           <div className="text-center text-white max-w-4xl px-4">
-            <h1 className="font-serif text-6xl mb-6 leading-tight">{winery.name}</h1>
-            <p className="text-xl max-w-2xl mx-auto font-light leading-relaxed">{winery.description}</p>
+            <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl mb-4 sm:mb-6 leading-tight">{winery.name}</h1>
+            <p className="text-sm sm:text-xl max-w-2xl mx-auto font-light leading-relaxed">{winery.description}</p>
             <div className="mt-8">
               {/* Show direct booking button if external booking is configured */}
               {hasExternalBooking ? (
@@ -308,11 +308,11 @@ const WineryDetail = () => {
       </div>
 
       {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-4 py-16 space-y-16">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:py-16 space-y-8 sm:space-y-16">
         {/* Multiple Tasting Selection */}
         {winery.tasting_info && winery.tasting_info.length > 1 && (
-          <div className="bg-white rounded-xl p-8 shadow-lg">
-            <h2 className="font-serif text-3xl mb-6 text-wine-primary">Choose Your Tasting Experience</h2>
+          <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg">
+            <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-6 text-wine-primary">Choose Your Tasting Experience</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {winery.tasting_info.map((tasting, index) => (
                 <Card
@@ -401,9 +401,9 @@ const WineryDetail = () => {
           currentTastingInfo?.tours?.tour_options?.length > 0 ||
           currentTastingInfo?.other_features?.length > 0 ||
           currentTastingInfo?.food_pairing_options?.length > 0) && (
-            <div className="bg-white rounded-lg p-8 shadow-lg">
-              <h2 className="font-serif text-3xl mb-6 text-wine-primary">Tasting Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white rounded-lg p-4 sm:p-8 shadow-lg">
+              <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-6 text-wine-primary">Tasting Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                 {/* Wine Section - Only show if wine details exist */}
                 {currentTastingInfo?.wine_details && currentTastingInfo.wine_details.length > 0 && (
                   <div>
@@ -478,12 +478,12 @@ const WineryDetail = () => {
           )}
 
         {/* Tasting Experience Section */}
-        <div className="bg-white rounded-xl p-8 shadow-lg">
-          <div className="flex items-center gap-3 mb-8">
-            <FaGlassCheers className="h-8 w-8 text-wine-primary" />
-            <h2 className="font-serif text-3xl text-wine-primary">Tasting Experience</h2>
+        <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg">
+          <div className="flex items-center gap-3 mb-4 sm:mb-8">
+            <FaGlassCheers className="h-6 w-6 sm:h-8 sm:w-8 text-wine-primary" />
+            <h2 className="font-serif text-2xl sm:text-3xl text-wine-primary">Tasting Experience</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
             <Card className="p-6">
               <h3 className="font-serif text-xl mb-4">What to Expect</h3>
               <div className="space-y-4">
@@ -523,8 +523,8 @@ const WineryDetail = () => {
         </div>
 
         {/* Book a Tasting Section */}
-        <div className="bg-white rounded-lg p-8 shadow-lg">
-          <h2 className="font-serif text-3xl mb-6 text-wine-primary">Book a Tasting</h2>
+        <div className="bg-white rounded-lg p-4 sm:p-8 shadow-lg">
+          <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-6 text-wine-primary">Book a Tasting</h2>
 
           {/* External Booking - Direct Flow */}
           {hasExternalBooking ? (
@@ -713,8 +713,8 @@ const WineryDetail = () => {
         )}
 
         {/* Contact & Directions Section */}
-        <div className="bg-white rounded-xl p-8 shadow-lg">
-          <h2 className="font-serif text-3xl mb-8 text-wine-primary">Contact & Directions</h2>
+        <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg">
+          <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-8 text-wine-primary">Contact & Directions</h2>
 
           {/* Hours of Operation */}
           <div className="mb-8">
@@ -807,9 +807,9 @@ const WineryDetail = () => {
 
         {/* Food Pairings Section - Bottom of Page */}
         {currentTastingInfo?.food_pairing_options && currentTastingInfo.food_pairing_options.length > 0 && (
-          <div className="max-w-7xl mx-auto px-4 py-16">
-            <div className="bg-white rounded-xl p-8 shadow-lg">
-              <h2 className="font-serif text-3xl mb-2 text-wine-primary">Food Pairings</h2>
+          <div className="max-w-7xl mx-auto px-4 py-8 sm:py-16">
+            <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg">
+              <h2 className="font-serif text-2xl sm:text-3xl mb-2 text-wine-primary">Food Pairings</h2>
               <p className="text-gray-600 mb-6">Enhance your tasting experience with artisanal pairings. Select quantity per party.</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

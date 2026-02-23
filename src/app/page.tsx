@@ -198,7 +198,7 @@ export default function Home() {
 
         <div className="lg:col-span-3 space-y-6 lg:ml-10 mb-20">
           {/* Voice Search Toggle Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 mb-8 gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 mb-6 gap-3">
             <div>
               <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
                 🍷 {nlpQuery ? "AI Selections" : "Napa Valley Collection [v1.1]"}
@@ -254,25 +254,24 @@ export default function Home() {
             <VoiceSearchPanel onFiltersApplied={handleVoiceFilters} className="mb-8 border-2 border-primary/20 animate-in fade-in slide-in-from-top-4 duration-300" />
           )}
 
-          {/* Marketing Showcase Sector */}
-          <div className="bg-gradient-to-br from-indigo-900 via-purple-900 to-berry-900 rounded-3xl p-8 mb-8 relative overflow-hidden shadow-2xl group border border-white/10">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl transition-transform group-hover:scale-110 duration-700"></div>
-            <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-              <div className="flex-1 text-center md:text-left">
-                <span className="inline-block px-3 py-1 bg-yellow-400/90 text-black text-[10px] font-black rounded-full uppercase tracking-tighter mb-4 shadow-xl">Promoted Partner</span>
-                <h3 className="text-3xl font-serif font-black text-white leading-tight">
-                  Premium Transit & <br />Exclusive Stay
+          {/* Marketing Showcase Sector — Compact */}
+          <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-berry-900 rounded-2xl p-4 sm:p-5 mb-6 relative overflow-hidden shadow-lg border border-white/10">
+            <div className="flex flex-row items-center gap-4">
+              <div className="flex-1 min-w-0">
+                <span className="inline-block px-2 py-0.5 bg-yellow-400/90 text-black text-[8px] font-black rounded-full uppercase tracking-tight mb-2 shadow-sm">Promoted Partner</span>
+                <h3 className="text-base sm:text-lg font-serif font-black text-white leading-snug">
+                  Premium Transit & Exclusive Stay
                 </h3>
-                <p className="text-white/70 mt-3 max-w-md text-sm leading-relaxed">
-                  Book your elite winery tour with our certified partners today. Luxury limousines and boutique hotels waiting for your arrival.
+                <p className="text-white/60 mt-1 text-xs leading-relaxed line-clamp-2">
+                  Luxury limousines and boutique hotels for your winery tour.
                 </p>
-                <div className="flex gap-4 mt-6 justify-center md:justify-start">
-                  <button className="px-6 py-2 bg-white text-berry-900 font-bold rounded-xl hover:bg-berry-50 transition-colors shadow-lg">Limo Services</button>
-                  <button className="px-6 py-2 border border-white/30 text-white font-bold rounded-xl hover:bg-white/10 transition-colors">Hotel Suites</button>
+                <div className="flex gap-2 mt-3">
+                  <button className="px-3 py-1.5 bg-white text-berry-900 font-bold rounded-lg text-xs hover:bg-berry-50 transition-colors shadow-sm">Limo Services</button>
+                  <button className="px-3 py-1.5 border border-white/30 text-white font-bold rounded-lg text-xs hover:bg-white/10 transition-colors">Hotel Suites</button>
                 </div>
               </div>
-              <div className="w-full md:w-64 aspect-video md:aspect-square bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 backdrop-blur-sm">
-                <span className="text-white/30 font-serif italic text-lg">Your Brand Here</span>
+              <div className="hidden sm:flex w-28 h-20 bg-white/10 rounded-xl items-center justify-center border border-white/20 flex-shrink-0">
+                <span className="text-white/30 font-serif italic text-xs">Your Brand</span>
               </div>
             </div>
           </div>

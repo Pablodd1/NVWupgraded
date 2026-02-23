@@ -126,22 +126,22 @@ export default function WineryOnboarding() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="min-h-screen bg-gray-50 flex flex-col justify-start pt-20 pb-24 px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto w-full max-w-md">
                 <div className="flex justify-center">
-                    <FaWineGlassAlt className="text-5xl text-primary" />
+                    <FaWineGlassAlt className="text-4xl text-primary" />
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                <h2 className="mt-4 text-center text-2xl font-extrabold text-gray-900">
                     Setup Your Winery
                 </h2>
-                <p className="mt-2 text-center text-sm text-gray-600">
+                <p className="mt-1 text-center text-sm text-gray-600">
                     Let's get your profile started so you can accept bookings.
                 </p>
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-100">
-                    <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="mt-6 mx-auto w-full max-w-md">
+                <div className="bg-white py-6 px-4 shadow rounded-lg sm:px-8 border border-gray-100">
+                    <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
 
                         {/* Name */}
                         <div>
@@ -353,11 +353,11 @@ export default function WineryOnboarding() {
                             </div>
                         </div>
 
-                        <div>
+                        <div className="pt-2 pb-2">
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
+                                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
                             >
                                 {loading ? (
                                     <span className="loading loading-spinner loading-sm"></span>
