@@ -36,21 +36,101 @@ export async function GET(req: Request) {
   try {
     await dbConnect();
 
-    // Parse query params for pagination
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
-    const limit = parseInt(searchParams.get("limit") || "1000", 10); // Default to high limit to preserve existing behavior for now, but allow optimization
+    const limit = parseInt(searchParams.get("limit") || "1000", 10);
     const skip = (page - 1) * limit;
 
-    // Use .select() to return only necessary fields for the card view
-    // This drastically reduces payload size by omitting heavy fields if not needed
-    const wineries = await Winery.find()
-      .select("name description location tasting_info contact_info amenities images")
+    const filtersParam = searchParams.get("filters");
+    let query: any = {};
+
+    if (filtersParam) {
+      try {
+        const filters = JSON.parse(filtersParam);
+
+        // Build Dynamic Query based on filters
+
+        // 1. Keyword search (Name or Description)
+        if (filters.searchQuery) {
+          query.$or = [
+            { name: { $regex: filters.searchQuery, $options: "i" } },
+            { description: { $regex: filters.searchQuery, $options: "i" } }
+          ];
+        }
+
+        // 2. AVA Region
+        if (filters.ava && filters.ava.length > 0) {
+          query["tasting_info.ava"] = { $in: filters.ava };
+        }
+
+        // 3. Mountain Location
+        if (filters.mountainLocation) {
+          query["location.is_mountain_location"] = true;
+        }
+
+        // 4. Wine Types
+        if (filters.wineType) {
+          const selectedWines = Object.keys(filters.wineType).filter(w => filters.wineType[w as keyof typeof filters.wineType]);
+          if (selectedWines.length > 0) {
+            // Regex to match ignoring case
+            const regexArr = selectedWines.map(w => new RegExp(`^${w}$`, 'i'));
+            query["tasting_info.wine_types"] = { $in: regexArr };
+          }
+        }
+
+        // 5. Special Features (Ex: Hand-blown glass)
+        if (filters.specialFeatures && filters.specialFeatures.length > 0) {
+          // If Handicapped Accessible is selected, check amenities instead of tasting_info explicitly
+          const hasHandicap = filters.specialFeatures.includes("Handicap Accessible");
+          const otherFeatures = filters.specialFeatures.filter((f: string) => f !== "Handicap Accessible");
+
+          if (hasHandicap) {
+            query["amenities.handicap_accessible"] = true;
+          }
+          if (otherFeatures.length > 0) {
+            query["tasting_info.special_features"] = { $all: otherFeatures };
+          }
+        }
+
+        // 6. Tasting Price Range (Check if any tasting matches to the range)
+        if (filters.priceRange && filters.priceRange.length === 2 && (filters.priceRange[0] > 0 || filters.priceRange[1] < 1000)) {
+          query["tasting_info.tasting_price"] = { $gte: filters.priceRange[0], $lte: filters.priceRange[1] };
+        } else if (filters.tastingPrice !== undefined && filters.tastingPrice < 200) { // Specific limit
+          query["tasting_info.tasting_price"] = { $lte: filters.tastingPrice };
+        }
+
+        // 7. Amenities Checks
+        if (filters.allowsChildren) {
+          query["amenities.allows_children"] = true;
+        }
+        if (filters.allowsNonDrinkers) {
+          query["amenities.allows_non_drinkers"] = true;
+        }
+
+        // 8. Other Booleans
+        if (filters.toursAvailable) {
+          query["tasting_info.tours.available"] = true;
+        }
+        if (filters.foodPairings) {
+          // check if array has size > 0
+          query["tasting_info.food_pairing_options.0"] = { $exists: true };
+        }
+        if (filters.multipleTastings) {
+          query["tasting_info.1"] = { $exists: true };
+        }
+
+      } catch (e) {
+        console.error("Error parsing filters param", e);
+      }
+    }
+
+    const wineries = await Winery.find(query)
+      .select("name description location tasting_info contact_info amenities images is_featured")
       .skip(skip)
       .limit(limit)
       .lean();
 
-    const total = await Winery.countDocuments();
+    const total = await Winery.countDocuments(query);
 
     return NextResponse.json({
       message: "success",

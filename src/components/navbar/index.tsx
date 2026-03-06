@@ -201,9 +201,13 @@ const ItineraryButton = ({ itineraryCount, totalCost, label }: { itineraryCount:
 
 const UserProfile = ({ user, handleLogout, loading, t }: { user: IUser; handleLogout: () => void; loading: boolean; t: any }) => (
   <div className="relative flex items-center space-x-2 neumorphism-card p-3">
-    <FaUserAlt size={28} className="text-gray-800 rounded-full" />
+    <Link href="/profile">
+      <FaUserAlt size={28} className="text-gray-800 rounded-full hover:text-primary transition-colors cursor-pointer" />
+    </Link>
     <div className="flex flex-col">
-      <span className="font-semibold text-sm text-gray-800">{`${user.firstName} ${user.lastName}`}</span>
+      <Link href="/profile" className="font-semibold text-sm text-gray-800 hover:text-primary transition-colors">
+        {`${user.firstName} ${user.lastName}`}
+      </Link>
       <button
         onClick={handleLogout}
         className="text-gray-600 hover:text-red-600 flex items-center space-x-1 text-xs"
@@ -272,6 +276,11 @@ const MobileBottomNav = ({
           <div className="flex flex-col items-center space-y-4">
             <FaUserAlt size={50} className="text-gray-800 rounded-full" />
             <span className="font-semibold text-lg text-gray-800">{`${user.firstName} ${user.lastName}`}</span>
+
+            <Link href="/profile" className="text-gray-600 text-sm font-semibold w-full text-center py-2 border-b border-gray-100 pb-4 mb-2">
+              My Profile Settings
+            </Link>
+
             {user.role === "admin" && (
               <Link href={"/admin/dashboard"} className="text-gray-600 text-sm font-semibold w-full text-center py-2">
                 Admin Dashboard

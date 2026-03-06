@@ -18,7 +18,8 @@ import {
   FaCheckCircle,
   FaTimesCircle,
   FaWineBottle,
-  FaImage
+  FaImage,
+  FaUserAlt
 } from "react-icons/fa";
 import { Winery, TastingInfo, FoodPairingOption } from "@/app/interfaces";
 import Select from "react-select";
@@ -1025,6 +1026,25 @@ export default function WineryProfile() {
                     className="input input-bordered input-sm"
                   />
                 </div>
+              </div>
+            </section>
+
+            {/* 7. Account Settings */}
+            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8">
+              <h2 className="text-xl font-serif font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <FaUserAlt className="text-gray-400" />
+                Account & Security
+              </h2>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Manage your login credentials, name, and phone number securely.
+                </p>
+                <button
+                  onClick={() => router.push('/profile')}
+                  className="w-full btn btn-outline btn-primary mt-4"
+                >
+                  Manage Profile & Password
+                </button>
               </div>
             </section>
           </div>

@@ -33,7 +33,7 @@ export default function Home() {
   const [wineries, setWineries] = useState<Winery[]>([]);
   const { showVoiceSearch } = useUIStore();
   const [nlpQuery, setNlpQuery] = useState<NLPResult | null>(null);
-  const { setFilters } = useFilterStore();
+  const { filters, setFilters } = useFilterStore();
   const [isLoading, setIsLoading] = useState(false);
   const [isAgeVerified, setIsAgeVerified] = useState(false);
 
@@ -50,31 +50,27 @@ export default function Home() {
     }
   }, []);
 
-  const loadWineries = useCallback(async (pageNum: number, isNewFilter: boolean = false) => {
+  const loadWineries = useCallback(async (pageNum: number, currentFilters: Filters, isNewFilter: boolean = false) => {
     try {
       if (pageNum === 1) setIsLoading(true);
       else setIsMoreLoading(true);
 
-      // Build query string based on filters if needed? 
-      // Currently filters are client-side on the "all" data or we need to move filters to API.
-      // The current Architecture seems to filter CLIENT-SIDE based on `wineries` state.
-      // If we implement pagination, we MUST fetch *filtered* results from API or fetch *all* and filter client side.
-      // The previous implementation fetched ALL (limit=1000).
-      // Optimization Goal context: "Implement pagination... to reduce payload size".
-      // So we must move filtering to API or accept that client-side filtering only works on loaded data.
-      // HYBRID APPROACH for now (to avoid rewriting all filter logic):
-      // 1. Fetch pages. 
-      // 2. Append to `wineries`.
-      // 3. `filteredWineries` is derived from `wineries` + `filters`.
-
       const limit = 20;
-      const response = await axios.get(`/api/winery?page=${pageNum}&limit=${limit}`);
+      // Pass filters to the backend
+      const response = await axios.get(`/api/winery`, {
+        params: {
+          page: pageNum,
+          limit,
+          filters: JSON.stringify(currentFilters)
+        }
+      });
+
       const newWineries = response.data.wineries || [];
       const total = response.data.total;
 
       if (isNewFilter) {
         setWineries(newWineries);
-        setFilteredWineries(newWineries); // Initial filter application happens in effect
+        setFilteredWineries(newWineries);
       } else {
         setWineries(prev => {
           // Prevent duplicates
@@ -82,10 +78,14 @@ export default function Home() {
           const uniqueNew = newWineries.filter((w: Winery) => !existingIds.has(w._id));
           return [...prev, ...uniqueNew];
         });
-        // We trigger filter re-application via effect dependency
+        setFilteredWineries(prev => {
+          const existingIds = new Set(prev.map(w => w._id));
+          const uniqueNew = newWineries.filter((w: Winery) => !existingIds.has(w._id));
+          return [...prev, ...uniqueNew];
+        });
       }
 
-      setHasMore(newWineries.length === limit); // If we got less than limit, no more data
+      setHasMore(newWineries.length === limit);
 
     } catch (err) {
       console.error("Failed to fetch wineries", err);
@@ -96,10 +96,11 @@ export default function Home() {
     }
   }, []);
 
-  // Initial load
+  // Effect to load initial or when filters update from backend
   useEffect(() => {
-    loadWineries(1, true);
-  }, [loadWineries]);
+    setPage(1);
+    loadWineries(1, filters, true);
+  }, [filters, loadWineries]);
 
   // Infinite Scroll Observer
   useEffect(() => {
@@ -108,7 +109,7 @@ export default function Home() {
         if (entries[0].isIntersecting && hasMore && !isMoreLoading && !isLoading) {
           setPage(prev => {
             const nextPage = prev + 1;
-            loadWineries(nextPage);
+            loadWineries(nextPage, filters, false);
             return nextPage;
           });
         }
@@ -125,7 +126,7 @@ export default function Home() {
         observer.unobserve(observerTarget.current);
       }
     };
-  }, [hasMore, isMoreLoading, isLoading, loadWineries]);
+  }, [hasMore, isMoreLoading, isLoading, loadWineries, filters]);
 
   // Re-apply filters when `wineries` changes (due to pagination) or `filters` change
   useEffect(() => {
