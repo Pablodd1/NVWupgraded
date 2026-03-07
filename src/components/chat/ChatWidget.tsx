@@ -97,7 +97,7 @@ export default function ChatWidget() {
             {!showChat && (
                 <button
                     onClick={() => setShowChat(true)}
-                    className="fixed bottom-20 md:bottom-5 right-20 md:right-5 h-14 w-14 rounded-full bg-primary text-white shadow-lg hover:bg-secondary transition-all z-40 flex items-center justify-center transform hover:scale-110"
+                    className="fixed bottom-24 md:bottom-5 right-4 md:right-5 h-14 w-14 rounded-full bg-primary text-white shadow-lg hover:bg-secondary transition-all z-40 flex items-center justify-center transform hover:scale-110"
                     aria-label="Open Chat"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -108,7 +108,7 @@ export default function ChatWidget() {
 
             {/* Chat Window */}
             {showChat && (
-                <div className="fixed bottom-24 md:bottom-5 right-2 md:right-5 w-80 md:w-96 bg-white rounded-xl shadow-2xl z-[60] overflow-hidden border border-gray-200 flex flex-col max-h-[70vh] md:max-h-[500px] animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="fixed bottom-28 md:bottom-5 right-2 md:right-5 w-80 md:w-96 bg-white rounded-xl shadow-2xl z-[60] overflow-hidden border border-gray-200 flex flex-col max-h-[70vh] md:max-h-[500px] animate-in slide-in-from-bottom-5 fade-in duration-300">
                     {/* Header */}
                     <div className="bg-primary text-white p-4 flex justify-between items-center shrink-0 shadow-md">
                         <div>
