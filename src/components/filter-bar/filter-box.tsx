@@ -121,6 +121,15 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
             <MdRestore size={18} />
             <span className="font-medium">Reset</span>
           </button>
+
+          <button
+            className="flex items-center justify-center space-x-2 px-4 py-3 rounded-md bg-primary text-white hover:bg-primary/90 transition duration-300 ease-in-out text-sm font-semibold shadow-md"
+            onClick={() => applyFilters()}
+            aria-label="Search Wineries"
+          >
+            <FilterIcon size={18} />
+            <span className="font-medium">Search</span>
+          </button>
         </div>
       </div>
 
