@@ -19,7 +19,9 @@ import {
   FaTimesCircle,
   FaWineBottle,
   FaImage,
-  FaUserAlt
+  FaUserAlt,
+  FaChevronLeft,
+  FaChevronRight
 } from "react-icons/fa";
 import { Winery, TastingInfo, FoodPairingOption } from "@/app/interfaces";
 import Select from "react-select";
@@ -33,6 +35,16 @@ export default function WineryProfile() {
   const [profile, setProfile] = useState<Winery | null>(null);
   const [saving, setSaving] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [currentSection, setCurrentSection] = useState(0);
+
+  const sections = [
+    { id: 'identity', label: 'Identity' },
+    { id: 'tasting', label: 'Tasting' },
+    { id: 'features', label: 'Features' },
+    { id: 'transport', label: 'Transport' },
+    { id: 'contact', label: 'Contact' },
+    { id: 'account', label: 'Account' }
+  ];
 
   useEffect(() => {
     if (!loading && !user) {
@@ -318,7 +330,7 @@ export default function WineryProfile() {
           <div className="lg:col-span-2 space-y-8">
 
             {/* 1. Basic & Location */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="identity" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-2xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaMapMarkerAlt className="text-wine-secondary" />
                 Identity & Location
@@ -483,7 +495,7 @@ export default function WineryProfile() {
             </section>
 
             {/* 2. Tasting Packages (UX & Filtration Management) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="tasting" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-serif font-bold text-wine-primary flex items-center gap-2">
                   <FaWineGlass className="text-wine-secondary" />
@@ -937,7 +949,7 @@ export default function WineryProfile() {
           <div className="space-y-8">
 
             {/* 3. Payment Method (Business Control) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="payment" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaCreditCard className="text-wine-secondary" />
                 Payment & Billing
@@ -982,7 +994,7 @@ export default function WineryProfile() {
             </section>
 
             {/* 4. Special Features (Filtration & UX) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="features" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaPlus className="text-wine-secondary" />
                 Special Features
@@ -1001,7 +1013,7 @@ export default function WineryProfile() {
 
 
             {/* 5. Transportation (Directions & Booking) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="transport" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaCar className="text-wine-secondary" />
                 Transportation Access
@@ -1033,7 +1045,7 @@ export default function WineryProfile() {
             </section>
 
             {/* 6. Contact & Support */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="contact" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <FaPhoneAlt className="text-gray-400" />
                 Public Contact
@@ -1071,7 +1083,7 @@ export default function WineryProfile() {
             </section>
 
             {/* 7. Account Settings */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8">
+            <section id="account" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8">
               <h2 className="text-xl font-serif font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <FaUserAlt className="text-gray-400" />
                 Account & Security
@@ -1089,6 +1101,39 @@ export default function WineryProfile() {
               </div>
             </section>
           </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex items-center justify-between z-50 shadow-lg">
+          <button
+            onClick={() => {
+              if (currentSection > 0) {
+                setCurrentSection(currentSection - 1);
+                document.getElementById(sections[currentSection - 1].id)?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            disabled={currentSection === 0}
+            className={`flex items-center gap-1 px-4 py-2 rounded-lg ${currentSection === 0 ? 'text-gray-300' : 'text-primary bg-primary/10'}`}
+          >
+            <FaChevronLeft size={16} />
+            <span className="text-sm font-medium">Prev</span>
+          </button>
+          
+          <span className="text-sm text-gray-500">{currentSection + 1}/{sections.length}</span>
+          
+          <button
+            onClick={() => {
+              if (currentSection < sections.length - 1) {
+                setCurrentSection(currentSection + 1);
+                document.getElementById(sections[currentSection + 1].id)?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            disabled={currentSection === sections.length - 1}
+            className={`flex items-center gap-1 px-4 py-2 rounded-lg ${currentSection === sections.length - 1 ? 'text-gray-300' : 'text-primary bg-primary/10'}`}
+          >
+            <span className="text-sm font-medium">Next</span>
+            <FaChevronRight size={16} />
+          </button>
         </div>
       </div>
     </div>
