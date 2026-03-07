@@ -15,6 +15,8 @@ export interface IUser {
   marketingConsent: boolean;
   smsConsent: boolean;
   visitedWineries: string[]; // Digital Passport Stamps
+  // Customer saved preferences for filtering wineries
+  preferences?: any;
 
   // Age Verification (Twilio Compliance)
   ageVerified?: boolean;
@@ -26,9 +28,11 @@ export interface IUser {
   smsOptInDate?: Date;
   smsOptInAgeConfirmed?: boolean;
 
-  // Password Reset
-  resetPasswordToken?: string;
-  resetPasswordExpires?: Date;
+    // Password Reset
+    resetPasswordToken?: string;
+    resetPasswordExpires?: Date;
+    // Customer saved preferences for filtering wineries
+    preferences: { type: Schema.Types.Mixed, default: {} };
 
   comparePassword(candidatePassword: string): Promise<boolean>;
 }

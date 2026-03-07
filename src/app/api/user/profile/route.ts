@@ -11,8 +11,8 @@ export async function PUT(req: NextRequest) {
     }
 
     await dbConnect();
-    const body = await req.json();
-    const { dateOfBirth, firstName, lastName, phone } = body;
+  const body = await req.json();
+  const { dateOfBirth, firstName, lastName, phone, preferences } = body;
 
     if (Object.keys(body).length === 0) {
       return NextResponse.json({ error: "No fields to update provided" }, { status: 400 });
@@ -23,6 +23,8 @@ export async function PUT(req: NextRequest) {
     if (firstName) updates.firstName = firstName;
     if (lastName) updates.lastName = lastName;
     if (phone) updates.phone = phone;
+    // Persist user preferences if provided
+    if (preferences) updates.preferences = preferences;
 
     const user = await User.findByIdAndUpdate(
       userId,

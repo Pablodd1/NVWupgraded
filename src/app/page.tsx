@@ -50,6 +50,13 @@ export default function Home() {
     }
   }, []);
 
+  // Auto-load saved user preferences into homepage filters, if present
+  useEffect(() => {
+    if (user?.preferences) {
+      setFilters(user.preferences as any);
+    }
+  }, [user?.preferences]);
+
   const loadWineries = useCallback(async (pageNum: number, currentFilters: Filters, isNewFilter: boolean = false) => {
     try {
       if (pageNum === 1) setIsLoading(true);
