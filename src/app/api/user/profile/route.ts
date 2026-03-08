@@ -47,7 +47,8 @@ export async function PUT(req: NextRequest) {
         phone: user.phone,
         dateOfBirth: user.dateOfBirth,
         role: user.role,
-        createdAt: user.createdAt
+        createdAt: user.createdAt,
+        preferences: user.preferences
       }
     });
   } catch (error: any) {
