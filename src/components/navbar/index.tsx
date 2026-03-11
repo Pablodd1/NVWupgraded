@@ -10,7 +10,7 @@ import { VoiceFilter } from "../filter-bar/voice-filter";
 import { useAuthStore } from "@/store/authStore";
 import { IUser } from "@/models/user.model";
 import { useLanguage } from "@/context/LanguageContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export function Navbar() {
   const { itinerary } = useItinerary();
@@ -20,7 +20,11 @@ export function Navbar() {
   const [showModal, setShowModal] = useState(false);
   const [totalCost, setTotalCost] = useState(0);
   const router = useRouter();
+  const pathname = usePathname();
   const { t, language, toggleLanguage } = useLanguage();
+
+  // Disable global mobile bottom nav on specific pages that have their own sticky footers
+  const hideMobileNav = pathname?.includes('/admin/dashboard/winery') || pathname?.includes('/winery-dashboard/onboarding');
 
   // Calculate total cost from itinerary
   useEffect(() => {
@@ -151,18 +155,20 @@ export function Navbar() {
         </div>
       </div>
 
-      <MobileBottomNav
-        setShowModal={setShowModal}
-        loading={loading}
-        user={user}
-        handleLogout={handleLogout}
-        itineraryCount={itinerary.length}
-        totalCost={totalCost}
-        isProfileMenuOpen={isProfileMenuOpen}
-        toggleProfileMenu={toggleProfileMenu}
-        closeProfileMenu={closeProfileMenu}
-        t={t}
-      />
+      {!hideMobileNav && (
+        <MobileBottomNav
+          setShowModal={setShowModal}
+          loading={loading}
+          user={user}
+          handleLogout={handleLogout}
+          itineraryCount={itinerary.length}
+          totalCost={totalCost}
+          isProfileMenuOpen={isProfileMenuOpen}
+          toggleProfileMenu={toggleProfileMenu}
+          closeProfileMenu={closeProfileMenu}
+          t={t}
+        />
+      )}
 
       {showModal && <AuthModal setShowPopup={setShowModal} />}
     </header>
