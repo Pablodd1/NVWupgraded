@@ -96,7 +96,7 @@ export default function VirtualAssistant() {
     const currentOptions = FAQ_OPTIONS[currentStep]?.options || [];
 
     return (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-28 md:bottom-6 right-6 z-50">
             {/* Floating Action Button */}
             {!isOpen && (
                 <button
@@ -137,8 +137,8 @@ export default function VirtualAssistant() {
                             >
                                 <div
                                     className={`max-w-[85%] px-4 py-2 rounded-2xl text-sm ${msg.role === "user"
-                                            ? "bg-primary text-white rounded-br-none"
-                                            : "bg-white border border-gray-100 shadow-sm text-gray-800 rounded-bl-none"
+                                        ? "bg-primary text-white rounded-br-none"
+                                        : "bg-white border border-gray-100 shadow-sm text-gray-800 rounded-bl-none"
                                         }`}
                                 >
                                     {msg.content}
