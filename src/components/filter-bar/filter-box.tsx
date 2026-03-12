@@ -202,8 +202,9 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
   }, [filters, wineries, onFilterApply]);
 
   useEffect(() => {
-    applyFilters();
-  }, [filters, applyFilters]);
+    // Only apply on initial load if needed, otherwise rely on manual trigger
+    // applyFilters(); 
+  }, []); // Changed dependency array to empty to stop real-time filtering
 
   const handleFilterChange = (key: string, value: any) => {
     setFilters({ ...filters, [key]: value });
@@ -284,6 +285,19 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
           isFeaturesOpen={isFeaturesOpen}
           setIsFeaturesOpen={setIsFeaturesOpen}
         />
+        <div className="p-4 border-t border-gray-200">
+          <button
+            className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-md bg-primary text-white hover:bg-primary/90 transition duration-300 ease-in-out text-sm font-semibold shadow-md"
+            onClick={() => {
+              applyFilters();
+              setBottomSheetOpen(false);
+            }}
+            aria-label="Search Wineries"
+          >
+            <SearchIcon size={20} />
+            <span>Search</span>
+          </button>
+        </div>
       </BottomSheet>
       <div className="hidden md:block p-4 bg-white shadow-lg rounded-lg w-full max-w-sm sm:max-w-md space-y-4 md:space-y-6">
         <h2 className="text-lg font-semibold text-gray-800">Filter Wineries</h2>
