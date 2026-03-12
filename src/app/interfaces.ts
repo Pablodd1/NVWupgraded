@@ -84,6 +84,7 @@ export interface TastingInfo {
   tasting_title: string;
   tasting_description: string;
   ava: string;
+  pricing_model?: 'base_fee' | 'per_person';
   tasting_price: number;
   base_booking_fee?: number;
   additional_guest_fee?: number;

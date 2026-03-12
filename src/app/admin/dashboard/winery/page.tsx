@@ -63,10 +63,7 @@ const initialState: Winery = {
 export default function WineryAdminStepperPage() {
   const [formData, setFormData] = useState<Winery>(initialState);
   const [activeStep, setActiveStep] = useState(0);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [availableSlotDates, setAvailableSlotDates] = useState<Date[]>([]);
   const [loading, setLoading] = useState(false);
-  const [tastingImages, setTastingImages] = useState<{ [key: number]: File[] }>({});
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -171,11 +168,10 @@ export default function WineryAdminStepperPage() {
         return false;
       }
 
-      // Check if there are any images (either existing or newly uploaded)
-      const hasExistingImages = tasting.images && tasting.images.length > 0;
-      const hasNewImages = tastingImages[i] && tastingImages[i].length > 0;
+      // Check if there are any images
+      const hasImages = tasting.images && tasting.images.length > 0;
 
-      if (!hasExistingImages && !hasNewImages) {
+      if (!hasImages) {
         toast.error(`Tasting #${i + 1}: At least one image is required`);
         return false;
       }
@@ -193,6 +189,20 @@ export default function WineryAdminStepperPage() {
 
   const handleBack = () => setActiveStep((prev) => prev - 1);
 
+  const onUpload = async (file: File): Promise<string> => {
+    try {
+      const urls = await fileUpload([file]);
+      if (urls && urls.length > 0) {
+        return urls[0];
+      }
+      return "";
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload image.");
+      return "";
+    }
+  };
+
   const handleSubmit = async () => {
     // Validate both steps before submitting
     if (!validateBasicInfo()) {
@@ -205,40 +215,7 @@ export default function WineryAdminStepperPage() {
 
     setLoading(true);
     try {
-      // Collect all files from global uploads and individual tastings
-      const allFiles: File[] = [...uploadedFiles];
-
-      // Add files from individual tastings
-      Object.values(tastingImages).forEach(files => {
-        allFiles.push(...files);
-      });
-
-      // Upload all files to ImgBB
-      const filesUrls = await fileUpload(allFiles);
-
       const updatedFormData = { ...formData };
-
-      if (filesUrls.length > 0) {
-        // Distribute URLs properly to each tasting
-        let urlIndex = 0;
-        updatedFormData.tasting_info = updatedFormData.tasting_info.map((tasting, index) => {
-          const filesForThisTasting = tastingImages[index] || [];
-          const urlsForThisTasting: string[] = [];
-
-          // Get URLs for this tasting's files
-          for (let i = 0; i < filesForThisTasting.length && urlIndex < filesUrls.length; i++) {
-            urlsForThisTasting.push(filesUrls[urlIndex]);
-            urlIndex++;
-          }
-
-          // Combine with existing images
-          const existingImages = tasting.images || [];
-          return {
-            ...tasting,
-            images: [...existingImages, ...urlsForThisTasting]
-          };
-        });
-      }
 
       if (wineryId) {
         // Update existing winery
@@ -258,9 +235,6 @@ export default function WineryAdminStepperPage() {
         });
       }
       setFormData({ ...initialState });
-      setUploadedFiles([]);
-      setTastingImages({});
-      setAvailableSlotDates([]);
       setActiveStep(0);
       router.push("/admin/dashboard/winery/list");
     } catch (error) {
@@ -278,18 +252,13 @@ export default function WineryAdminStepperPage() {
   const renderStep = () => {
     switch (activeStep) {
       case 0:
-        return <BasicInfoForm formData={formData} setFormData={setFormData} />;
+        return <BasicInfoForm formData={formData} setFormData={setFormData} onUpload={onUpload} />;
       case 1:
         return (
           <TastingBookingForm
             formData={formData}
             setFormData={setFormData}
-            uploadedFiles={uploadedFiles}
-            setUploadedFiles={setUploadedFiles}
-            availableSlotDates={availableSlotDates}
-            setAvailableSlotDates={setAvailableSlotDates}
-            tastingImages={tastingImages}
-            setTastingImages={setTastingImages}
+            onUpload={onUpload}
           />
         );
       default:
@@ -314,20 +283,20 @@ export default function WineryAdminStepperPage() {
 
         <ToastContainer />
 
-        <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-6" id="winery-form">
+        <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-6 pb-24 md:pb-6" id="winery-form">
           {renderStep()}
-          <div className="flex justify-between" style={{ marginBottom: "40px" }}>
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-between gap-4 z-50 md:relative md:bg-transparent md:border-0 md:p-0 md:mt-10 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-none">
             {activeStep > 0 && (
-              <button type="button" onClick={handleBack} className="btn">
+              <button type="button" onClick={handleBack} className="btn flex-1 md:flex-none">
                 Back
               </button>
             )}
             {activeStep < 1 ? (
-              <button type="button" onClick={handleNext} className="btn btn-primary ml-auto">
+              <button type="button" onClick={handleNext} className="btn btn-primary ml-auto flex-1 md:flex-none">
                 Next
               </button>
             ) : (
-              <button onClick={handleSubmit} className="btn btn-success ml-auto" disabled={loading}>
+              <button onClick={handleSubmit} className="btn btn-success ml-auto flex-1 md:flex-none" disabled={loading}>
                 {wineryId ? "Update Winery" : "Submit Winery"}
               </button>
             )}
