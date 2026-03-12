@@ -194,7 +194,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen relative pt-24 md:pt-28 pb-32 bg-gray-100">
+    <div className="min-h-screen relative pt-24 md:pt-28 pb-20 md:pb-32 bg-gray-100">
       {!isAgeVerified && <AgeGateSplash onVerify={() => setIsAgeVerified(true)} />}
       {showPopup && isAgeVerified && <AuthModal setShowPopup={setShowPopup} />}
       <div className="grid grid-cols-1 lg:grid-cols-4 px-4 sm:px-6 max-w-[1600px] mx-auto gap-6">

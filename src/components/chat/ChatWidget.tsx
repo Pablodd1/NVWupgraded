@@ -97,7 +97,7 @@ export default function ChatWidget() {
             {!showChat && (
                 <button
                     onClick={() => setShowChat(true)}
-                    className="fixed bottom-24 md:bottom-5 right-4 md:right-5 h-14 w-14 rounded-full bg-primary text-white shadow-lg hover:bg-secondary transition-all z-40 flex items-center justify-center transform hover:scale-110"
+                    className="fixed bottom-20 md:bottom-5 right-4 md:right-5 h-14 w-14 rounded-full bg-primary text-white shadow-lg hover:bg-secondary transition-all z-50 flex items-center justify-center transform hover:scale-110"
                     aria-label="Open Chat"
                     title="Open Chat"
                 >
