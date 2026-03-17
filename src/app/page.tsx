@@ -216,7 +216,7 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="flex gap-2 w-full md:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
               <button
                 onClick={async () => {
                   setIsLoading(true);
@@ -249,7 +249,7 @@ export default function Home() {
                       specialFeatures: [],
                     } as any);
                   }}
-                  className="px-6 py-3 border border-red-200 text-red-600 font-bold rounded-2xl hover:bg-red-50 transition-all"
+                  className="flex-1 md:flex-none px-6 py-3 border border-red-200 text-red-600 font-bold rounded-2xl hover:bg-red-50 transition-all text-center"
                 >
                   Reset
                 </button>

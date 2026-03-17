@@ -400,11 +400,11 @@ export default function ItineraryPage() {
               <li>📸 Don’t forget to take pictures and share your experience!</li>
             </ul>
 
-            <div className="flex gap-4 mt-6">
-              <Button onClick={() => handleRideClick("uber")} className="bg-black text-white">
+            <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full">
+              <Button onClick={() => handleRideClick("uber")} className="bg-black text-white w-full">
                 🚗 Book an Uber
               </Button>
-              <Button onClick={() => handleRideClick("lyft")} className="bg-[#FF00BF] text-white">
+              <Button onClick={() => handleRideClick("lyft")} className="bg-[#FF00BF] text-white w-full">
                 🚖 Book a Lyft
               </Button>
             </div>

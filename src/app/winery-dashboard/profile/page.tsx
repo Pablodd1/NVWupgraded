@@ -1042,7 +1042,7 @@ export default function WineryProfile() {
         </div>
 
         {/* Mobile Navigation */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 flex items-center justify-between z-50 shadow-lg">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex items-center justify-between z-50 shadow-lg">
           <button
             onClick={() => {
               if (currentSection > 0) {

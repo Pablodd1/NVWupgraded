@@ -41,9 +41,6 @@ const initialState: Winery = {
         external_booking_link: "",
       },
       other_features: [],
-      base_booking_fee: 0,
-      additional_guest_fee: 0,
-      free_guests_included: 1,
       child_price: 0,
       non_drinker_price: 0,
     },
@@ -285,7 +282,7 @@ export default function WineryAdminStepperPage() {
 
         <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-6 pb-24 md:pb-6" id="winery-form">
           {renderStep()}
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex justify-between gap-4 z-50 md:relative md:bg-transparent md:border-0 md:p-0 md:mt-10 pb-safe shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-none">
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 pb-[calc(16px+env(safe-area-inset-bottom))] flex justify-between gap-4 z-50 md:relative md:bg-transparent md:border-0 md:p-0 md:mt-10 md:pb-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-none">
             {activeStep > 0 && (
               <button type="button" onClick={handleBack} className="btn flex-1 md:flex-none">
                 Back
