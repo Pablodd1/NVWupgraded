@@ -180,15 +180,7 @@ export default function ItineraryPage() {
           const nonDrinkers = winery.bookingDetails?.numberOfNonDrinkers || 0;
           const foodQty = winery.bookingDetails?.foodPairingQty || 1;
 
-          if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
-            wineryTotal += currentTastingInfo.base_booking_fee;
-            if (guests > 1) {
-              const freeIncluded = currentTastingInfo.free_guests_included || 1;
-              wineryTotal += Math.max(0, guests - freeIncluded) * (currentTastingInfo.additional_guest_fee || 0);
-            }
-          } else if (currentTastingInfo?.tasting_price) {
-            wineryTotal += currentTastingInfo.tasting_price;
-          }
+          wineryTotal += (currentTastingInfo?.tasting_price || 0) * guests;
 
           // Guest type pricing
           wineryTotal += (currentTastingInfo?.child_price || 0) * children;

@@ -28,8 +28,7 @@ export interface SplitBookingResult {
 }
 
 export interface DynamicPricingConfig {
-  baseFee: number;
-  additionalGuestFee: number;
+  tastingPrice: number;
   excessGuestMultiplier: number;
   weekendMultiplier: number;
 }
@@ -119,12 +118,10 @@ class AdditionalGuestWorkflowService {
     const capacityUtilization = slot ? (slot.bookedCapacity / slot.totalCapacity) : 0;
     const excessMultiplier = 1 + (excessGuests * 0.1) + (capacityUtilization * 0.2);
 
-    const baseFee = tastingInfo.base_booking_fee || 0;
-    const additionalGuestFee = tastingInfo.additional_guest_fee || 0;
+    const tastingPrice = tastingInfo.tasting_price || 0;
 
     return {
-      baseFee,
-      additionalGuestFee,
+      tastingPrice,
       excessGuestMultiplier: Math.max(1, excessMultiplier),
       weekendMultiplier: isWeekend ? weekendMultiplier : 1
     };
@@ -219,9 +216,7 @@ class AdditionalGuestWorkflowService {
    * Calculate price for a booking with given number of guests
    */
   private calculateBookingPrice(guests: number, pricing: DynamicPricingConfig): number {
-    const basePrice = pricing.baseFee;
-    const guestPrice = (guests > 1 ? pricing.additionalGuestFee * (guests - 1) : 0);
-    const subtotal = basePrice + guestPrice;
+    const subtotal = pricing.tastingPrice * guests;
     
     return subtotal * pricing.excessGuestMultiplier * pricing.weekendMultiplier;
   }

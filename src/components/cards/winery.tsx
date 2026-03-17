@@ -323,18 +323,12 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
             </span>
             <span className="text-sm text-green-800 font-bold">
               ${(() => {
-                let tastingPrice = 0;
                 const guests = selections.numberOfGuests;
                 const children = selections.numberOfChildren || 0;
                 const nonDrinkers = selections.numberOfNonDrinkers || 0;
                 const foodQty = selections.foodPairingQty || 1;
 
-                if (currentTastingInfo?.base_booking_fee) {
-                  const freeIncluded = currentTastingInfo.free_guests_included || 1;
-                  tastingPrice = currentTastingInfo.base_booking_fee + (guests > freeIncluded ? (guests - freeIncluded) * (currentTastingInfo.additional_guest_fee || 0) : 0);
-                } else {
-                  tastingPrice = (currentTastingInfo?.tasting_price || 0);
-                }
+                let tastingPrice = (currentTastingInfo?.tasting_price || 0) * guests;
 
                 // Add children and non-drinkers
                 tastingPrice += (currentTastingInfo?.child_price || 0) * children;
@@ -349,15 +343,9 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
               })()}
             </span>
           </div>
-          {currentTastingInfo?.base_booking_fee ? (
-            <p className="text-[10px] text-green-600 mt-1">
-              (${currentTastingInfo.base_booking_fee} base + ${currentTastingInfo.additional_guest_fee} per extra guest)
-            </p>
-          ) : (
-            <p className="text-[10px] text-green-600 mt-1">
-              (Flat rate for up to {currentTastingInfo?.booking_info?.max_guests_per_slot || 6} guests)
-            </p>
-          )}
+          <p className="text-[10px] text-green-600 mt-1 italic">
+            (${currentTastingInfo?.tasting_price?.toFixed(2)} per person fee applied)
+          </p>
         </div>
 
         {/* Available Times Display */}

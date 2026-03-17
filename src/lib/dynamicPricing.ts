@@ -28,8 +28,7 @@ export interface PricingCalculationResult {
   }[];
   totalPrice: number;
   breakdown: {
-    baseFee: number;
-    guestFees: number;
+    tastingPrice: number;
     excessPremium: number;
     dynamicMultiplier: number;
   };
@@ -130,8 +129,7 @@ class DynamicPricingService {
    * Calculate dynamic pricing for a booking
    */
   async calculateDynamicPrice(
-    baseBookingFee: number,
-    additionalGuestFee: number,
+    tastingPrice: number,
     totalGuests: number,
     excessGuests: number,
     capacityUtilization: number,
@@ -142,9 +140,7 @@ class DynamicPricingService {
   ): Promise<PricingCalculationResult> {
     try {
       // Start with base calculation
-      const baseFee = baseBookingFee;
-      const guestFees = totalGuests > 1 ? additionalGuestFee * (totalGuests - 1) : 0;
-      let currentPrice = baseFee + guestFees;
+      let currentPrice = tastingPrice * totalGuests;
 
       const appliedRules: string[] = [];
       const dynamicAdjustments: { ruleName: string; adjustment: number; amount: number }[] = [];
@@ -189,14 +185,13 @@ class DynamicPricingService {
 
       // Calculate final breakdown
       const breakdown = {
-        baseFee,
-        guestFees,
+        tastingPrice: tastingPrice * totalGuests,
         excessPremium: dynamicAdjustments.reduce((sum, adj) => sum + adj.amount, 0),
-        dynamicMultiplier: currentPrice / (baseFee + guestFees)
+        dynamicMultiplier: currentPrice / (tastingPrice * totalGuests)
       };
 
       return {
-        basePrice: baseFee + guestFees,
+        basePrice: tastingPrice * totalGuests,
         dynamicAdjustments,
         totalPrice: Math.round(currentPrice * 100) / 100, // Round to 2 decimal places
         breakdown,
@@ -354,8 +349,7 @@ class DynamicPricingService {
    * Simulate pricing for different scenarios
    */
   async simulatePricing(
-    baseBookingFee: number,
-    additionalGuestFee: number,
+    tastingPrice: number,
     scenarios: {
       guestCount: number;
       excessGuests: number;
@@ -368,8 +362,7 @@ class DynamicPricingService {
 
     for (const scenario of scenarios) {
       const result = await this.calculateDynamicPrice(
-        baseBookingFee,
-        additionalGuestFee,
+        tastingPrice,
         scenario.guestCount,
         scenario.excessGuests,
         scenario.capacityUtilization,

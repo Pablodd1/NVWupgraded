@@ -38,7 +38,6 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
         {
           tasting_title: "",
           tasting_description: "",
-          pricing_model: "per_person",
           tasting_price: 0,
           available_times: [],
           wine_types: [],
@@ -58,9 +57,6 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
             external_booking_link: "",
           },
           other_features: [],
-          base_booking_fee: 0,
-          additional_guest_fee: 0,
-          free_guests_included: 1,
           child_price: 0,
           non_drinker_price: 0,
         },
@@ -179,108 +175,46 @@ export const TastingBookingForm: React.FC<TastingBookingFormProps> = ({
           </div>
 
           <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 mt-4">
-            <h4 className="font-bold mb-4 text-gray-800">Pricing {"&"} Capacity Model</h4>
-            <div className="flex gap-4 mb-6">
-              <label className="cursor-pointer flex items-center gap-2">
-                <input
-                  type="radio"
-                  name={`pricing_${index}`}
-                  className="radio radio-primary"
-                  checked={tasting.pricing_model !== 'base_fee'}
-                  onChange={() => handleTastingChange(index, 'pricing_model', 'per_person')}
+            <h4 className="font-bold mb-4 text-gray-800 uppercase tracking-wider text-xs">Guest Pricing {"&"} Capacity</h4>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="form-control">
+                <label className="label"><span className="label-text font-bold text-xs uppercase">Per Person Guest Fee ($)</span></label>
+                <input 
+                  type="number" placeholder="0" className="input input-bordered" 
+                  value={tasting.tasting_price || ""} 
+                  onChange={(e) => handleTastingChange(index, "tasting_price", parseFloat(e.target.value) || 0)} 
+                  min={0} 
                 />
-                <span>Per Person Fee (Guest Fee)</span>
-              </label>
-              <label className="cursor-pointer flex items-center gap-2">
-                <input
-                  type="radio"
-                  name={`pricing_${index}`}
-                  className="radio radio-primary"
-                  checked={tasting.pricing_model === 'base_fee'}
-                  onChange={() => handleTastingChange(index, 'pricing_model', 'base_fee')}
-                />
-                <span>Base Booking Fee (Flat Rate)</span>
-              </label>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {tasting.pricing_model === 'base_fee' ? (
-                <>
-                  <div className="form-control">
-                    <label className="label"><span className="label-text font-bold text-xs uppercase">Base Booking Fee ($)</span></label>
-                    <input
-                      type="number" placeholder="0" className="input input-bordered"
-                      value={tasting.base_booking_fee || ""}
-                      onChange={(e) => {
-                        const val = parseFloat(e.target.value) || 0;
-                        handleTastingChange(index, "base_booking_fee", val);
-                        handleTastingChange(index, "tasting_price", val); // Keep search sync
-                      }}
-                      min={0}
-                    />
-                  </div>
-                  <div className="form-control">
-                    <label className="label"><span className="label-text font-bold text-xs uppercase">Guests Included In Base</span></label>
-                    <input
-                      type="number" placeholder="1" className="input input-bordered"
-                      value={tasting.free_guests_included || ""}
-                      onChange={(e) => handleTastingChange(index, "free_guests_included", parseInt(e.target.value) || 0)}
-                      min={0}
-                    />
-                  </div>
-                  <div className="form-control">
-                    <label className="label"><span className="label-text font-bold text-xs uppercase">Extra Guest Fee ($)</span></label>
-                    <input
-                      type="number" placeholder="0" className="input input-bordered"
-                      value={tasting.additional_guest_fee || ""}
-                      onChange={(e) => handleTastingChange(index, "additional_guest_fee", parseFloat(e.target.value) || 0)}
-                      min={0}
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="form-control">
-                  <label className="label"><span className="label-text font-bold text-xs uppercase">Per Person Guest Fee ($)</span></label>
-                  <input
-                    type="number" placeholder="0" className="input input-bordered"
-                    value={tasting.tasting_price || ""}
-                    onChange={(e) => handleTastingChange(index, "tasting_price", parseFloat(e.target.value) || 0)}
-                    min={0}
-                  />
-                </div>
-              )}
-            </div>
-
-            <div className="divider my-4">Guest Capacity {"&"} Addons</div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              </div>
               <div className="form-control">
                 <label className="label"><span className="label-text font-bold text-xs uppercase">Total Guest Capacity (Hard Limit)</span></label>
-                <input
-                  type="number" placeholder="Max limit" className="input input-bordered"
-                  value={tasting.booking_info?.max_guests_per_slot || ""}
+                <input 
+                  type="number" placeholder="Max limit" className="input input-bordered" 
+                  value={tasting.booking_info?.max_guests_per_slot || ""} 
                   onChange={(e) => {
                     const bookingInfo = { ...tasting.booking_info, max_guests_per_slot: parseInt(e.target.value) || 0 };
                     handleTastingChange(index, "booking_info", bookingInfo);
-                  }}
-                  min={0}
+                  }} 
+                  min={0} 
                 />
               </div>
               <div className="form-control">
                 <label className="label"><span className="label-text font-bold text-xs uppercase">Non-Drinker Fee ($)</span></label>
-                <input
-                  type="number" placeholder="0" className="input input-bordered"
-                  value={tasting.non_drinker_price || ""}
-                  onChange={(e) => handleTastingChange(index, "non_drinker_price", parseFloat(e.target.value) || 0)}
-                  min={0}
+                <input 
+                  type="number" placeholder="0" className="input input-bordered" 
+                  value={tasting.non_drinker_price || ""} 
+                  onChange={(e) => handleTastingChange(index, "non_drinker_price", parseFloat(e.target.value) || 0)} 
+                  min={0} 
                 />
               </div>
               <div className="form-control">
                 <label className="label"><span className="label-text font-bold text-xs uppercase">Underage Kids Fee ($)</span></label>
-                <input
-                  type="number" placeholder="0" className="input input-bordered"
-                  value={tasting.child_price || ""}
-                  onChange={(e) => handleTastingChange(index, "child_price", parseFloat(e.target.value) || 0)}
-                  min={0}
+                <input 
+                  type="number" placeholder="0" className="input input-bordered" 
+                  value={tasting.child_price || ""} 
+                  onChange={(e) => handleTastingChange(index, "child_price", parseFloat(e.target.value) || 0)} 
+                  min={0} 
                 />
               </div>
             </div>

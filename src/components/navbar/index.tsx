@@ -35,18 +35,9 @@ export function Navbar() {
         const selectedTastingIndex = bookingDetails?.selectedTastingIndex || 0;
         const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
 
-        // Calculate tasting cost using per-person pricing if available
+        // Calculate tasting cost using per-person pricing
         const numberOfGuests = bookingDetails?.numberOfGuests || 1;
-        if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
-          // Use per-person pricing
-          wineryCost += currentTastingInfo.base_booking_fee; // Base fee for first person
-          if (numberOfGuests > 1) {
-            wineryCost += (numberOfGuests - 1) * (currentTastingInfo.additional_guest_fee || 0);
-          }
-        } else if (currentTastingInfo?.tasting_price) {
-          // Use legacy pricing
-          wineryCost += currentTastingInfo.tasting_price;
-        }
+        wineryCost += (currentTastingInfo?.tasting_price || 0) * numberOfGuests;
 
         // Add food pairing prices
         if (bookingDetails?.foodPairings) {

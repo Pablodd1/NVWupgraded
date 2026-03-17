@@ -154,13 +154,11 @@ export async function GET(request: NextRequest) {
     }
 
     const tastingInfo = winery.tasting_info[0]; // Simplified - use first tasting
-    const baseFee = tastingInfo?.base_booking_fee || 0;
-    const additionalGuestFee = tastingInfo?.additional_guest_fee || 0;
+    const tastingPrice = tastingInfo?.tasting_price || 0;
 
     // Calculate pricing
     const pricing = await DynamicPricingService.calculateDynamicPrice(
-      baseFee,
-      additionalGuestFee,
+      tastingPrice,
       requestedGuests,
       capacityCheck.excessGuests,
       1 - (capacityCheck.availableCapacity / capacityCheck.maxAllowed), // Estimate capacity utilization
@@ -173,8 +171,7 @@ export async function GET(request: NextRequest) {
     let simulations = null;
     if (simulate) {
       simulations = await DynamicPricingService.simulatePricing(
-        baseFee,
-        additionalGuestFee,
+        tastingPrice,
         [
           {
             guestCount: Math.max(1, requestedGuests - 2),
@@ -208,8 +205,7 @@ export async function GET(request: NextRequest) {
       wineryInfo: {
         name: winery.name,
         maxGuestsPerSlot: capacityCheck.maxAllowed,
-        baseFee,
-        additionalGuestFee
+        tastingPrice
       },
       simulations
     });

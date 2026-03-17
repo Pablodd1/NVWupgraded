@@ -230,10 +230,7 @@ const WineryDetail = () => {
   // Calculate Total Price
   const totalSummary = (() => {
     const adults = Number(selectedNumberOfPeople) || 0;
-    const baseFee = currentTastingInfo?.base_booking_fee || 0;
-    const freeGuests = currentTastingInfo?.free_guests_included || 0;
-    const extraAdults = Math.max(0, adults - freeGuests);
-    const extraAdultFee = (currentTastingInfo?.additional_guest_fee || 0) * extraAdults;
+    const tastingPrice = (currentTastingInfo?.tasting_price || 0) * adults;
 
     const childrenFee = (currentTastingInfo?.child_price || 0) * selectedChildren;
     const nonDrinkerFee = (currentTastingInfo?.non_drinker_price || 0) * selectedNonDrinkers;
@@ -241,9 +238,9 @@ const WineryDetail = () => {
     const foodFee = selectedFoodPairings.reduce((sum, p) => sum + (p.price * selectedFoodQty), 0);
     const tourFee = selectedTours.reduce((sum, t) => sum + t.price, 0);
 
-    const total = baseFee + extraAdultFee + childrenFee + nonDrinkerFee + foodFee + tourFee;
+    const total = tastingPrice + childrenFee + nonDrinkerFee + foodFee + tourFee;
 
-    return { baseFee, extraAdultFee, childrenFee, nonDrinkerFee, foodFee, tourFee, total };
+    return { tastingPrice, childrenFee, nonDrinkerFee, foodFee, tourFee, total };
   })();
 
   return (
@@ -324,15 +321,9 @@ const WineryDetail = () => {
                   <h3 className="font-serif text-xl mb-3 text-wine-primary">{tasting.tasting_title}</h3>
                   <p className="text-gray-600 mb-4 text-sm">{tasting.tasting_description}</p>
                   <div className="space-y-2 text-sm">
-                    {tasting.base_booking_fee !== undefined && tasting.base_booking_fee > 0 ? (
-                      <p className="font-semibold text-lg">${tasting.base_booking_fee.toFixed(2)} Base</p>
-                    ) : (
-                      <p className="font-semibold text-lg">${tasting.tasting_price.toFixed(2)}</p>
-                    )}
+                    <p className="font-semibold text-lg">${tasting.tasting_price.toFixed(2)}</p>
                     <p className="text-gray-500">{tasting.number_of_wines_per_tasting} wines included</p>
-                    {tasting.free_guests_included && tasting.free_guests_included > 0 ? (
-                      <p className="text-gray-500 font-medium">Includes first {tasting.free_guests_included} guest{tasting.free_guests_included > 1 ? 's' : ''}</p>
-                    ) : null}
+                    <p className="text-gray-500 font-medium">Per Person</p>
                   </div>
                 </Card>
               ))}
@@ -375,10 +366,7 @@ const WineryDetail = () => {
               <div>
                 <h3 className="font-serif text-lg mb-1">Price</h3>
                 <p className="text-gray-600 text-sm">
-                  {currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo.base_booking_fee > 0
-                    ? `$${currentTastingInfo.base_booking_fee.toFixed(2)} (Base)`
-                    : `$${currentTastingInfo?.tasting_price?.toFixed(2) ?? "N/A"}`
-                  }
+                  {`$${currentTastingInfo?.tasting_price?.toFixed(2) ?? "N/A"} per person`}
                 </p>
               </div>
             </div>
@@ -638,15 +626,9 @@ const WineryDetail = () => {
                 <h3 className="font-serif text-xl mb-4 text-wine-primary">Price Breakdown</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Base Booking Fee</span>
-                    <span className="font-bold">${totalSummary.baseFee.toFixed(2)}</span>
+                    <span className="text-gray-600">Tasting ({selectedNumberOfPeople} Guests)</span>
+                    <span className="font-bold">${totalSummary.tastingPrice.toFixed(2)}</span>
                   </div>
-                  {totalSummary.extraAdultFee > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Additional Adults</span>
-                      <span className="font-bold">+${totalSummary.extraAdultFee.toFixed(2)}</span>
-                    </div>
-                  )}
                   {totalSummary.childrenFee > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Children ({selectedChildren})</span>

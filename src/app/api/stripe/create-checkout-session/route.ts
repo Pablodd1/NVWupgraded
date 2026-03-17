@@ -133,18 +133,8 @@ export async function POST(req: Request) {
           || winery.tasting_info[0];
 
         if (tasting) {
-          const baseFee = Number(tasting.base_booking_fee) || 0;
-          const additionalGuestFee = Number(tasting.additional_guest_fee) || 0;
-
-          if (baseFee > 0) {
-            wineryTotal += baseFee;
-            const freeGuests = Number(tasting.free_guests_included) || 1;
-            if (guests > freeGuests) {
-              wineryTotal += (guests - freeGuests) * additionalGuestFee;
-            }
-          } else {
-            wineryTotal += (Number(tasting.tasting_price) || 0);
-          }
+          const pricePerPerson = Number(tasting.tasting_price) || 0;
+          wineryTotal += pricePerPerson * guests;
 
           // Add guest type pricing
           wineryTotal += (Number(tasting.child_price) || 0) * children;
@@ -177,9 +167,7 @@ export async function POST(req: Request) {
           wineryId: winery.wineryId,
           datetime: winery.dateTime,
           tasting: winery.tasting,
-          baseBookingFee: tasting?.base_booking_fee || 0,
-          additionalGuestFee: tasting?.additional_guest_fee || 0,
-          freeGuestsIncluded: tasting?.free_guests_included || 0,
+          tasting_price: tasting?.tasting_price || 0,
           childPrice: tasting?.child_price || 0,
           nonDrinkerPrice: tasting?.non_drinker_price || 0,
           tours: winery.tours || [],
