@@ -315,11 +315,12 @@ export default function WineryOnboarding() {
                                 <div className="grid grid-cols-3 gap-2 mb-3">
                                     {images.map((img, idx) => (
                                         <div key={idx} className="relative group aspect-square">
-                                            <img src={img} className="w-full h-full object-cover rounded-md border" />
+                                            <img src={img} alt={`Winery photo ${idx + 1}`} className="w-full h-full object-cover rounded-md border" />
                                             <button
                                                 type="button"
                                                 onClick={() => removeImage(idx)}
                                                 className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                aria-label="Remove image"
                                             >
                                                 <FaTrash size={10} />
                                             </button>

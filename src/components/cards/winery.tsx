@@ -293,8 +293,9 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
         {/* Multiple Tasting Selection */}
         {winery.tasting_info && winery.tasting_info.length > 1 && (
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Tasting Experience</label>
+            <label htmlFor={`tasting-exp-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">Select Tasting Experience</label>
             <select
+              id={`tasting-exp-${winery._id}`}
               className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               value={selectedTastingIndex}
               onChange={(e) => {
@@ -427,10 +428,11 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
 
           {/* Number of Guests */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor={`guests-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">
               Number of Guests
             </label>
             <select
+              id={`guests-${winery._id}`}
               className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
               value={selections.numberOfGuests}
               onChange={(e) => {
@@ -450,29 +452,33 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {winery.amenities?.allows_children && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor={`children-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">
                   Children (+${currentTastingInfo?.child_price || 0})
                 </label>
                 <input
+                  id={`children-${winery._id}`}
                   type="number"
                   min={0}
                   className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500"
                   value={selections.numberOfChildren}
                   onChange={(e) => setSelections(prev => ({ ...prev, numberOfChildren: Math.max(0, parseInt(e.target.value) || 0) }))}
+                  placeholder="0"
                 />
               </div>
             )}
             {winery.amenities?.allows_non_drinkers && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor={`non-drinkers-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">
                   Non-Drinkers (+${currentTastingInfo?.non_drinker_price || 0})
                 </label>
                 <input
+                  id={`non-drinkers-${winery._id}`}
                   type="number"
                   min={0}
                   className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500"
                   value={selections.numberOfNonDrinkers}
                   onChange={(e) => setSelections(prev => ({ ...prev, numberOfNonDrinkers: Math.max(0, parseInt(e.target.value) || 0) }))}
+                  placeholder="0"
                 />
               </div>
             )}

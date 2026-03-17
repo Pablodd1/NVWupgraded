@@ -564,8 +564,9 @@ const WineryDetail = () => {
             <div className="space-y-6">
               {/* Number of People Selection */}
               <div>
-                <label className="text-sm text-gray-900 font-extrabold">Number of People</label>
+                <label htmlFor="num-people" className="text-sm text-gray-900 font-extrabold">Number of People</label>
                 <input
+                  id="num-people"
                   type="number"
                   min={1}
                   max={currentTastingInfo?.booking_info?.max_guests_per_slot || 20}
@@ -582,6 +583,7 @@ const WineryDetail = () => {
                     }
                   }}
                   className="input input-bordered w-full mt-2 text-sm"
+                  placeholder="1"
                 />
               </div>
 
@@ -589,16 +591,18 @@ const WineryDetail = () => {
                 {/* Children Selection */}
                 {winery.amenities?.allows_children && (
                   <div>
-                    <label className="text-sm text-gray-900 font-extrabold flex justify-between">
+                    <label htmlFor="num-children" className="text-sm text-gray-900 font-extrabold flex justify-between">
                       <span>Number of Children</span>
                       <span className="text-primary">${currentTastingInfo?.child_price || 0} ea</span>
                     </label>
                     <input
+                      id="num-children"
                       type="number"
                       min={0}
                       value={selectedChildren}
                       onChange={(e) => setSelectedChildren(Math.max(0, parseInt(e.target.value) || 0))}
                       className="input input-bordered w-full mt-2 text-sm"
+                      placeholder="0"
                     />
                   </div>
                 )}
@@ -606,16 +610,18 @@ const WineryDetail = () => {
                 {/* Non-Drinkers Selection */}
                 {winery.amenities?.allows_non_drinkers && (
                   <div>
-                    <label className="text-sm text-gray-900 font-extrabold flex justify-between">
+                    <label htmlFor="num-non-drinkers" className="text-sm text-gray-900 font-extrabold flex justify-between">
                       <span>Non-Drinkers</span>
                       <span className="text-primary">${currentTastingInfo?.non_drinker_price || 0} ea</span>
                     </label>
                     <input
+                      id="num-non-drinkers"
                       type="number"
                       min={0}
                       value={selectedNonDrinkers}
                       onChange={(e) => setSelectedNonDrinkers(Math.max(0, parseInt(e.target.value) || 0))}
                       className="input input-bordered w-full mt-2 text-sm"
+                      placeholder="0"
                     />
                   </div>
                 )}
