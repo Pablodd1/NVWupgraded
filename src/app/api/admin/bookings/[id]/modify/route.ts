@@ -57,36 +57,13 @@ export async function PATCH(
                 const winery = await WineryModel.findById(wineryBooking.wineryId);
                 if (winery) {
                     // Logic similar to booking route
-                    const tasting = winery.tasting_info[0]; // Simplified to first tasting for now
-                    const guests = wineryBooking.numberOfGuests;
-                    const baseFee = Number(tasting.base_booking_fee) || 0;
-                    const additionalGuestFee = Number(tasting.additional_guest_fee) || 0;
-                    const freeGuestsIncluded = Number(tasting.free_guests_included) || 1;
-                    const maxGuests = tasting.booking_info?.max_guests_per_slot || 20;
-                    const allowExcess = tasting.booking_info?.allow_excess_guests || false;
-                    const excessMultiplier = tasting.booking_info?.excess_guest_multiplier || 1.5;
+                    const tasting = winery.tasting_info[0];
+                    const guests = wineryBooking.numberOfGuests || 1;
+                    const tastingPrice = Number(tasting.tasting_price) || 0;
 
-                    let wineryTotal = 0;
-                    if (baseFee > 0) {
-                        wineryTotal += baseFee;
-                        const guestsToCharge = Math.max(0, guests - freeGuestsIncluded);
+                    let wineryTotal = tastingPrice * guests;
 
-                        // Excess logic implementation
-                        if (guests > maxGuests && allowExcess) {
-                            // Charge excess premium for EVERY guest? Or just the excess ones?
-                            // User said: "additional guest aside from... will then cost money... set by owner"
-                            // Usually the multiplier applies to the whole booking or just the excess part.
-                            // Let's apply it to the total winery cost if excess guests are present.
-                            wineryTotal += guestsToCharge * additionalGuestFee;
-                            wineryTotal *= excessMultiplier;
-                        } else {
-                            wineryTotal += guestsToCharge * additionalGuestFee;
-                        }
-                    } else {
-                        wineryTotal += (Number(tasting.tasting_price) || 0);
-                    }
-
-                    // Add features
+                    // Add features (Per Person)
                     wineryBooking.foodPairings?.forEach((fp: any) => wineryTotal += (Number(fp.price) || 0) * guests);
                     wineryBooking.tours?.forEach((t: any) => wineryTotal += (Number(t.price) || 0) * guests);
                     wineryBooking.otherFeatures?.forEach((of: any) => wineryTotal += (Number(of.price) || 0) * guests);
