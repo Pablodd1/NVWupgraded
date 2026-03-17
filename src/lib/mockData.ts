@@ -96,11 +96,9 @@ export const mockWineries = [
         tasting_info: [
             {
                 tasting_title: "Premium Tasting Experience",
-                tasting_description: "An exclusive tasting showcasing our per-person pricing model with $50 base fee and $25 per additional guest.",
+                tasting_description: "An exclusive tasting showcasing our per-person pricing model.",
                 ava: "Napa Valley",
-                base_booking_fee: 50,
-                additional_guest_fee: 25,
-                tasting_price: 0, // Legacy price disabled
+                tasting_price: 50,
                 available_times: ["10:00 AM", "11:30 AM", "1:00 PM", "2:30 PM", "4:00 PM"],
                 wine_types: ["Red", "White", "Sparkling"],
                 number_of_wines_per_tasting: 4,
