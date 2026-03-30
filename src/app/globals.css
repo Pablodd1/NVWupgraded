@@ -64,6 +64,7 @@
     @apply bg-background text-foreground;
     /* Support for iPhone notches and safe areas */
     padding-bottom: env(safe-area-inset-bottom);
+    overscroll-behavior-y: none;
   }
 
   h1,
@@ -78,8 +79,8 @@
 
 .min-h-screen {
   min-height: 100vh;
-  min-height: 100dvh;
   /* Dynamic viewport height for mobile browsers */
+  min-height: 100dvh;
 }
 
 .transition-all {

@@ -20,6 +20,13 @@ export const metadata = {
   description: "Discover, filter, and book tastings at Napa Valley wineries. Use AI voice search for instant recommendations.",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+};
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
