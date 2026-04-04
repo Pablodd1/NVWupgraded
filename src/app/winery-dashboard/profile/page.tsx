@@ -22,7 +22,7 @@ import {
 } from "react-icons/fa";
 import { Winery, TastingInfo, FoodPairingOption } from "@/app/interfaces";
 import Select from "react-select";
-import { wineTypes, specialFeatures, avaOrder } from "@/data/data";
+import { wineTypes, specialFeatures, avaOrder, timeOptions } from "@/data/data";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
 
@@ -205,12 +205,6 @@ export default function WineryProfile() {
       }
 
       tasting[field] = arr;
-
-      // Special handling: if Handicap Accessible is toggled in special_features, sync with amenities
-      if (item === "Handicap Accessible") {
-        newProfile.amenities.handicap_accessible = arr.includes("Handicap Accessible");
-      }
-
       return newProfile;
     });
   };
@@ -637,6 +631,29 @@ export default function WineryProfile() {
                             />
                           </div>
                         )}
+                      </div>
+                    </div>
+
+                    <div className="form-control mb-4">
+                      <label className="label text-xs font-bold uppercase text-gray-500">Available Time Slots</label>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 p-3 bg-white rounded-lg border border-gray-100">
+                        {timeOptions.map(time => (
+                          <label key={time} className="flex items-center gap-2 cursor-pointer text-[10px] sm:text-xs">
+                            <input
+                              type="checkbox"
+                              checked={tasting.available_times?.includes(time)}
+                              onChange={() => {
+                                const currentTimes = tasting.available_times || [];
+                                const newTimes = currentTimes.includes(time) 
+                                  ? currentTimes.filter(t => t !== time)
+                                  : [...currentTimes, time];
+                                handleTastingChange(idx, 'available_times', newTimes);
+                              }}
+                              className="checkbox checkbox-primary checkbox-xs"
+                            />
+                            {time}
+                          </label>
+                        ))}
                       </div>
                     </div>
 

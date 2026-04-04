@@ -21,6 +21,9 @@ type Filters = {
   mountainLocation: boolean;
   allowsChildren: boolean;
   allowsNonDrinkers: boolean;
+  handicapAccessible: boolean;
+  uberAvailability: boolean;
+  lyftAvailability: boolean;
 };
 
 interface FilterBlockProps {
@@ -222,6 +225,33 @@ export const FilterBlock = ({
             onChange={(e) => handleFilterChange("allowsNonDrinkers", e.target.checked)}
           />
           <span className="font-bold text-gray-700">Non-Drinker Friendly</span>
+        </label>
+        <label className="flex items-center space-x-2 text-xs sm:text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            className="checkbox checkbox-primary checkbox-sm"
+            checked={filters.handicapAccessible}
+            onChange={(e) => handleFilterChange("handicapAccessible", e.target.checked)}
+          />
+          <span className="font-bold text-gray-700">Handicap Accessible</span>
+        </label>
+        <label className="flex items-center space-x-2 text-xs sm:text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            className="checkbox checkbox-primary checkbox-sm"
+            checked={filters.uberAvailability}
+            onChange={(e) => handleFilterChange("uberAvailability", e.target.checked)}
+          />
+          <span className="font-bold text-gray-700">Uber Available</span>
+        </label>
+        <label className="flex items-center space-x-2 text-xs sm:text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            className="checkbox checkbox-primary checkbox-sm"
+            checked={filters.lyftAvailability}
+            onChange={(e) => handleFilterChange("lyftAvailability", e.target.checked)}
+          />
+          <span className="font-bold text-gray-700">Lyft Available</span>
         </label>
       </div>
     </>
