@@ -10,10 +10,12 @@ interface AuthStore {
   register: (data: { firstName: string; lastName: string; email: string; phone: string; password: string; dateOfBirth?: Date; role?: string; marketingConsent?: boolean; smsConsent?: boolean }) => Promise<{ success: boolean; message?: string }>;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => Promise<void>;
+  updateUser: (userUpdates: Partial<IUser>) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
+
   isAuthenticated: false,
   loading: true,
   error: null,
@@ -85,5 +87,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
   logout: async () => {
     await fetch("/api/auth/logout", { credentials: "include" });
     set({ user: null, isAuthenticated: false, error: null });
+  },
+
+  updateUser: (userUpdates) => {
+    set((state) => ({
+      user: state.user ? { ...state.user, ...userUpdates } : null
+    }));
   },
 }));

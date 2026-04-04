@@ -180,15 +180,7 @@ export default function ItineraryPage() {
           const nonDrinkers = winery.bookingDetails?.numberOfNonDrinkers || 0;
           const foodQty = winery.bookingDetails?.foodPairingQty || 1;
 
-          if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
-            wineryTotal += currentTastingInfo.base_booking_fee;
-            if (guests > 1) {
-              const freeIncluded = currentTastingInfo.free_guests_included || 1;
-              wineryTotal += Math.max(0, guests - freeIncluded) * (currentTastingInfo.additional_guest_fee || 0);
-            }
-          } else if (currentTastingInfo?.tasting_price) {
-            wineryTotal += currentTastingInfo.tasting_price;
-          }
+          wineryTotal += (currentTastingInfo?.tasting_price || 0) * guests;
 
           // Guest type pricing
           wineryTotal += (currentTastingInfo?.child_price || 0) * children;
@@ -408,11 +400,11 @@ export default function ItineraryPage() {
               <li>📸 Don’t forget to take pictures and share your experience!</li>
             </ul>
 
-            <div className="flex gap-4 mt-6">
-              <Button onClick={() => handleRideClick("uber")} className="bg-black text-white">
+            <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full">
+              <Button onClick={() => handleRideClick("uber")} className="bg-black text-white w-full">
                 🚗 Book an Uber
               </Button>
-              <Button onClick={() => handleRideClick("lyft")} className="bg-[#FF00BF] text-white">
+              <Button onClick={() => handleRideClick("lyft")} className="bg-[#FF00BF] text-white w-full">
                 🚖 Book a Lyft
               </Button>
             </div>

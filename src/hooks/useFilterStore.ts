@@ -15,9 +15,13 @@ export type Filters = {
   mountainLocation: boolean;
   allowsChildren: boolean;
   allowsNonDrinkers: boolean;
+<<<<<<< HEAD
   handicapAccessible: boolean;
   uberAvailability: boolean;
   lyftAvailability: boolean;
+=======
+  searchQuery: string;
+>>>>>>> 02b657b8bd4daeadc2919ec1dd967032c2818b82
 };
 
 export interface FilterState {
@@ -41,9 +45,13 @@ export const useFilterStore = create<FilterState>((set) => ({
     mountainLocation: false,
     allowsChildren: false,
     allowsNonDrinkers: false,
+<<<<<<< HEAD
     handicapAccessible: false,
     uberAvailability: false,
     lyftAvailability: false,
+=======
+    searchQuery: "",
+>>>>>>> 02b657b8bd4daeadc2919ec1dd967032c2818b82
   },
   setFilters: (newFilters) =>
     set((state) => ({

@@ -21,21 +21,9 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
         const selectedTastingIndex = bookingDetails?.selectedTastingIndex || 0;
         const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
 
-        // Calculate tasting cost using per-person pricing if available, otherwise use legacy pricing
+        // Calculate tasting cost using per-person pricing
         const numberOfGuests = bookingDetails?.numberOfGuests || 1;
-        const hasTieredPricing = currentTastingInfo?.base_booking_fee !== undefined &&
-          (currentTastingInfo.base_booking_fee > 0 || (currentTastingInfo.additional_guest_fee ?? 0) > 0);
-
-        if (hasTieredPricing) {
-          // Use tiered pricing (Base + Additional)
-          wineryCost += currentTastingInfo?.base_booking_fee || 0;
-          const freeGuests = currentTastingInfo?.free_guests_included || 0;
-          const guestsToCharge = Math.max(0, numberOfGuests - freeGuests);
-          wineryCost += guestsToCharge * (currentTastingInfo?.additional_guest_fee || 0);
-        } else if (currentTastingInfo?.tasting_price) {
-          // Use legacy pricing
-          wineryCost += currentTastingInfo.tasting_price;
-        }
+        wineryCost += (currentTastingInfo?.tasting_price || 0) * numberOfGuests;
 
         // Check for excess guests and apply dynamic pricing
         const maxGuestsPerSlot = currentTastingInfo?.booking_info?.max_guests_per_slot || 8;
@@ -146,19 +134,7 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
               // Calculate winery subtotal
               let winerySubtotal = 0;
               const numberOfGuests = bookingDetails?.numberOfGuests || 1;
-              const hasTieredPricing = currentTastingInfo?.base_booking_fee !== undefined &&
-                (currentTastingInfo.base_booking_fee > 0 || (currentTastingInfo.additional_guest_fee ?? 0) > 0);
-
-              if (hasTieredPricing) {
-                // Use tiered pricing
-                winerySubtotal += currentTastingInfo?.base_booking_fee || 0;
-                const freeGuests = currentTastingInfo?.free_guests_included || 0;
-                const guestsToCharge = Math.max(0, numberOfGuests - freeGuests);
-                winerySubtotal += guestsToCharge * (currentTastingInfo?.additional_guest_fee || 0);
-              } else if (currentTastingInfo?.tasting_price) {
-                // Use legacy pricing
-                winerySubtotal += currentTastingInfo.tasting_price;
-              }
+              winerySubtotal += (currentTastingInfo?.tasting_price || 0) * numberOfGuests;
 
               // Guest types
               const childrenCount = bookingDetails?.numberOfChildren || 0;
@@ -209,21 +185,7 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                       bookingDetails.tours?.length > 0 ||
                       bookingDetails.otherFeature?.length > 0) ? (
                     <ul className="ml-4 list-disc text-xs">
-                      {currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0 ? (
-                        <li>
-                          Tasting (tiered): Base ${currentTastingInfo.base_booking_fee.toFixed(2)} (up to {currentTastingInfo.free_guests_included || 1} guests)
-                          {(() => {
-                            const freeGuests = currentTastingInfo.free_guests_included || 1;
-                            const guestsToCharge = Math.max(0, numberOfGuests - freeGuests);
-                            if (guestsToCharge > 0 && currentTastingInfo.additional_guest_fee) {
-                              return <> + ${(guestsToCharge * currentTastingInfo.additional_guest_fee).toFixed(2)} for {guestsToCharge} additional guest{guestsToCharge > 1 ? 's' : ''}</>;
-                            }
-                            return null;
-                          })()}
-                        </li>
-                      ) : currentTastingInfo?.tasting_price && (
-                        <li>Tasting: ${currentTastingInfo.tasting_price.toFixed(2)}</li>
-                      )}
+                      <li>Tasting: ${currentTastingInfo?.tasting_price?.toFixed(2)} x {numberOfGuests} = ${((currentTastingInfo?.tasting_price || 0) * numberOfGuests).toFixed(2)}</li>
                       {(bookingDetails?.numberOfChildren || 0) > 0 && (
                         <li>Children: ${currentTastingInfo?.child_price || 0} x {bookingDetails?.numberOfChildren} = ${((currentTastingInfo?.child_price || 0) * (bookingDetails?.numberOfChildren || 0)).toFixed(2)}</li>
                       )}

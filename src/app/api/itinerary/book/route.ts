@@ -173,36 +173,14 @@ export async function POST(req: NextRequest) {
         if (tasting) {
           // Check max guests condition
           const maxGuests = tasting.booking_info?.max_guests_per_slot || 20;
-          const allowExcess = tasting.booking_info?.allow_excess_guests || false;
-          const excessMultiplier = tasting.booking_info?.excess_guest_multiplier || 1.5;
 
-          if (guests > maxGuests && !allowExcess) {
+          if (guests > maxGuests) {
             throw new Error(`Winery ${winery.name} only allows up to ${maxGuests} guests per slot.`);
           }
 
-          // Calculation: Base Fee + (Additional Guest Fee * (Guests - 1))
-          // OR if legacy: tasting_price
-          // Calculation: Base Fee + (Additional Guest Fee * Math.max(0, Guests - FreeGuests))
-          // OR if legacy: tasting_price
-          const baseFee = Number(tasting.base_booking_fee) || 0;
-          const additionalGuestFee = Number(tasting.additional_guest_fee) || 0;
-          const freeGuestsIncluded = Number(tasting.free_guests_included) || 1; // Default to 1 if not set
-
-          if (baseFee > 0) {
-            // Use per-person pricing
-            wineryTotal += baseFee;
-            const guestsToCharge = Math.max(0, guests - freeGuestsIncluded);
-            wineryTotal += guestsToCharge * additionalGuestFee;
-
-            // Apply excess guest premium if applicable
-            if (guests > maxGuests && allowExcess) {
-              wineryTotal *= excessMultiplier;
-            }
-          } else {
-            // Use legacy pricing
-            const legacyPrice = Number(tasting.tasting_price) || 0;
-            wineryTotal += legacyPrice;
-          }
+          // Calculation: Per Person Fee * Number of Guests
+          const pricePerPerson = Number(tasting.tasting_price) || 0;
+          wineryTotal += pricePerPerson * guests;
 
           // Add children and non-drinkers pricing
           wineryTotal += (Number(tasting.child_price) || 0) * children;
@@ -235,9 +213,7 @@ export async function POST(req: NextRequest) {
         wineryId: winery.wineryId,
         datetime: winery.dateTime,
         tasting: winery.tasting,
-        baseBookingFee: tasting?.base_booking_fee || 0,
-        additionalGuestFee: tasting?.additional_guest_fee || 0,
-        freeGuestsIncluded: tasting?.free_guests_included || 0,
+        tasting_price: tasting?.tasting_price || 0,
         childPrice: tasting?.child_price || 0,
         nonDrinkerPrice: tasting?.non_drinker_price || 0,
         tours: winery.tours || [],

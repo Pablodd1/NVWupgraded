@@ -19,195 +19,30 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
   const [showResetModal, setShowResetModal] = useState(false);
   const [isFeaturesOpen, setIsFeaturesOpen] = useState(true);
 
+  const [searchQuery, setSearchQuery] = useState(filters.searchQuery || "");
+
   const applyFilters = useCallback(() => {
     setIsLoading(true);
-    let filtered = wineries;
+    // Instead of doing client-side filtering here, we update the global store which triggers loadWineries in page.tsx
+    // The actual filtering is done by `api/winery`.
+    // The results will be loaded into `wineries` by page.tsx from the backend.
 
-
-
-    // Filter by tasting price range
-    filtered = filtered.filter((winery) => {
-      if (!winery.tasting_info || !Array.isArray(winery.tasting_info) || winery.tasting_info.length === 0) return false;
-
-      // Check if any tasting falls within the price range
-      return winery.tasting_info.some(tasting =>
-        tasting && typeof tasting.tasting_price === 'number' &&
-        tasting.tasting_price >= filters.priceRange[0] &&
-        tasting.tasting_price <= filters.priceRange[1]
-      );
-    });
-
-    // Filter by tasting price specifically
-    if (filters.tastingPrice !== undefined) {
-      filtered = filtered.filter((winery) => {
-        if (!winery.tasting_info || !Array.isArray(winery.tasting_info) || winery.tasting_info.length === 0) return false;
-
-        // Check if any tasting is within the tasting price range
-        return winery.tasting_info.some(tasting =>
-          tasting && typeof tasting.tasting_price === 'number' &&
-          tasting.tasting_price <= filters.tastingPrice
-        );
-      });
+    // 1. Update global search query state first if it changed
+    if (filters.searchQuery !== searchQuery) {
+      handleFilterChange("searchQuery", searchQuery);
     }
 
-    // Filter by number of wines per tasting
-    filtered = filtered.filter((winery) => {
-      if (!winery.tasting_info || !Array.isArray(winery.tasting_info) || winery.tasting_info.length === 0) return false;
-
-      // Check if any tasting has the required number of wines
-      return winery.tasting_info.some(tasting => {
-        if (!tasting) return false;
-        const numWines = tasting.number_of_wines_per_tasting || 1;
-        return numWines >= filters.numberOfWines[0] && numWines <= filters.numberOfWines[1];
-      });
-    });
-
-    // Filter by number of people
-    filtered = filtered.filter((winery) => {
-      if (!winery.tasting_info || !Array.isArray(winery.tasting_info) || winery.tasting_info.length === 0) return false;
-
-      // Check if any tasting matches the required number of people
-      return winery.tasting_info.some(tasting => {
-        // If number_of_people is not defined, we'll assume it doesn't filter out unless explicitly requested
-        const peopleList = tasting?.booking_info?.number_of_people;
-        if (!peopleList || !Array.isArray(peopleList)) {
-          // If no list is provided, only include it if the filter is at default [1, 20]
-          return filters.numberOfPeople[0] <= 1 && filters.numberOfPeople[1] >= 20;
-        }
-
-        return peopleList.some(people => {
-          const numPeople = people || 1;
-          return numPeople >= filters.numberOfPeople[0] && numPeople <= filters.numberOfPeople[1];
-        });
-      });
-    });
-    // Filter by wine type
-    if (Object.values(filters.wineType).some((value) => value)) {
-      filtered = filtered.filter((winery) => {
-        if (!winery.tasting_info || !Array.isArray(winery.tasting_info) || winery.tasting_info.length === 0) return false;
-
-        // Check if any tasting has the required wine types
-        return winery.tasting_info.some(tasting => {
-          if (!tasting || !tasting.wine_types || !Array.isArray(tasting.wine_types)) return false;
-
-          // Get selected wine types
-          const selectedTypes = Object.keys(filters.wineType).filter(
-            (type) => filters.wineType[type as keyof typeof filters.wineType]
-          );
-
-          // Check if any of the selected types match the tasting's wine types
-          return selectedTypes.some(selectedType =>
-            tasting.wine_types.some(wineType => {
-              // Normalize both strings for comparison
-              const normalizedSelected = selectedType.toLowerCase().trim();
-              const normalizedWineType = wineType.toLowerCase().trim();
-              return normalizedSelected === normalizedWineType;
-            })
-          );
-        });
-      });
-    }
-
-    // Filter by AVA
-    if (filters.ava.length > 0) {
-      filtered = filtered.filter((winery) => {
-        if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
-
-        // Check if any tasting is in the selected AVA
-        return winery.tasting_info.some(tasting =>
-          tasting.ava && filters.ava.includes(tasting.ava)
-        );
-      });
-    }
-
-
-
-    // Filter by special features
-    if (filters.specialFeatures.length > 0) {
-      filtered = filtered.filter((winery) => {
-        if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
-
-        return winery.tasting_info.some(tasting => {
-          if (!tasting.special_features || !Array.isArray(tasting.special_features)) return false;
-          return filters.specialFeatures.every((feature) => tasting.special_features.includes(feature));
-        });
-      });
-    }
-
-    // Filter by multiple tastings availability
-    if (filters.multipleTastings) {
-      filtered = filtered.filter((winery) =>
-        winery.tasting_info && winery.tasting_info.length > 1
-      );
-    }
-
-    // Filter by food pairings availability
-    if (filters.foodPairings) {
-      filtered = filtered.filter((winery) => {
-        if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
-
-        // Check if any tasting has food pairings
-        return winery.tasting_info.some(tasting =>
-          tasting.food_pairing_options && tasting.food_pairing_options.length > 0
-        );
-      });
-    }
-
-    // Filter by tour availability
-    if (filters.toursAvailable) {
-      filtered = filtered.filter((winery) => {
-        if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
-
-        // Check if any tasting has tours available
-        return winery.tasting_info.some(tasting =>
-          tasting.tours && tasting.tours.available
-        );
-      });
-    }
-
-    // Filter by mountain location
-    if (filters.mountainLocation) {
-      filtered = filtered.filter((winery) => {
-        if (!winery.tasting_info || winery.tasting_info.length === 0) return false;
-        return winery.tasting_info.some(tasting =>
-          mountainAVAs.includes(tasting.ava)
-        );
-      });
-    }
-
-    // Filter by children allowed
-    if (filters.allowsChildren) {
-      filtered = filtered.filter((winery) => winery.amenities?.allows_children === true);
-    }
-
-    // Filter by non-drinker friendly
-    if (filters.allowsNonDrinkers) {
-      filtered = filtered.filter((winery) => winery.amenities?.allows_non_drinkers === true);
-    }
-
-    // Filter by handicap accessible
-    if (filters.handicapAccessible) {
-      filtered = filtered.filter((winery) => winery.amenities?.handicap_accessible === true);
-    }
-
-    // Filter by uber availability
-    if (filters.uberAvailability) {
-      filtered = filtered.filter((winery) => winery.transportation?.uber_availability === true);
-    }
-
-    // Filter by lyft availability
-    if (filters.lyftAvailability) {
-      filtered = filtered.filter((winery) => winery.transportation?.lyft_availability === true);
-    }
-
-
-    onFilterApply(filtered);
+    // We then emit onFilterApply with current parent `wineries` just to populate initially,
+    // The real magic happens inside page.tsx capturing the `filters` state change and firing API query.
+    onFilterApply(wineries);
     setIsLoading(false);
-  }, [filters, wineries, onFilterApply]);
+  }, [filters, wineries, onFilterApply, searchQuery]);
 
+  // We DO NOT want the `useEffect` calling `applyFilters` automatically on every keystroke
+  // because the user should press "Search" to execute the request to the database.
   useEffect(() => {
-    applyFilters();
-  }, [filters, applyFilters]);
+    // Only apply on initial load if needed, otherwise rely on manual trigger
+  }, []); // Changed dependency array to empty to stop real-time filtering
 
   const handleFilterChange = (key: string, value: any) => {
     setFilters({ ...filters, [key]: value });
@@ -224,6 +59,7 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
   };
 
   const resetFilters = () => {
+    setSearchQuery("");
     setFilters({
       priceRange: [0, 1000],
       numberOfWines: [1, 10],
@@ -241,13 +77,15 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
       allowsNonDrinkers: false,
       mountainLocation: false,
       uberAvailability: false,
-      lyftAvailability: false
+      lyftAvailability: false,
+      searchQuery: ""
     });
     setShowResetModal(false);
   };
 
+
+
   const [isBottomSheetOpen, setBottomSheetOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   return (
     <>
@@ -283,6 +121,15 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
             <MdRestore size={18} />
             <span className="font-medium">Reset</span>
           </button>
+
+          <button
+            className="flex items-center justify-center space-x-2 px-4 py-3 rounded-md bg-primary text-white hover:bg-primary/90 transition duration-300 ease-in-out text-sm font-semibold shadow-md"
+            onClick={() => applyFilters()}
+            aria-label="Search Wineries"
+          >
+            <FilterIcon size={18} />
+            <span className="font-medium">Search</span>
+          </button>
         </div>
       </div>
 
@@ -294,6 +141,19 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
           isFeaturesOpen={isFeaturesOpen}
           setIsFeaturesOpen={setIsFeaturesOpen}
         />
+        <div className="p-4 border-t border-gray-200">
+          <button
+            className="w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-md bg-primary text-white hover:bg-primary/90 transition duration-300 ease-in-out text-sm font-semibold shadow-md"
+            onClick={() => {
+              applyFilters();
+              setBottomSheetOpen(false);
+            }}
+            aria-label="Search Wineries"
+          >
+            <SearchIcon size={20} />
+            <span>Search</span>
+          </button>
+        </div>
       </BottomSheet>
       <div className="hidden md:block p-4 bg-white shadow-lg rounded-lg w-full max-w-sm sm:max-w-md space-y-4 md:space-y-6">
         <h2 className="text-lg font-semibold text-gray-800">Filter Wineries</h2>

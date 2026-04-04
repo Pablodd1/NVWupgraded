@@ -10,7 +10,7 @@ import { VoiceFilter } from "../filter-bar/voice-filter";
 import { useAuthStore } from "@/store/authStore";
 import { IUser } from "@/models/user.model";
 import { useLanguage } from "@/context/LanguageContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export function Navbar() {
   const { itinerary } = useItinerary();
@@ -20,7 +20,11 @@ export function Navbar() {
   const [showModal, setShowModal] = useState(false);
   const [totalCost, setTotalCost] = useState(0);
   const router = useRouter();
+  const pathname = usePathname();
   const { t, language, toggleLanguage } = useLanguage();
+
+  // Disable global mobile bottom nav on specific pages that have their own sticky footers
+  const hideMobileNav = pathname?.includes('/admin/dashboard/winery') || pathname?.includes('/winery-dashboard/onboarding');
 
   // Calculate total cost from itinerary
   useEffect(() => {
@@ -31,18 +35,9 @@ export function Navbar() {
         const selectedTastingIndex = bookingDetails?.selectedTastingIndex || 0;
         const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
 
-        // Calculate tasting cost using per-person pricing if available
+        // Calculate tasting cost using per-person pricing
         const numberOfGuests = bookingDetails?.numberOfGuests || 1;
-        if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
-          // Use per-person pricing
-          wineryCost += currentTastingInfo.base_booking_fee; // Base fee for first person
-          if (numberOfGuests > 1) {
-            wineryCost += (numberOfGuests - 1) * (currentTastingInfo.additional_guest_fee || 0);
-          }
-        } else if (currentTastingInfo?.tasting_price) {
-          // Use legacy pricing
-          wineryCost += currentTastingInfo.tasting_price;
-        }
+        wineryCost += (currentTastingInfo?.tasting_price || 0) * numberOfGuests;
 
         // Add food pairing prices
         if (bookingDetails?.foodPairings) {
@@ -151,18 +146,20 @@ export function Navbar() {
         </div>
       </div>
 
-      <MobileBottomNav
-        setShowModal={setShowModal}
-        loading={loading}
-        user={user}
-        handleLogout={handleLogout}
-        itineraryCount={itinerary.length}
-        totalCost={totalCost}
-        isProfileMenuOpen={isProfileMenuOpen}
-        toggleProfileMenu={toggleProfileMenu}
-        closeProfileMenu={closeProfileMenu}
-        t={t}
-      />
+      {!hideMobileNav && (
+        <MobileBottomNav
+          setShowModal={setShowModal}
+          loading={loading}
+          user={user}
+          handleLogout={handleLogout}
+          itineraryCount={itinerary.length}
+          totalCost={totalCost}
+          isProfileMenuOpen={isProfileMenuOpen}
+          toggleProfileMenu={toggleProfileMenu}
+          closeProfileMenu={closeProfileMenu}
+          t={t}
+        />
+      )}
 
       {showModal && <AuthModal setShowPopup={setShowModal} />}
     </header>
@@ -201,9 +198,13 @@ const ItineraryButton = ({ itineraryCount, totalCost, label }: { itineraryCount:
 
 const UserProfile = ({ user, handleLogout, loading, t }: { user: IUser; handleLogout: () => void; loading: boolean; t: any }) => (
   <div className="relative flex items-center space-x-2 neumorphism-card p-3">
-    <FaUserAlt size={28} className="text-gray-800 rounded-full" />
+    <Link href="/profile">
+      <FaUserAlt size={28} className="text-gray-800 rounded-full hover:text-primary transition-colors cursor-pointer" />
+    </Link>
     <div className="flex flex-col">
-      <span className="font-semibold text-sm text-gray-800">{`${user.firstName} ${user.lastName}`}</span>
+      <Link href="/profile" className="font-semibold text-sm text-gray-800 hover:text-primary transition-colors">
+        {`${user.firstName} ${user.lastName}`}
+      </Link>
       <button
         onClick={handleLogout}
         className="text-gray-600 hover:text-red-600 flex items-center space-x-1 text-xs"
@@ -272,6 +273,11 @@ const MobileBottomNav = ({
           <div className="flex flex-col items-center space-y-4">
             <FaUserAlt size={50} className="text-gray-800 rounded-full" />
             <span className="font-semibold text-lg text-gray-800">{`${user.firstName} ${user.lastName}`}</span>
+
+            <Link href="/profile" className="text-gray-600 text-sm font-semibold w-full text-center py-2 border-b border-gray-100 pb-4 mb-2">
+              My Profile Settings
+            </Link>
+
             {user.role === "admin" && (
               <Link href={"/admin/dashboard"} className="text-gray-600 text-sm font-semibold w-full text-center py-2">
                 Admin Dashboard

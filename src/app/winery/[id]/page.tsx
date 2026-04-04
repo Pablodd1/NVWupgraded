@@ -230,26 +230,26 @@ const WineryDetail = () => {
   // Calculate Total Price
   const totalSummary = (() => {
     const adults = Number(selectedNumberOfPeople) || 0;
-    const baseFee = currentTastingInfo?.base_booking_fee || 0;
-    const freeGuests = currentTastingInfo?.free_guests_included || 0;
-    const extraAdults = Math.max(0, adults - freeGuests);
-    const extraAdultFee = (currentTastingInfo?.additional_guest_fee || 0) * extraAdults;
+    const tastingPrice = (currentTastingInfo?.tasting_price || 0) * adults;
 
     const childrenFee = (currentTastingInfo?.child_price || 0) * selectedChildren;
     const nonDrinkerFee = (currentTastingInfo?.non_drinker_price || 0) * selectedNonDrinkers;
 
-    const foodFee = selectedFoodPairings.reduce((sum, p) => sum + (p.price * selectedFoodQty), 0);
-    const tourFee = selectedTours.reduce((sum, t) => sum + t.price, 0);
+    const foodFee = selectedFoodPairings.reduce((sum, p) => sum + (p.price || 0), 0);
+    const tourFee = selectedTours.reduce((sum, t) => sum + (t.price || 0), 0);
 
-    const total = baseFee + extraAdultFee + childrenFee + nonDrinkerFee + foodFee + tourFee;
+    const totalFoodItems = selectedFoodPairings.length;
+    const totalTourItems = selectedTours.length;
 
-    return { baseFee, extraAdultFee, childrenFee, nonDrinkerFee, foodFee, tourFee, total };
+    const total = tastingPrice + childrenFee + nonDrinkerFee + foodFee + tourFee;
+
+    return { tastingPrice, childrenFee, nonDrinkerFee, foodFee, tourFee, total, totalFoodItems, totalTourItems };
   })();
 
   return (
     <div className="min-h-screen bg-wine-background md:top-20 top-16 relative">
       {/* Hero Section */}
-      <div className="relative h-[80vh] overflow-hidden">
+      <div className="relative h-[60vh] sm:h-[80vh] overflow-hidden">
         {currentImages.length > 0 ? (
           <Image
             src={currentImages[currentImageIndex]}
@@ -266,8 +266,8 @@ const WineryDetail = () => {
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/50 flex items-center justify-center">
           <div className="text-center text-white max-w-4xl px-4">
-            <h1 className="font-serif text-6xl mb-6 leading-tight">{winery.name}</h1>
-            <p className="text-xl max-w-2xl mx-auto font-light leading-relaxed">{winery.description}</p>
+            <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl mb-4 sm:mb-6 leading-tight">{winery.name}</h1>
+            <p className="text-sm sm:text-xl max-w-2xl mx-auto font-light leading-relaxed">{winery.description}</p>
             <div className="mt-8">
               {/* Show direct booking button if external booking is configured */}
               {hasExternalBooking ? (
@@ -308,11 +308,11 @@ const WineryDetail = () => {
       </div>
 
       {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-4 py-16 space-y-16">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:py-16 space-y-8 sm:space-y-16">
         {/* Multiple Tasting Selection */}
         {winery.tasting_info && winery.tasting_info.length > 1 && (
-          <div className="bg-white rounded-xl p-8 shadow-lg">
-            <h2 className="font-serif text-3xl mb-6 text-wine-primary">Choose Your Tasting Experience</h2>
+          <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg">
+            <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-6 text-wine-primary">Choose Your Tasting Experience</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {winery.tasting_info.map((tasting, index) => (
                 <Card
@@ -324,15 +324,9 @@ const WineryDetail = () => {
                   <h3 className="font-serif text-xl mb-3 text-wine-primary">{tasting.tasting_title}</h3>
                   <p className="text-gray-600 mb-4 text-sm">{tasting.tasting_description}</p>
                   <div className="space-y-2 text-sm">
-                    {tasting.base_booking_fee !== undefined && tasting.base_booking_fee > 0 ? (
-                      <p className="font-semibold text-lg">${tasting.base_booking_fee.toFixed(2)} Base</p>
-                    ) : (
-                      <p className="font-semibold text-lg">${tasting.tasting_price.toFixed(2)}</p>
-                    )}
+                    <p className="font-semibold text-lg">${tasting.tasting_price.toFixed(2)}</p>
                     <p className="text-gray-500">{tasting.number_of_wines_per_tasting} wines included</p>
-                    {tasting.free_guests_included && tasting.free_guests_included > 0 ? (
-                      <p className="text-gray-500 font-medium">Includes first {tasting.free_guests_included} guest{tasting.free_guests_included > 1 ? 's' : ''}</p>
-                    ) : null}
+                    <p className="text-gray-500 font-medium">Per Person</p>
                   </div>
                 </Card>
               ))}
@@ -375,10 +369,7 @@ const WineryDetail = () => {
               <div>
                 <h3 className="font-serif text-lg mb-1">Price</h3>
                 <p className="text-gray-600 text-sm">
-                  {currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo.base_booking_fee > 0
-                    ? `$${currentTastingInfo.base_booking_fee.toFixed(2)} (Base)`
-                    : `$${currentTastingInfo?.tasting_price?.toFixed(2) ?? "N/A"}`
-                  }
+                  {`$${currentTastingInfo?.tasting_price?.toFixed(2) ?? "N/A"} per person`}
                 </p>
               </div>
             </div>
@@ -401,9 +392,9 @@ const WineryDetail = () => {
           currentTastingInfo?.tours?.tour_options?.length > 0 ||
           currentTastingInfo?.other_features?.length > 0 ||
           currentTastingInfo?.food_pairing_options?.length > 0) && (
-            <div className="bg-white rounded-lg p-8 shadow-lg">
-              <h2 className="font-serif text-3xl mb-6 text-wine-primary">Tasting Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white rounded-lg p-4 sm:p-8 shadow-lg">
+              <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-6 text-wine-primary">Tasting Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                 {/* Wine Section - Only show if wine details exist */}
                 {currentTastingInfo?.wine_details && currentTastingInfo.wine_details.length > 0 && (
                   <div>
@@ -444,12 +435,6 @@ const WineryDetail = () => {
                         <p className="text-lg font-semibold text-wine-primary">
                           {tour.cost === 0 ? 'Free' : `$${tour.cost.toFixed(2)}`}
                         </p>
-                        <Button
-                          onClick={() => handleTourToggle(tour)}
-                          className={`mt-2 w-full ${selectedTours.some(t => t.description === tour.description) ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-wine-primary text-white hover:bg-wine-primary/90'}`}
-                        >
-                          {selectedTours.some(t => t.description === tour.description) ? 'Remove' : 'Add to Booking'}
-                        </Button>
                       </div>
                     ))}
                   </div>
@@ -478,12 +463,12 @@ const WineryDetail = () => {
           )}
 
         {/* Tasting Experience Section */}
-        <div className="bg-white rounded-xl p-8 shadow-lg">
-          <div className="flex items-center gap-3 mb-8">
-            <FaGlassCheers className="h-8 w-8 text-wine-primary" />
-            <h2 className="font-serif text-3xl text-wine-primary">Tasting Experience</h2>
+        <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg">
+          <div className="flex items-center gap-3 mb-4 sm:mb-8">
+            <FaGlassCheers className="h-6 w-6 sm:h-8 sm:w-8 text-wine-primary" />
+            <h2 className="font-serif text-2xl sm:text-3xl text-wine-primary">Tasting Experience</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
             <Card className="p-6">
               <h3 className="font-serif text-xl mb-4">What to Expect</h3>
               <div className="space-y-4">
@@ -523,8 +508,8 @@ const WineryDetail = () => {
         </div>
 
         {/* Book a Tasting Section */}
-        <div className="bg-white rounded-lg p-8 shadow-lg">
-          <h2 className="font-serif text-3xl mb-6 text-wine-primary">Book a Tasting</h2>
+        <div className="bg-white rounded-lg p-4 sm:p-8 shadow-lg">
+          <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-6 text-wine-primary">Book a Tasting</h2>
 
           {/* External Booking - Direct Flow */}
           {hasExternalBooking ? (
@@ -573,62 +558,151 @@ const WineryDetail = () => {
             </div>
           ) : (
             /* Built-in Booking Flow */
-            <div className="space-y-6">
-              {/* Number of People Selection */}
-              <div>
-                <label className="text-sm text-gray-900 font-extrabold">Number of People</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={currentTastingInfo?.booking_info?.max_guests_per_slot || 20}
-                  value={selectedNumberOfPeople}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '') {
-                      setSelectedNumberOfPeople('');
-                    } else {
-                      const numValue = parseInt(value);
-                      if (!isNaN(numValue) && numValue >= 1) {
-                        setSelectedNumberOfPeople(numValue);
-                      }
-                    }
-                  }}
-                  className="input input-bordered w-full mt-2 text-sm"
-                />
-              </div>
+            <>
+              <div className="space-y-6">
+                {/* Number of People Selection */}
+                <div>
+                  <label htmlFor="num-people" className="text-sm text-gray-900 font-extrabold mb-2 block">Number of People</label>
+                  <select
+                    id="num-people"
+                    value={selectedNumberOfPeople === '' ? 1 : selectedNumberOfPeople}
+                    onChange={(e) => {
+                      const numValue = parseInt(e.target.value);
+                      setSelectedNumberOfPeople(numValue);
+                      
+                      if (selectedChildren > numValue) setSelectedChildren(numValue);
+                      if (selectedNonDrinkers > numValue) setSelectedNonDrinkers(numValue);
+                    }}
+                    className="select select-bordered w-full text-base sm:text-sm bg-gray-50 border-gray-200 shadow-sm"
+                  >
+                    {[...Array(currentTastingInfo?.booking_info?.max_guests_per_slot || 20)].map((_, i) => (
+                      <option key={i + 1} value={i + 1}>
+                        {i + 1} {i === 0 ? 'Guest' : 'Guests'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Children Selection */}
-                {winery.amenities?.allows_children && (
-                  <div>
-                    <label className="text-sm text-gray-900 font-extrabold flex justify-between">
-                      <span>Number of Children</span>
-                      <span className="text-primary">${currentTastingInfo?.child_price || 0} ea</span>
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={selectedChildren}
-                      onChange={(e) => setSelectedChildren(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="input input-bordered w-full mt-2 text-sm"
-                    />
+                {/* Additional Guests (Children & Non-Drinkers) */}
+                {(winery.amenities?.allows_children || winery.amenities?.allows_non_drinkers) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {winery.amenities?.allows_children && (
+                      <div>
+                        <label htmlFor="num-children" className="text-sm text-gray-900 font-extrabold flex justify-between mb-2">
+                          <span>Children</span>
+                          <span className="text-primary">${currentTastingInfo?.child_price || 0} ea</span>
+                        </label>
+                        <select
+                          id="num-children"
+                          value={selectedChildren}
+                          onChange={(e) => setSelectedChildren(parseInt(e.target.value) || 0)}
+                          className="select select-bordered w-full text-base sm:text-sm bg-gray-50 border-gray-200 shadow-sm"
+                        >
+                          <option value={0}>0</option>
+                          {[...Array(Number(selectedNumberOfPeople) || 1)].map((_, i) => (
+                            <option key={i + 1} value={i + 1}>{i + 1}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {winery.amenities?.allows_non_drinkers && (
+                      <div>
+                        <label htmlFor="num-non-drinkers" className="text-sm text-gray-900 font-extrabold flex justify-between mb-2">
+                          <span>Non-Drinkers</span>
+                          <span className="text-primary">${currentTastingInfo?.non_drinker_price || 0} ea</span>
+                        </label>
+                        <select
+                          id="num-non-drinkers"
+                          value={selectedNonDrinkers}
+                          onChange={(e) => setSelectedNonDrinkers(parseInt(e.target.value) || 0)}
+                          className="select select-bordered w-full text-base sm:text-sm bg-gray-50 border-gray-200 shadow-sm"
+                        >
+                          <option value={0}>0</option>
+                          {[...Array(Number(selectedNumberOfPeople) || 1)].map((_, i) => (
+                            <option key={i + 1} value={i + 1}>{i + 1}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Non-Drinkers Selection */}
-                {winery.amenities?.allows_non_drinkers && (
-                  <div>
-                    <label className="text-sm text-gray-900 font-extrabold flex justify-between">
-                      <span>Non-Drinkers</span>
-                      <span className="text-primary">${currentTastingInfo?.non_drinker_price || 0} ea</span>
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      value={selectedNonDrinkers}
-                      onChange={(e) => setSelectedNonDrinkers(Math.max(0, parseInt(e.target.value) || 0))}
-                      className="input input-bordered w-full mt-2 text-sm"
-                    />
+                {/* Optional Tours Selection */}
+                {currentTastingInfo?.tours?.tour_options && currentTastingInfo.tours.tour_options.length > 0 && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <label className="text-sm text-gray-900 font-extrabold mb-3 block">Add Tours</label>
+                    <div className="space-y-3">
+                      {currentTastingInfo.tours.tour_options.map((tour: any, index: number) => {
+                        const currentQty = selectedTours.filter(t => t.description === tour.description).length;
+                        return (
+                          <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm">
+                            <div className="flex-1 pr-4">
+                              <p className="font-bold text-sm text-gray-900 truncate">{tour.description}</p>
+                              <p className="text-xs text-wine-primary font-medium mt-0.5">
+                                {tour.cost ? `+$${tour.cost.toFixed(2)}/person` : 'Included'}
+                              </p>
+                            </div>
+                            <select
+                              className="select select-bordered select-sm w-20 flex-shrink-0 bg-white"
+                              value={currentQty}
+                              onChange={(e) => {
+                                const qty = parseInt(e.target.value);
+                                setSelectedTours(prev => {
+                                  const other = prev.filter(t => t.description !== tour.description);
+                                  const newEntries = Array(qty).fill({ description: tour.description, price: tour.cost || 0 });
+                                  return [...other, ...newEntries];
+                                });
+                              }}
+                            >
+                              <option value={0}>0</option>
+                              {[...Array(Number(selectedNumberOfPeople) || 1)].map((_, i) => (
+                                <option key={i + 1} value={i + 1}>{i + 1}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Optional Food Pairings Selection */}
+                {currentTastingInfo?.food_pairing_options && currentTastingInfo.food_pairing_options.length > 0 && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <label className="text-sm text-gray-900 font-extrabold mb-3 block">Add Food Pairings</label>
+                    <div className="space-y-3">
+                      {currentTastingInfo.food_pairing_options.map((pairing: any, index: number) => {
+                        const currentQty = selectedFoodPairings.filter(p => p.name === pairing.name).length;
+                        return (
+                          <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm">
+                            <div className="flex-1 pr-4">
+                              <p className="font-bold text-sm text-gray-900 truncate">{pairing.name}</p>
+                              <p className="text-xs text-indigo-600 font-medium mt-0.5">
+                                {pairing.price ? `+$${pairing.price.toFixed(2)}/person` : 'Included'}
+                              </p>
+                            </div>
+                            <select
+                              className="select select-bordered select-sm w-20 flex-shrink-0 bg-white"
+                              value={currentQty}
+                              onChange={(e) => {
+                                const qty = parseInt(e.target.value);
+                                setSelectedFoodPairings(prev => {
+                                  const other = prev.filter(p => p.name !== pairing.name);
+                                  const newEntries = Array(qty).fill({ name: pairing.name, price: pairing.price || 0 });
+                                  return [...other, ...newEntries];
+                                });
+                              }}
+                            >
+                              <option value={0}>0</option>
+                              {[...Array(Number(selectedNumberOfPeople) || 1)].map((_, i) => (
+                                <option key={i + 1} value={i + 1}>{i + 1}</option>
+                              ))}
+                            </select>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -638,15 +712,9 @@ const WineryDetail = () => {
                 <h3 className="font-serif text-xl mb-4 text-wine-primary">Price Breakdown</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Base Booking Fee</span>
-                    <span className="font-bold">${totalSummary.baseFee.toFixed(2)}</span>
+                    <span className="text-gray-600">Tasting ({selectedNumberOfPeople} Guests)</span>
+                    <span className="font-bold">${totalSummary.tastingPrice.toFixed(2)}</span>
                   </div>
-                  {totalSummary.extraAdultFee > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Additional Adults</span>
-                      <span className="font-bold">+${totalSummary.extraAdultFee.toFixed(2)}</span>
-                    </div>
-                  )}
                   {totalSummary.childrenFee > 0 && (
                     <div className="flex justify-between">
                       <span className="text-gray-600">Children ({selectedChildren})</span>
@@ -659,9 +727,15 @@ const WineryDetail = () => {
                       <span className="font-bold">+${totalSummary.nonDrinkerFee.toFixed(2)}</span>
                     </div>
                   )}
+                  {totalSummary.tourFee > 0 && (
+                    <div className="flex justify-between text-wine-secondary font-medium">
+                      <span>Tours ({totalSummary.totalTourItems}x)</span>
+                      <span>+${totalSummary.tourFee.toFixed(2)}</span>
+                    </div>
+                  )}
                   {totalSummary.foodFee > 0 && (
                     <div className="flex justify-between text-indigo-600 font-medium">
-                      <span>Food Pairings ({selectedFoodQty}x)</span>
+                      <span>Food Pairings ({totalSummary.totalFoodItems}x)</span>
                       <span>+${totalSummary.foodFee.toFixed(2)}</span>
                     </div>
                   )}
@@ -680,7 +754,7 @@ const WineryDetail = () => {
                   Confirm & Add to Itinerary
                 </Button>
               </div>
-            </div>
+            </>
           )}
         </div>
 
@@ -713,8 +787,8 @@ const WineryDetail = () => {
         )}
 
         {/* Contact & Directions Section */}
-        <div className="bg-white rounded-xl p-8 shadow-lg">
-          <h2 className="font-serif text-3xl mb-8 text-wine-primary">Contact & Directions</h2>
+        <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg">
+          <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-8 text-wine-primary">Contact & Directions</h2>
 
           {/* Hours of Operation */}
           <div className="mb-8">
@@ -807,9 +881,9 @@ const WineryDetail = () => {
 
         {/* Food Pairings Section - Bottom of Page */}
         {currentTastingInfo?.food_pairing_options && currentTastingInfo.food_pairing_options.length > 0 && (
-          <div className="max-w-7xl mx-auto px-4 py-16">
-            <div className="bg-white rounded-xl p-8 shadow-lg">
-              <h2 className="font-serif text-3xl mb-2 text-wine-primary">Food Pairings</h2>
+          <div className="max-w-7xl mx-auto px-4 py-8 sm:py-16">
+            <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg">
+              <h2 className="font-serif text-2xl sm:text-3xl mb-2 text-wine-primary">Food Pairings</h2>
               <p className="text-gray-600 mb-6">Enhance your tasting experience with artisanal pairings. Select quantity per party.</p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -18,7 +18,10 @@ import {
   FaCheckCircle,
   FaTimesCircle,
   FaWineBottle,
-  FaImage
+  FaImage,
+  FaUserAlt,
+  FaChevronLeft,
+  FaChevronRight
 } from "react-icons/fa";
 import { Winery, TastingInfo, FoodPairingOption } from "@/app/interfaces";
 import Select from "react-select";
@@ -32,6 +35,16 @@ export default function WineryProfile() {
   const [profile, setProfile] = useState<Winery | null>(null);
   const [saving, setSaving] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [currentSection, setCurrentSection] = useState(0);
+
+  const sections = [
+    { id: 'identity', label: 'Identity' },
+    { id: 'tasting', label: 'Tasting' },
+    { id: 'features', label: 'Features' },
+    { id: 'transport', label: 'Transport' },
+    { id: 'contact', label: 'Contact' },
+    { id: 'account', label: 'Account' }
+  ];
 
   useEffect(() => {
     if (!loading && !user) {
@@ -217,9 +230,6 @@ export default function WineryProfile() {
       tasting_description: "",
       ava: "",
       tasting_price: 0,
-      base_booking_fee: 0,
-      additional_guest_fee: 0,
-      free_guests_included: 0,
       available_times: [],
       wine_types: [],
       number_of_wines_per_tasting: 0,
@@ -237,7 +247,9 @@ export default function WineryProfile() {
         allow_excess_guests: false,
         excess_guest_multiplier: 1.5
       },
-      other_features: []
+      other_features: [],
+      child_price: 0,
+      non_drinker_price: 0
     };
     setProfile({
       ...profile,
@@ -311,7 +323,7 @@ export default function WineryProfile() {
           <div className="lg:col-span-2 space-y-8">
 
             {/* 1. Basic & Location */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="identity" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-2xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaMapMarkerAlt className="text-wine-secondary" />
                 Identity & Location
@@ -476,7 +488,7 @@ export default function WineryProfile() {
             </section>
 
             {/* 2. Tasting Packages (UX & Filtration Management) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="tasting" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-serif font-bold text-wine-primary flex items-center gap-2">
                   <FaWineGlass className="text-wine-secondary" />
@@ -499,80 +511,60 @@ export default function WineryProfile() {
                       <FaTrash size={18} />
                     </button>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Base Booking Fee ($)</label>
-                        <input
-                          type="number" value={tasting.base_booking_fee || 0}
-                          onChange={(e) => handleTastingChange(idx, 'base_booking_fee', Number(e.target.value))}
-                          className="input input-bordered input-sm"
-                          placeholder="0"
-                          aria-label="Base Booking Fee"
-                        />
-                      </div>
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Additional Guest Fee ($)</label>
-                        <input
-                          type="number" value={tasting.additional_guest_fee || 0}
-                          onChange={(e) => handleTastingChange(idx, 'additional_guest_fee', Number(e.target.value))}
-                          className="input input-bordered input-sm"
-                          placeholder="0"
-                          aria-label="Additional Guest Fee"
-                        />
-                      </div>
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Free Guests Included</label>
-                        <input
-                          type="number" value={tasting.free_guests_included || 0}
-                          onChange={(e) => handleTastingChange(idx, 'free_guests_included', Number(e.target.value))}
-                          className="input input-bordered input-sm"
-                          placeholder="0"
-                          title="Guests included in base fee"
-                        />
-                      </div>
+                    <div className="form-control mb-4">
+                      <label className="label text-xs font-bold uppercase text-gray-500">Tasting Title</label>
+                      <input
+                        type="text" value={tasting.tasting_title}
+                        onChange={(e) => handleTastingChange(idx, 'tasting_title', e.target.value)}
+                        className="input input-bordered input-sm font-bold shadow-inner"
+                        placeholder="e.g. Reserve Flight"
+                        aria-label="Tasting Title"
+                      />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Tasting Title</label>
-                        <input
-                          type="text" value={tasting.tasting_title}
-                          onChange={(e) => handleTastingChange(idx, 'tasting_title', e.target.value)}
-                          className="input input-bordered input-sm font-bold"
-                          placeholder="e.g. Reserve Flight"
-                          aria-label="Tasting Title"
-                        />
-                      </div>
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Old Tasting Price (Legacy) ($)</label>
-                        <input
-                          type="number" value={tasting.tasting_price}
-                          onChange={(e) => handleTastingChange(idx, 'tasting_price', Number(e.target.value))}
-                          className="input input-bordered input-sm opacity-50"
-                          placeholder="0"
-                          aria-label="Legacy Tasting Price"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Child Price ($)</label>
-                        <input
-                          type="number" value={tasting.child_price || 0}
-                          onChange={(e) => handleTastingChange(idx, 'child_price', Number(e.target.value))}
-                          className="input input-bordered input-sm"
-                          placeholder="Default 0"
-                        />
-                      </div>
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Non-Drinker Price ($)</label>
-                        <input
-                          type="number" value={tasting.non_drinker_price || 0}
-                          onChange={(e) => handleTastingChange(idx, 'non_drinker_price', Number(e.target.value))}
-                          className="input input-bordered input-sm"
-                          placeholder="Default 0"
-                        />
+                    <div className="bg-white p-4 rounded-xl border border-gray-200 mb-4 shadow-sm">
+                      <label className="label text-xs font-bold uppercase text-gray-800 mb-2 block border-b pb-2">Guest Pricing & Capacity</label>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="form-control">
+                          <label className="label text-[10px] font-bold uppercase text-gray-500">Per Person Fee ($)</label>
+                          <input 
+                            type="number" placeholder="0" className="input input-bordered input-sm" 
+                            value={tasting.tasting_price || ""} 
+                            onChange={(e) => handleTastingChange(idx, "tasting_price", parseFloat(e.target.value) || 0)} 
+                            min={0} 
+                          />
+                        </div>
+                        <div className="form-control">
+                          <label className="label text-[10px] font-bold uppercase text-gray-500">Max Guest Capacity</label>
+                          <input 
+                            type="number" placeholder="Max limit" className="input input-bordered input-sm" 
+                            value={tasting.booking_info?.max_guests_per_slot || ""} 
+                            onChange={(e) => {
+                              const bookingInfo = { ...tasting.booking_info, max_guests_per_slot: parseInt(e.target.value) || 0 };
+                              handleTastingChange(idx, "booking_info", bookingInfo);
+                            }} 
+                            min={0} 
+                          />
+                        </div>
+                        <div className="form-control">
+                          <label className="label text-[10px] font-bold uppercase text-gray-500">Non-Drinker Fee ($)</label>
+                          <input 
+                            type="number" placeholder="0" className="input input-bordered input-sm" 
+                            value={tasting.non_drinker_price || ""} 
+                            onChange={(e) => handleTastingChange(idx, "non_drinker_price", parseFloat(e.target.value) || 0)} 
+                            min={0} 
+                          />
+                        </div>
+                        <div className="form-control">
+                          <label className="label text-[10px] font-bold uppercase text-gray-500">Kids Underage Fee ($)</label>
+                          <input 
+                            type="number" placeholder="0" className="input input-bordered input-sm" 
+                            value={tasting.child_price || ""} 
+                            onChange={(e) => handleTastingChange(idx, "child_price", parseFloat(e.target.value) || 0)} 
+                            min={0} 
+                          />
+                        </div>
                       </div>
                     </div>
 
@@ -912,7 +904,7 @@ export default function WineryProfile() {
           <div className="space-y-8">
 
             {/* 3. Payment Method (Business Control) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="payment" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaCreditCard className="text-wine-secondary" />
                 Payment & Billing
@@ -957,7 +949,7 @@ export default function WineryProfile() {
             </section>
 
             {/* 4. Special Features (Filtration & UX) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="features" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaPlus className="text-wine-secondary" />
                 Special Features
@@ -976,7 +968,7 @@ export default function WineryProfile() {
 
 
             {/* 5. Transportation (Directions & Booking) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="transport" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaCar className="text-wine-secondary" />
                 Transportation Access
@@ -1008,7 +1000,7 @@ export default function WineryProfile() {
             </section>
 
             {/* 6. Contact & Support */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="contact" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <FaPhoneAlt className="text-gray-400" />
                 Public Contact
@@ -1044,7 +1036,59 @@ export default function WineryProfile() {
                 </div>
               </div>
             </section>
+
+            {/* 7. Account Settings */}
+            <section id="account" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8">
+              <h2 className="text-xl font-serif font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <FaUserAlt className="text-gray-400" />
+                Account & Security
+              </h2>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Manage your login credentials, name, and phone number securely.
+                </p>
+                <button
+                  onClick={() => router.push('/profile')}
+                  className="w-full btn btn-outline btn-primary mt-4"
+                >
+                  Manage Profile & Password
+                </button>
+              </div>
+            </section>
           </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex items-center justify-between z-50 shadow-lg">
+          <button
+            onClick={() => {
+              if (currentSection > 0) {
+                setCurrentSection(currentSection - 1);
+                document.getElementById(sections[currentSection - 1].id)?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            disabled={currentSection === 0}
+            className={`flex items-center gap-1 px-4 py-2 rounded-lg ${currentSection === 0 ? 'text-gray-300' : 'text-primary bg-primary/10'}`}
+          >
+            <FaChevronLeft size={16} />
+            <span className="text-sm font-medium">Prev</span>
+          </button>
+          
+          <span className="text-sm text-gray-500">{currentSection + 1}/{sections.length}</span>
+          
+          <button
+            onClick={() => {
+              if (currentSection < sections.length - 1) {
+                setCurrentSection(currentSection + 1);
+                document.getElementById(sections[currentSection + 1].id)?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            disabled={currentSection === sections.length - 1}
+            className={`flex items-center gap-1 px-4 py-2 rounded-lg ${currentSection === sections.length - 1 ? 'text-gray-300' : 'text-primary bg-primary/10'}`}
+          >
+            <span className="text-sm font-medium">Next</span>
+            <FaChevronRight size={16} />
+          </button>
         </div>
       </div>
     </div>
