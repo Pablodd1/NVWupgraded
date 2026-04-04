@@ -29,6 +29,8 @@ export const timeOptions = [
   "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM", "06:00 PM"
 ];
 
+export const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
 // Ordered AVAs (north-to-south, with mountain districts grouped)
 export const avaOrder: string[] = [
   "Calistoga",

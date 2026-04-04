@@ -284,7 +284,7 @@ export default function ItineraryPage() {
     handleConfirmBooking();
   };
 
-  const handleRideClick = async (service: "uber" | "lyft") => {
+  const handleRideClick = async (service: "uber") => {
     if (!currentLocation) {
       try {
         const location: any = await getUserLocation();
@@ -297,7 +297,7 @@ export default function ItineraryPage() {
     }
   };
 
-  const openRideLink = (service: "uber" | "lyft", location: { latitude: number; longitude: number }) => {
+  const openRideLink = (service: "uber", location: { latitude: number; longitude: number }) => {
     const earliestWinery = itinerary[0];
     if (!earliestWinery) return;
 
@@ -305,9 +305,6 @@ export default function ItineraryPage() {
     let rideURL = "";
     if (service === "uber") {
       rideURL = `https://m.uber.com/ul/?action=setPickup&pickup[latitude]=${location.latitude}&pickup[longitude]=${location.longitude}&dropoff[latitude]=${earliestWinery.location.latitude}&dropoff[longitude]=${earliestWinery.location.longitude}&pickup_time=${pickupTime}&intent=ride`;
-    } else if (service === "lyft") {
-      rideURL = `https://ride.lyft.com/?id=lyft&pickup[latitude]=${location.latitude}&pickup[longitude]=${location.longitude
-        }&destination=${encodeURIComponent(earliestWinery.location.address)}`;
     }
     window.open(rideURL, "_blank");
   };
@@ -404,9 +401,7 @@ export default function ItineraryPage() {
               <Button onClick={() => handleRideClick("uber")} className="bg-black text-white w-full">
                 🚗 Book an Uber
               </Button>
-              <Button onClick={() => handleRideClick("lyft")} className="bg-[#FF00BF] text-white w-full">
-                🚖 Book a Lyft
-              </Button>
+
             </div>
           </>
 

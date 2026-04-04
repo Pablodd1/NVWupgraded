@@ -13,7 +13,9 @@ import {
   FaGlassCheers,
   FaUsers,
   FaCar,
+  FaCheckCircle,
 } from "react-icons/fa";
+import { CheckCircle2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/buttons/button";
 import { Card } from "@/components/cards/card";
@@ -227,23 +229,18 @@ const WineryDetail = () => {
     );
   }
 
-  // Calculate Total Price
+  // Calculate Total Price (DEPRECATED for detail page, kept for reference if needed elsewhere)
   const totalSummary = (() => {
-    const adults = Number(selectedNumberOfPeople) || 0;
-    const tastingPrice = (currentTastingInfo?.tasting_price || 0) * adults;
-
-    const childrenFee = (currentTastingInfo?.child_price || 0) * selectedChildren;
-    const nonDrinkerFee = (currentTastingInfo?.non_drinker_price || 0) * selectedNonDrinkers;
-
-    const foodFee = selectedFoodPairings.reduce((sum, p) => sum + (p.price || 0), 0);
-    const tourFee = selectedTours.reduce((sum, t) => sum + (t.price || 0), 0);
-
-    const totalFoodItems = selectedFoodPairings.length;
-    const totalTourItems = selectedTours.length;
-
-    const total = tastingPrice + childrenFee + nonDrinkerFee + foodFee + tourFee;
-
-    return { tastingPrice, childrenFee, nonDrinkerFee, foodFee, tourFee, total, totalFoodItems, totalTourItems };
+    return { 
+      tastingPrice: currentTastingInfo?.tasting_price || 0, 
+      childrenFee: 0, 
+      nonDrinkerFee: 0, 
+      foodFee: 0, 
+      tourFee: 0, 
+      total: currentTastingInfo?.tasting_price || 0, 
+      totalFoodItems: 0, 
+      totalTourItems: 0 
+    };
   })();
 
   return (
@@ -507,255 +504,35 @@ const WineryDetail = () => {
           </div>
         </div>
 
-        {/* Book a Tasting Section */}
-        <div className="bg-white rounded-lg p-4 sm:p-8 shadow-lg">
-          <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-6 text-wine-primary">Book a Tasting</h2>
-
-          {/* External Booking - Direct Flow */}
-          {hasExternalBooking ? (
-            <div className="space-y-6">
-              {/* Information Note */}
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-lg">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <svg className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                      External Booking System
-                    </h3>
-                    <p className="text-blue-800 mb-3">
-                      This winery uses their own booking system. When you click the button below, you'll be redirected to <strong>{winery.name}</strong> official booking platform to complete your reservation.
-                    </p>
-                    <p className="text-sm text-blue-700">
-                      ✓ Secure booking process<br />
-                      ✓ Direct confirmation from the winery<br />
-                      ✓ Managed by {winery.name}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Direct External Booking Button */}
-              <Button
-                className="bg-wine-primary hover:bg-wine-primary/90 text-white w-full py-8 text-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                onClick={handleExternalBooking}
-              >
-                <span className="flex items-center justify-center gap-3">
-                  <span>Book Your Tasting Now</span>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </span>
-              </Button>
-
-              {/* Additional Info */}
-              <p className="text-center text-gray-500 text-sm">
-                You will be redirected to {winery.name}'s booking system in a new window
-              </p>
-            </div>
-          ) : (
-            /* Built-in Booking Flow */
-            <>
-              <div className="space-y-6">
-                {/* Number of People Selection */}
-                <div>
-                  <label htmlFor="num-people" className="text-sm text-gray-900 font-extrabold mb-2 block">Number of People</label>
-                  <select
-                    id="num-people"
-                    value={selectedNumberOfPeople === '' ? 1 : selectedNumberOfPeople}
-                    onChange={(e) => {
-                      const numValue = parseInt(e.target.value);
-                      setSelectedNumberOfPeople(numValue);
-                      
-                      if (selectedChildren > numValue) setSelectedChildren(numValue);
-                      if (selectedNonDrinkers > numValue) setSelectedNonDrinkers(numValue);
-                    }}
-                    className="select select-bordered w-full text-base sm:text-sm bg-gray-50 border-gray-200 shadow-sm"
-                  >
-                    {[...Array(currentTastingInfo?.booking_info?.max_guests_per_slot || 20)].map((_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {i + 1} {i === 0 ? 'Guest' : 'Guests'}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Additional Guests (Children & Non-Drinkers) */}
-                {(winery.amenities?.allows_children || winery.amenities?.allows_non_drinkers) && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {winery.amenities?.allows_children && (
-                      <div>
-                        <label htmlFor="num-children" className="text-sm text-gray-900 font-extrabold flex justify-between mb-2">
-                          <span>Children</span>
-                          <span className="text-primary">${currentTastingInfo?.child_price || 0} ea</span>
-                        </label>
-                        <select
-                          id="num-children"
-                          value={selectedChildren}
-                          onChange={(e) => setSelectedChildren(parseInt(e.target.value) || 0)}
-                          className="select select-bordered w-full text-base sm:text-sm bg-gray-50 border-gray-200 shadow-sm"
-                        >
-                          <option value={0}>0</option>
-                          {[...Array(Number(selectedNumberOfPeople) || 1)].map((_, i) => (
-                            <option key={i + 1} value={i + 1}>{i + 1}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-
-                    {winery.amenities?.allows_non_drinkers && (
-                      <div>
-                        <label htmlFor="num-non-drinkers" className="text-sm text-gray-900 font-extrabold flex justify-between mb-2">
-                          <span>Non-Drinkers</span>
-                          <span className="text-primary">${currentTastingInfo?.non_drinker_price || 0} ea</span>
-                        </label>
-                        <select
-                          id="num-non-drinkers"
-                          value={selectedNonDrinkers}
-                          onChange={(e) => setSelectedNonDrinkers(parseInt(e.target.value) || 0)}
-                          className="select select-bordered w-full text-base sm:text-sm bg-gray-50 border-gray-200 shadow-sm"
-                        >
-                          <option value={0}>0</option>
-                          {[...Array(Number(selectedNumberOfPeople) || 1)].map((_, i) => (
-                            <option key={i + 1} value={i + 1}>{i + 1}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Optional Tours Selection */}
-                {currentTastingInfo?.tours?.tour_options && currentTastingInfo.tours.tour_options.length > 0 && (
-                  <div className="pt-2 border-t border-gray-100">
-                    <label className="text-sm text-gray-900 font-extrabold mb-3 block">Add Tours</label>
-                    <div className="space-y-3">
-                      {currentTastingInfo.tours.tour_options.map((tour: any, index: number) => {
-                        const currentQty = selectedTours.filter(t => t.description === tour.description).length;
-                        return (
-                          <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm">
-                            <div className="flex-1 pr-4">
-                              <p className="font-bold text-sm text-gray-900 truncate">{tour.description}</p>
-                              <p className="text-xs text-wine-primary font-medium mt-0.5">
-                                {tour.cost ? `+$${tour.cost.toFixed(2)}/person` : 'Included'}
-                              </p>
-                            </div>
-                            <select
-                              className="select select-bordered select-sm w-20 flex-shrink-0 bg-white"
-                              value={currentQty}
-                              onChange={(e) => {
-                                const qty = parseInt(e.target.value);
-                                setSelectedTours(prev => {
-                                  const other = prev.filter(t => t.description !== tour.description);
-                                  const newEntries = Array(qty).fill({ description: tour.description, price: tour.cost || 0 });
-                                  return [...other, ...newEntries];
-                                });
-                              }}
-                            >
-                              <option value={0}>0</option>
-                              {[...Array(Number(selectedNumberOfPeople) || 1)].map((_, i) => (
-                                <option key={i + 1} value={i + 1}>{i + 1}</option>
-                              ))}
-                            </select>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Optional Food Pairings Selection */}
-                {currentTastingInfo?.food_pairing_options && currentTastingInfo.food_pairing_options.length > 0 && (
-                  <div className="pt-2 border-t border-gray-100">
-                    <label className="text-sm text-gray-900 font-extrabold mb-3 block">Add Food Pairings</label>
-                    <div className="space-y-3">
-                      {currentTastingInfo.food_pairing_options.map((pairing: any, index: number) => {
-                        const currentQty = selectedFoodPairings.filter(p => p.name === pairing.name).length;
-                        return (
-                          <div key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm">
-                            <div className="flex-1 pr-4">
-                              <p className="font-bold text-sm text-gray-900 truncate">{pairing.name}</p>
-                              <p className="text-xs text-indigo-600 font-medium mt-0.5">
-                                {pairing.price ? `+$${pairing.price.toFixed(2)}/person` : 'Included'}
-                              </p>
-                            </div>
-                            <select
-                              className="select select-bordered select-sm w-20 flex-shrink-0 bg-white"
-                              value={currentQty}
-                              onChange={(e) => {
-                                const qty = parseInt(e.target.value);
-                                setSelectedFoodPairings(prev => {
-                                  const other = prev.filter(p => p.name !== pairing.name);
-                                  const newEntries = Array(qty).fill({ name: pairing.name, price: pairing.price || 0 });
-                                  return [...other, ...newEntries];
-                                });
-                              }}
-                            >
-                              <option value={0}>0</option>
-                              {[...Array(Number(selectedNumberOfPeople) || 1)].map((_, i) => (
-                                <option key={i + 1} value={i + 1}>{i + 1}</option>
-                              ))}
-                            </select>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Price Summary Breakdown */}
-              <div className="mt-8 border-t border-gray-100 pt-6">
-                <h3 className="font-serif text-xl mb-4 text-wine-primary">Price Breakdown</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tasting ({selectedNumberOfPeople} Guests)</span>
-                    <span className="font-bold">${totalSummary.tastingPrice.toFixed(2)}</span>
-                  </div>
-                  {totalSummary.childrenFee > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Children ({selectedChildren})</span>
-                      <span className="font-bold">+${totalSummary.childrenFee.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {totalSummary.nonDrinkerFee > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Non-Drinkers ({selectedNonDrinkers})</span>
-                      <span className="font-bold">+${totalSummary.nonDrinkerFee.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {totalSummary.tourFee > 0 && (
-                    <div className="flex justify-between text-wine-secondary font-medium">
-                      <span>Tours ({totalSummary.totalTourItems}x)</span>
-                      <span>+${totalSummary.tourFee.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {totalSummary.foodFee > 0 && (
-                    <div className="flex justify-between text-indigo-600 font-medium">
-                      <span>Food Pairings ({totalSummary.totalFoodItems}x)</span>
-                      <span>+${totalSummary.foodFee.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-lg font-black border-t-2 border-primary/10 pt-4 mt-2">
-                    <span>Estimated Total</span>
-                    <span className="text-primary underline decoration-berry-500 underline-offset-4">${totalSummary.total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 flex gap-4">
-                <Button
-                  className="flex-1 bg-wine-primary hover:bg-wine-primary/90 text-white font-black py-6 rounded-2xl shadow-xl shadow-wine-primary/20 transition-all hover:scale-[1.02]"
-                  onClick={addToItinerary}
-                >
-                  Confirm & Add to Itinerary
-                </Button>
-              </div>
-            </>
-          )}
+        {/* Add to Itinerary - Cleaned Up */}
+        <div className="bg-white rounded-lg p-6 sm:p-10 shadow-lg border border-primary/10 flex flex-col items-center text-center">
+          <h2 className="font-serif text-3xl mb-4 text-wine-primary">Plan Your Visit</h2>
+          <p className="text-gray-600 mb-8 max-w-2xl">
+            Add <strong>{winery.name}</strong> to your personalized Napa Valley itinerary. 
+            You'll be able to select your preferred date, time, and additional options like food pairings or tours in the next step.
+          </p>
+          
+          <Button 
+            className="bg-wine-primary hover:bg-wine-primary/95 text-white px-12 py-8 text-xl font-bold rounded-2xl shadow-xl shadow-wine-primary/20 transition-all hover:scale-[1.02] w-full sm:w-auto"
+            onClick={addToItinerary}
+          >
+            Add to Itinerary
+          </Button>
+          
+          <div className="mt-6 flex flex-wrap justify-center gap-6 text-sm text-gray-500">
+            <span className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              Flexible Scheduling
+            </span>
+            <span className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              Customize Tours
+            </span>
+            <span className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              No Payment Needed Yet
+            </span>
+          </div>
         </div>
 
         {/* Reviews Section - Only show if reviews exist */}
@@ -879,60 +656,7 @@ const WineryDetail = () => {
           {userLocation && <Map userLocation={userLocation} wineryLocation={winery?.location} />}
         </div>
 
-        {/* Food Pairings Section - Bottom of Page */}
-        {currentTastingInfo?.food_pairing_options && currentTastingInfo.food_pairing_options.length > 0 && (
-          <div className="max-w-7xl mx-auto px-4 py-8 sm:py-16">
-            <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg">
-              <h2 className="font-serif text-2xl sm:text-3xl mb-2 text-wine-primary">Food Pairings</h2>
-              <p className="text-gray-600 mb-6">Enhance your tasting experience with artisanal pairings. Select quantity per party.</p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {currentTastingInfo.food_pairing_options.map((pairing, index) => (
-                  <div key={index} className="border-2 border-gray-200 rounded-xl p-6 hover:border-wine-primary transition-all">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="font-bold text-lg text-gray-900">{pairing.name}</h3>
-                        <p className="text-wine-primary font-semibold text-xl mt-1">
-                          {pairing.price === 0 ? 'Complimentary' : `$${pairing.price.toFixed(2)}`}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Quantity Selector - Click to Select */}
-                    <div className="mt-4">
-                      <p className="text-sm text-gray-500 mb-2">Quantity for party:</p>
-                      <div className="flex flex-wrap gap-2">
-                        {[0, 1, 2, 3, 4, 5, 6].map((qty) => (
-                          <button
-                            key={qty}
-                            onClick={() => handleFoodPairingChange(pairing, qty)}
-                            className={`
-                              w-10 h-10 rounded-full border-2 font-bold transition-all
-                              ${
-                              // Check if this quantity is currently selected
-                              selectedFoodPairings.filter(p => p.name === pairing.name).length === qty
-                                ? 'bg-wine-primary text-white border-wine-primary'
-                                : qty === 0
-                                  ? 'border-gray-300 text-gray-400 hover:border-red-400 hover:text-red-500'
-                                  : 'border-wine-primary/30 text-wine-primary hover:bg-wine-primary hover:text-white'
-                              }
-                            `}
-                          >
-                            {qty === 0 ? '✕' : qty}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <p className="text-center text-gray-500 text-sm mt-6">
-                Food pairings are per person. Click a number to select quantity for your party.
-              </p>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

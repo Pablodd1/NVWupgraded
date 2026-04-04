@@ -77,12 +77,10 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
       allowsNonDrinkers: false,
       mountainLocation: false,
       uberAvailability: false,
-      lyftAvailability: false,
       searchQuery: ""
     });
     setShowResetModal(false);
   };
-
 
 
   const [isBottomSheetOpen, setBottomSheetOpen] = useState(false);

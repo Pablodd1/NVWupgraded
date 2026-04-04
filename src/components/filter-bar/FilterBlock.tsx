@@ -23,7 +23,6 @@ type Filters = {
   allowsNonDrinkers: boolean;
   handicapAccessible: boolean;
   uberAvailability: boolean;
-  lyftAvailability: boolean;
 };
 
 interface FilterBlockProps {
@@ -161,9 +160,6 @@ export const FilterBlock = ({
         )}
       </div>
 
-
-
-
       {/* Special Features Filter */}
       <div className="my-10">
         <button
@@ -204,55 +200,6 @@ export const FilterBlock = ({
             <span>Only show mountain AVAs</span>
           </label>
         </div>
-      </div>
-
-      {/* Family & Non-Drinker Friendly Filters */}
-      <div className="mt-6 flex flex-wrap gap-4 mb-5 border-t border-gray-100 pt-6">
-        <label className="flex items-center space-x-2 text-xs sm:text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            className="checkbox checkbox-primary checkbox-sm"
-            checked={filters.allowsChildren}
-            onChange={(e) => handleFilterChange("allowsChildren", e.target.checked)}
-          />
-          <span className="font-bold text-gray-700">Allows Children</span>
-        </label>
-        <label className="flex items-center space-x-2 text-xs sm:text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            className="checkbox checkbox-primary checkbox-sm"
-            checked={filters.allowsNonDrinkers}
-            onChange={(e) => handleFilterChange("allowsNonDrinkers", e.target.checked)}
-          />
-          <span className="font-bold text-gray-700">Non-Drinker Friendly</span>
-        </label>
-        <label className="flex items-center space-x-2 text-xs sm:text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            className="checkbox checkbox-primary checkbox-sm"
-            checked={filters.handicapAccessible}
-            onChange={(e) => handleFilterChange("handicapAccessible", e.target.checked)}
-          />
-          <span className="font-bold text-gray-700">Handicap Accessible</span>
-        </label>
-        <label className="flex items-center space-x-2 text-xs sm:text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            className="checkbox checkbox-primary checkbox-sm"
-            checked={filters.uberAvailability}
-            onChange={(e) => handleFilterChange("uberAvailability", e.target.checked)}
-          />
-          <span className="font-bold text-gray-700">Uber Available</span>
-        </label>
-        <label className="flex items-center space-x-2 text-xs sm:text-sm cursor-pointer">
-          <input
-            type="checkbox"
-            className="checkbox checkbox-primary checkbox-sm"
-            checked={filters.lyftAvailability}
-            onChange={(e) => handleFilterChange("lyftAvailability", e.target.checked)}
-          />
-          <span className="font-bold text-gray-700">Lyft Available</span>
-        </label>
       </div>
     </>
   );

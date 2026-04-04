@@ -209,10 +209,10 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 mb-6 gap-3">
             <div>
               <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-                🍷 {nlpQuery ? "AI Selections" : "Napa Valley Collection [v1.1]"}
+                🍷 {nlpQuery ? "AI Selections" : "Napa Valley Collection"}
               </h2>
               <p className="text-sm text-gray-500 font-medium mt-1">
-                {nlpQuery ? "Curated by your AI Sommelier" : "Discover 150+ world-class vineyard experiences"}
+                {nlpQuery ? "Curated by your AI Sommelier" : "Curated Vineyards"}
               </p>
             </div>
 
@@ -261,28 +261,6 @@ export default function Home() {
           {showVoiceSearch && (
             <VoiceSearchPanel onFiltersApplied={handleVoiceFilters} className="mb-8 border-2 border-primary/20 animate-in fade-in slide-in-from-top-4 duration-300" />
           )}
-
-          {/* Marketing Showcase Sector — Compact */}
-          <div className="bg-gradient-to-r from-indigo-900 via-purple-900 to-berry-900 rounded-2xl p-4 sm:p-5 mb-6 relative overflow-hidden shadow-lg border border-white/10">
-            <div className="flex flex-row items-center gap-4">
-              <div className="flex-1 min-w-0">
-                <span className="inline-block px-2 py-0.5 bg-yellow-400/90 text-black text-[8px] font-black rounded-full uppercase tracking-tight mb-2 shadow-sm">Promoted Partner</span>
-                <h3 className="text-base sm:text-lg font-serif font-black text-white leading-snug">
-                  Premium Transit & Exclusive Stay
-                </h3>
-                <p className="text-white/60 mt-1 text-xs leading-relaxed line-clamp-2">
-                  Luxury limousines and boutique hotels for your winery tour.
-                </p>
-                <div className="flex gap-2 mt-3">
-                  <button className="px-3 py-1.5 bg-white text-berry-900 font-bold rounded-lg text-xs hover:bg-berry-50 transition-colors shadow-sm">Limo Services</button>
-                  <button className="px-3 py-1.5 border border-white/30 text-white font-bold rounded-lg text-xs hover:bg-white/10 transition-colors">Hotel Suites</button>
-                </div>
-              </div>
-              <div className="hidden sm:flex w-28 h-20 bg-white/10 rounded-xl items-center justify-center border border-white/20 flex-shrink-0">
-                <span className="text-white/30 font-serif italic text-xs">Your Brand</span>
-              </div>
-            </div>
-          </div>
 
           {/* Winery List */}
           {isLoading && page === 1 ? (

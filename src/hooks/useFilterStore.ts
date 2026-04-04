@@ -17,7 +17,6 @@ export type Filters = {
   allowsNonDrinkers: boolean;
   handicapAccessible: boolean;
   uberAvailability: boolean;
-  lyftAvailability: boolean;
   searchQuery: string;
 };
 
@@ -44,7 +43,6 @@ export const useFilterStore = create<FilterState>((set) => ({
     allowsNonDrinkers: false,
     handicapAccessible: false,
     uberAvailability: false,
-    lyftAvailability: false,
     searchQuery: "",
   },
   setFilters: (newFilters) =>

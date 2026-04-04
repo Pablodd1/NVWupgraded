@@ -433,7 +433,8 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
             </label>
             <select
               id={`guests-${winery._id}`}
-              className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer"
+              className="w-full h-11 text-base rounded-lg border border-gray-300 px-3 py-2 bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 cursor-pointer appearance-none"
+              style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236B7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.5rem center', backgroundSize: '1.5em 1.5em' }}
               value={selections.numberOfGuests}
               onChange={(e) => {
                 const guests = Number(e.target.value);
@@ -455,15 +456,17 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
                 <label htmlFor={`children-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">
                   Children (+${currentTastingInfo?.child_price || 0})
                 </label>
-                <input
+                <select
                   id={`children-${winery._id}`}
-                  type="number"
-                  min={0}
-                  className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500"
+                  className="w-full h-11 text-base rounded-lg border border-gray-300 px-3 py-2 bg-white focus:ring-2 focus:ring-purple-500 appearance-none"
+                  style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236B7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.4rem center', backgroundSize: '1.2em 1.2em' }}
                   value={selections.numberOfChildren}
-                  onChange={(e) => setSelections(prev => ({ ...prev, numberOfChildren: Math.max(0, parseInt(e.target.value) || 0) }))}
-                  placeholder="0"
-                />
+                  onChange={(e) => setSelections(prev => ({ ...prev, numberOfChildren: parseInt(e.target.value) || 0 }))}
+                >
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
               </div>
             )}
             {winery.amenities?.allows_non_drinkers && (
@@ -471,15 +474,17 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
                 <label htmlFor={`non-drinkers-${winery._id}`} className="block text-sm font-medium text-gray-700 mb-1">
                   Non-Drinkers (+${currentTastingInfo?.non_drinker_price || 0})
                 </label>
-                <input
+                <select
                   id={`non-drinkers-${winery._id}`}
-                  type="number"
-                  min={0}
-                  className="w-full text-sm rounded-lg border border-gray-300 p-2 focus:ring-2 focus:ring-purple-500"
+                  className="w-full h-11 text-base rounded-lg border border-gray-300 px-3 py-2 bg-white focus:ring-2 focus:ring-purple-500 appearance-none"
+                  style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236B7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 0.4rem center', backgroundSize: '1.2em 1.2em' }}
                   value={selections.numberOfNonDrinkers}
-                  onChange={(e) => setSelections(prev => ({ ...prev, numberOfNonDrinkers: Math.max(0, parseInt(e.target.value) || 0) }))}
-                  placeholder="0"
-                />
+                  onChange={(e) => setSelections(prev => ({ ...prev, numberOfNonDrinkers: parseInt(e.target.value) || 0 }))}
+                >
+                  {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
+                    <option key={n} value={n}>{n}</option>
+                  ))}
+                </select>
               </div>
             )}
           </div>

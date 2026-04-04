@@ -25,7 +25,7 @@ import {
 } from "react-icons/fa";
 import { Winery, TastingInfo, FoodPairingOption } from "@/app/interfaces";
 import Select from "react-select";
-import { wineTypes, specialFeatures, avaOrder, timeOptions } from "@/data/data";
+import { wineTypes, specialFeatures, avaOrder, timeOptions, daysOfWeek } from "@/data/data";
 import { APIProvider } from "@vis.gl/react-google-maps";
 import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
 
@@ -80,7 +80,9 @@ export default function WineryProfile() {
           }
 
           if (!winery.contact_info) winery.contact_info = { phone: "", email: "", website: "" };
-          if (!winery.amenities) winery.amenities = { handicap_accessible: false };
+          if (!winery.amenities) winery.amenities = { handicap_accessible: false, allows_children: false, allows_non_drinkers: false, virtual_sommelier: false, augmented_reality_tours: false };
+          if (winery.amenities.allows_children === undefined) winery.amenities.allows_children = false;
+          if (winery.amenities.allows_non_drinkers === undefined) winery.amenities.allows_non_drinkers = false;
           if (!winery.transportation) winery.transportation = { uber_availability: false, lyft_availability: false, distance_from_user: 0 };
           if (!winery.payment_method) winery.payment_method = { type: 'pay_winery' };
           if (!winery.images) winery.images = [];
@@ -231,6 +233,7 @@ export default function WineryProfile() {
       ava: "",
       tasting_price: 0,
       available_times: [],
+      available_days: [],
       wine_types: [],
       number_of_wines_per_tasting: 0,
       special_features: [],
@@ -547,24 +550,28 @@ export default function WineryProfile() {
                             min={0} 
                           />
                         </div>
-                        <div className="form-control">
-                          <label className="label text-[10px] font-bold uppercase text-gray-500">Non-Drinker Fee ($)</label>
-                          <input 
-                            type="number" placeholder="0" className="input input-bordered input-sm" 
-                            value={tasting.non_drinker_price || ""} 
-                            onChange={(e) => handleTastingChange(idx, "non_drinker_price", parseFloat(e.target.value) || 0)} 
-                            min={0} 
-                          />
-                        </div>
-                        <div className="form-control">
-                          <label className="label text-[10px] font-bold uppercase text-gray-500">Kids Underage Fee ($)</label>
-                          <input 
-                            type="number" placeholder="0" className="input input-bordered input-sm" 
-                            value={tasting.child_price || ""} 
-                            onChange={(e) => handleTastingChange(idx, "child_price", parseFloat(e.target.value) || 0)} 
-                            min={0} 
-                          />
-                        </div>
+                        {profile.amenities?.allows_non_drinkers && (
+                          <div className="form-control">
+                            <label className="label text-[10px] font-bold uppercase text-gray-500">Non-Drinker Fee ($)</label>
+                            <input 
+                              type="number" placeholder="0" className="input input-bordered input-sm" 
+                              value={tasting.non_drinker_price || ""} 
+                              onChange={(e) => handleTastingChange(idx, "non_drinker_price", parseFloat(e.target.value) || 0)} 
+                              min={0} 
+                            />
+                          </div>
+                        )}
+                        {profile.amenities?.allows_children && (
+                          <div className="form-control">
+                            <label className="label text-[10px] font-bold uppercase text-gray-500">Kids Underage Fee ($)</label>
+                            <input 
+                              type="number" placeholder="0" className="input input-bordered input-sm" 
+                              value={tasting.child_price || ""} 
+                              onChange={(e) => handleTastingChange(idx, "child_price", parseFloat(e.target.value) || 0)} 
+                              min={0} 
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -623,6 +630,29 @@ export default function WineryProfile() {
                             />
                           </div>
                         )}
+                      </div>
+                    </div>
+
+                    <div className="form-control mb-4">
+                      <label className="label text-xs font-bold uppercase text-gray-500">Available Days</label>
+                      <div className="flex flex-wrap gap-2 p-3 bg-white rounded-lg border border-gray-100">
+                        {daysOfWeek.map((day: string) => (
+                          <label key={day} className="flex items-center gap-2 cursor-pointer text-sm">
+                            <input
+                              type="checkbox"
+                              checked={tasting.available_days?.includes(day)}
+                              onChange={() => {
+                                const currentDays = tasting.available_days || [];
+                                const newDays = currentDays.includes(day)
+                                  ? currentDays.filter((d: string) => d !== day)
+                                  : [...currentDays, day];
+                                handleTastingChange(idx, 'available_days', newDays);
+                              }}
+                              className="checkbox checkbox-primary checkbox-sm"
+                            />
+                            {day}
+                          </label>
+                        ))}
                       </div>
                     </div>
 
