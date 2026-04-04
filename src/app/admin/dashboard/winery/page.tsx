@@ -20,6 +20,7 @@ const initialState: Winery = {
       tasting_description: "",
       tasting_price: 0,
       available_times: [],
+      available_days: [],
       wine_types: [],
       number_of_wines_per_tasting: 1,
       special_features: [],
