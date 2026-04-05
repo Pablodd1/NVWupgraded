@@ -209,10 +209,10 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 mb-6 gap-3">
             <div>
               <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-                🍷 {nlpQuery ? "AI Selections" : "Napa Valley Collection"}
+                {nlpQuery ? "🍷 AI Selections" : ""}
               </h2>
               <p className="text-sm text-gray-500 font-medium mt-1">
-                {nlpQuery ? "Curated by your AI Sommelier" : "Curated Vineyards"}
+                {nlpQuery ? "Curated by your AI Sommelier" : ""}
               </p>
             </div>
 

@@ -245,7 +245,9 @@ const MobileBottomNav = ({
       <NavLink icon={<FaHome size={20} />} href="/" label="Home" />
       <NavLink icon={<FaHistory size={20} />} href="/bookings" label="Bookings" />
 
-      <VoiceFilter />
+      <div className="flex justify-center flex-shrink-0 scale-100 sm:scale-110 px-2 overflow-visible">
+        <VoiceFilter />
+      </div>
 
       <NavLink icon={<FaMapMarkerAlt size={20} />} href="/itinerary" label="Itinerary" badge={itineraryCount} totalCost={totalCost} />
 

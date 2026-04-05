@@ -114,16 +114,16 @@ export const FilterBlock = ({
       {/* Wine Types of Tasting Filter */}
       <div className="mt-4">
         <label className="text-sm text-gray-900 font-extrabold">Wine Types of Tasting</label>
-        <div className="mt-2 flex flex-wrap gap-3">
+        <div className="mt-2 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-3">
           {wineTypes.map((type) => (
             <label key={type} className="flex items-center space-x-2 text-xs sm:text-sm">
               <input
                 type="checkbox"
-                className="checkbox checkbox-primary"
+                className="checkbox checkbox-primary checkbox-xs sm:checkbox-sm"
                 checked={filters.wineType[type as keyof typeof filters.wineType]}
                 onChange={(e) => handleFilterChange("wineType", { ...filters.wineType, [type]: e.target.checked })}
               />
-              <span className="capitalize">{type}</span>
+              <span className="capitalize leading-tight">{type}</span>
             </label>
           ))}
         </div>
@@ -170,16 +170,16 @@ export const FilterBlock = ({
           <span>{isFeaturesOpen ? "-" : "+"}</span>
         </button>
         {isFeaturesOpen && (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-2">
             {specialFeatures.map((feature) => (
               <label key={feature} className="flex items-center space-x-2 text-xs sm:text-sm">
                 <input
                   type="checkbox"
-                  className="checkbox checkbox-primary"
+                  className="checkbox checkbox-primary checkbox-xs sm:checkbox-sm"
                   checked={filters.specialFeatures.includes(feature)}
                   onChange={(e) => handleSpecialFeatureChange(feature, e.target.checked)}
                 />
-                <span>{feature}</span>
+                <span className="leading-tight">{feature}</span>
               </label>
             ))}
           </div>

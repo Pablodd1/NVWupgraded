@@ -112,20 +112,20 @@ const Filter = ({ wineries, onFilterApply }: FilterProps) => {
           </button>
 
           <button
-            className="flex items-center justify-center space-x-2 px-4 py-3 rounded-md border border-wine-primary text-wine-primary bg-transparent hover:bg-wine-primary hover:text-white hover:shadow-neumorphism transition duration-300 ease-in-out text-sm font-medium"
+            className="flex items-center justify-center space-x-1 px-3 py-3 rounded-md border border-wine-primary text-wine-primary bg-transparent hover:bg-wine-primary hover:text-white hover:shadow-neumorphism transition duration-300 ease-in-out text-[11px] font-medium min-w-0"
             onClick={() => setShowResetModal(true)}
             aria-label="Reset Filters"
           >
-            <MdRestore size={18} />
+            <MdRestore size={16} />
             <span className="font-medium">Reset</span>
           </button>
 
           <button
-            className="flex items-center justify-center space-x-2 px-4 py-3 rounded-md bg-primary text-white hover:bg-primary/90 transition duration-300 ease-in-out text-sm font-semibold shadow-md"
+            className="flex items-center justify-center space-x-1 px-3 py-3 rounded-md bg-primary text-white hover:bg-primary/90 transition duration-300 ease-in-out text-[11px] font-semibold shadow-md min-w-0"
             onClick={() => applyFilters()}
             aria-label="Search Wineries"
           >
-            <FilterIcon size={18} />
+            <FilterIcon size={16} />
             <span className="font-medium">Search</span>
           </button>
         </div>

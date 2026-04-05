@@ -96,7 +96,7 @@ export default function VirtualAssistant() {
     const currentOptions = FAQ_OPTIONS[currentStep]?.options || [];
 
     return (
-        <div className="fixed bottom-24 md:bottom-6 right-6 z-30">
+        <div className="fixed bottom-28 md:bottom-6 right-6 z-30">
             {/* Floating Action Button */}
             {!isOpen && (
                 <button
