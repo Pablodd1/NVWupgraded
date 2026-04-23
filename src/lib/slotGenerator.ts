@@ -36,7 +36,7 @@ function generateAvailableSlotsStrings(winery: any, daysAhead: number = 30): str
     const operatingHours = winery.operating_hours || {};
 
     dates.forEach(date => {
-        const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'lowercase' }) as keyof typeof operatingHours;
+        const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as keyof typeof operatingHours;
         const hours = operatingHours[dayOfWeek];
 
         if (hours && !hours.closed) {
@@ -120,7 +120,7 @@ export async function autoGenerateWinerySlots(winery: any, daysAhead: number = 3
         const operatingHours = winery.operating_hours || {};
 
         for (const date of dates) {
-            const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'lowercase' }) as keyof typeof operatingHours;
+            const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as keyof typeof operatingHours;
             const hours = operatingHours[dayOfWeek];
 
             if (hours && !hours.closed) {

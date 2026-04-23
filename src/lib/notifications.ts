@@ -576,7 +576,8 @@ export async function sendFinalBookingDecision(booking: any, winery: any, custom
     const smsMsg = isConfirmed
       ? `Great news! ${winery.name} has confirmed your booking for ${new Date(booking.datetime).toLocaleDateString()}. See you then!`
       : `Sorry, ${winery.name} was unable to confirm your booking request. Check the app for other available slots. Reply STOP to unsubscribe.`;
-    await sendSMS(customer.phone, smsMsg);
+    console.log("SMS integration disabled. Would have sent:", smsMsg);
+    // await sendSMS(customer.phone, smsMsg);
   }
 }
 
@@ -608,7 +609,8 @@ export async function sendHourReminder(customer: any, wineryName: string, time: 
 
   if (customer.phone && customer.smsConsent) {
     const navLink = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(wineryName)}+Napa+Valley`;
-    await sendSMS(customer.phone, `Reminder: Your tasting at ${wineryName} is in 1 hour (${time}). View location/Ride: ${navLink}`);
+    console.log("SMS integration disabled. Would have sent Reminder for", wineryName);
+    // await sendSMS(customer.phone, `Reminder: Your tasting at ${wineryName} is in 1 hour (${time}). View location/Ride: ${navLink}`);
   }
 }
 
