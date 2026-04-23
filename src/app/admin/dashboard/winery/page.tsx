@@ -20,6 +20,7 @@ const initialState: Winery = {
       tasting_description: "",
       tasting_price: 0,
       available_times: [],
+      available_days: [],
       wine_types: [],
       number_of_wines_per_tasting: 1,
       special_features: [],
@@ -41,9 +42,17 @@ const initialState: Winery = {
         external_booking_link: "",
       },
       other_features: [],
+      child_price: 0,
+      non_drinker_price: 0,
     },
   ],
-  amenities: { virtual_sommelier: false, augmented_reality_tours: false, handicap_accessible: false },
+  amenities: {
+    virtual_sommelier: false,
+    augmented_reality_tours: false,
+    handicap_accessible: false,
+    allows_children: false,
+    allows_non_drinkers: false
+  },
   user_reviews: [],
   transportation: { uber_availability: false, lyft_availability: false, distance_from_user: 0 },
   payment_method: { type: "pay_winery" },
@@ -52,10 +61,7 @@ const initialState: Winery = {
 export default function WineryAdminStepperPage() {
   const [formData, setFormData] = useState<Winery>(initialState);
   const [activeStep, setActiveStep] = useState(0);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [availableSlotDates, setAvailableSlotDates] = useState<Date[]>([]);
   const [loading, setLoading] = useState(false);
-  const [tastingImages, setTastingImages] = useState<{ [key: number]: File[] }>({});
   const formRef = useRef<HTMLFormElement>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -69,15 +75,15 @@ export default function WineryAdminStepperPage() {
         .then((res) => {
           if (res.data && res.data.winery) {
             const wineryData = res.data.winery;
-            
+
             // Migrate old payment_method format to new format
             if (typeof wineryData.payment_method === 'string') {
-              wineryData.payment_method = { 
+              wineryData.payment_method = {
                 type: wineryData.payment_method,
                 external_booking_link: ''
               };
             }
-            
+
             setFormData(wineryData);
           }
         })
@@ -88,32 +94,36 @@ export default function WineryAdminStepperPage() {
 
   const validateBasicInfo = () => {
     const { name, description, contact_info, location } = formData;
-    
+
+    // console.log("validateBasicInfo:", { name, description, contact_info, location });
+
     if (!name || name.trim() === "") {
       toast.error("Winery name is required");
       return false;
     }
-    
-    if (!description || description.trim() === "") {
+
+    // Ensure description is treated as string
+    const safeDesc = description || "";
+    if (!safeDesc || safeDesc.trim() === "") {
       toast.error("Description is required");
       return false;
     }
-    
+
     if (!contact_info.email || contact_info.email.trim() === "") {
       toast.error("Email is required");
       return false;
     }
-    
+
     if (!contact_info.phone || contact_info.phone.trim() === "") {
       toast.error("Phone number is required");
       return false;
     }
-    
+
     if (!location.address || location.address.trim() === "") {
       toast.error("Address is required");
       return false;
     }
-    
+
     return true;
   };
 
@@ -125,47 +135,46 @@ export default function WineryAdminStepperPage() {
 
     for (let i = 0; i < formData.tasting_info.length; i++) {
       const tasting = formData.tasting_info[i];
-      
+
       if (!tasting.tasting_title || tasting.tasting_title.trim() === "") {
         toast.error(`Tasting #${i + 1}: Tasting title is required`);
         return false;
       }
-      
+
       if (!tasting.tasting_description || tasting.tasting_description.trim() === "") {
         toast.error(`Tasting #${i + 1}: Tasting description is required`);
         return false;
       }
-      
+
       if (!tasting.tasting_price || tasting.tasting_price <= 0) {
         toast.error(`Tasting #${i + 1}: Tasting price must be greater than 0`);
         return false;
       }
-      
+
       if (!tasting.available_times || tasting.available_times.length === 0) {
         toast.error(`Tasting #${i + 1}: At least one available time must be selected`);
         return false;
       }
-      
+
       if (!tasting.wine_types || tasting.wine_types.length === 0) {
         toast.error(`Tasting #${i + 1}: At least one wine type must be selected`);
         return false;
       }
-      
+
       if (!tasting.ava || tasting.ava.trim() === "") {
         toast.error(`Tasting #${i + 1}: AVA selection is required`);
         return false;
       }
-      
-      // Check if there are any images (either existing or newly uploaded)
-      const hasExistingImages = tasting.images && tasting.images.length > 0;
-      const hasNewImages = tastingImages[i] && tastingImages[i].length > 0;
-      
-      if (!hasExistingImages && !hasNewImages) {
+
+      // Check if there are any images
+      const hasImages = tasting.images && tasting.images.length > 0;
+
+      if (!hasImages) {
         toast.error(`Tasting #${i + 1}: At least one image is required`);
         return false;
       }
     }
-    
+
     return true;
   };
 
@@ -175,55 +184,36 @@ export default function WineryAdminStepperPage() {
     }
     setActiveStep((prev) => prev + 1);
   };
-  
+
   const handleBack = () => setActiveStep((prev) => prev - 1);
+
+  const onUpload = async (file: File): Promise<string> => {
+    try {
+      const urls = await fileUpload([file]);
+      if (urls && urls.length > 0) {
+        return urls[0];
+      }
+      return "";
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload image.");
+      return "";
+    }
+  };
 
   const handleSubmit = async () => {
     // Validate both steps before submitting
     if (!validateBasicInfo()) {
       return;
     }
-    
+
     if (!validateTastingInfo()) {
       return;
     }
-    
+
     setLoading(true);
     try {
-      // Collect all files from global uploads and individual tastings
-      const allFiles: File[] = [...uploadedFiles];
-      
-      // Add files from individual tastings
-      Object.values(tastingImages).forEach(files => {
-        allFiles.push(...files);
-      });
-      
-      // Upload all files to ImgBB
-      const filesUrls = await fileUpload(allFiles);
-      
       const updatedFormData = { ...formData };
-      
-      if (filesUrls.length > 0) {
-        // Distribute URLs properly to each tasting
-        let urlIndex = 0;
-        updatedFormData.tasting_info = updatedFormData.tasting_info.map((tasting, index) => {
-          const filesForThisTasting = tastingImages[index] || [];
-          const urlsForThisTasting: string[] = [];
-          
-          // Get URLs for this tasting's files
-          for (let i = 0; i < filesForThisTasting.length && urlIndex < filesUrls.length; i++) {
-            urlsForThisTasting.push(filesUrls[urlIndex]);
-            urlIndex++;
-          }
-          
-          // Combine with existing images
-          const existingImages = tasting.images || [];
-          return {
-            ...tasting,
-            images: [...existingImages, ...urlsForThisTasting]
-          };
-        });
-      }
 
       if (wineryId) {
         // Update existing winery
@@ -243,9 +233,6 @@ export default function WineryAdminStepperPage() {
         });
       }
       setFormData({ ...initialState });
-      setUploadedFiles([]);
-      setTastingImages({});
-      setAvailableSlotDates([]);
       setActiveStep(0);
       router.push("/admin/dashboard/winery/list");
     } catch (error) {
@@ -263,18 +250,13 @@ export default function WineryAdminStepperPage() {
   const renderStep = () => {
     switch (activeStep) {
       case 0:
-        return <BasicInfoForm formData={formData} setFormData={setFormData} />;
+        return <BasicInfoForm formData={formData} setFormData={setFormData} onUpload={onUpload} />;
       case 1:
         return (
           <TastingBookingForm
             formData={formData}
             setFormData={setFormData}
-            uploadedFiles={uploadedFiles}
-            setUploadedFiles={setUploadedFiles}
-            availableSlotDates={availableSlotDates}
-            setAvailableSlotDates={setAvailableSlotDates}
-            tastingImages={tastingImages}
-            setTastingImages={setTastingImages}
+            onUpload={onUpload}
           />
         );
       default:
@@ -299,20 +281,20 @@ export default function WineryAdminStepperPage() {
 
         <ToastContainer />
 
-        <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-6" id="winery-form">
+        <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-6 pb-24 md:pb-6" id="winery-form">
           {renderStep()}
-          <div className="flex justify-between" style={{ marginBottom: "40px" }}>
+          <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 pb-[calc(16px+env(safe-area-inset-bottom))] flex justify-between gap-4 z-50 md:relative md:bg-transparent md:border-0 md:p-0 md:mt-10 md:pb-0 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] md:shadow-none">
             {activeStep > 0 && (
-              <button type="button" onClick={handleBack} className="btn">
+              <button type="button" onClick={handleBack} className="btn flex-1 md:flex-none">
                 Back
               </button>
             )}
             {activeStep < 1 ? (
-              <button type="button" onClick={handleNext} className="btn btn-primary ml-auto">
+              <button type="button" onClick={handleNext} className="btn btn-primary ml-auto flex-1 md:flex-none">
                 Next
               </button>
             ) : (
-              <button onClick={handleSubmit} className="btn btn-success ml-auto" disabled={loading}>
+              <button onClick={handleSubmit} className="btn btn-success ml-auto flex-1 md:flex-none" disabled={loading}>
                 {wineryId ? "Update Winery" : "Submit Winery"}
               </button>
             )}

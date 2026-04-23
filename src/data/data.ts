@@ -20,9 +20,16 @@ export const regions = [
 
 export const wineTypes = ["Red", "Rosé", "White", "Sparkling", "Dessert"];
 
-export const specialFeatures = ["Tasting Waived with Bottle Purchase", "Tour Available", "Food Available", "Family-Friendly", "Pet Friendly", "Organic", "Walk-ins Welcome", "Handicap Accessible"];
+export const specialFeatures = ["Tasting Waived with Bottle Purchase", "Tour Available", "Food Available", "Family-Friendly", "Pet Friendly", "Organic", "Walk-ins Welcome", "Non-Drinker Friendly"];
 
-export const timeOptions = ["Morning", "Afternoon", "Evening"];
+// 9 AM to 6 PM in 30-minute intervals
+export const timeOptions = [
+  "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+  "12:00 PM", "12:30 PM", "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM",
+  "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM", "05:00 PM", "05:30 PM", "06:00 PM"
+];
+
+export const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 // Ordered AVAs (north-to-south, with mountain districts grouped)
 export const avaOrder: string[] = [

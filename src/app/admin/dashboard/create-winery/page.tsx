@@ -1,469 +1,355 @@
 "use client";
-import { useEffect, useState } from "react";
+
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/store/authStore";
 import { toast } from "react-toastify";
-import { FaWineGlass, FaUser, FaMapMarkerAlt, FaPhone, FaEnvelope, FaGlobe } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaLock,
+  FaWineGlassAlt,
+  FaMapMarkerAlt,
+  FaGlobe,
+  FaArrowLeft,
+  FaArrowRight,
+  FaMagic,
+  FaCheckCircle,
+} from "react-icons/fa";
+import { APIProvider } from "@vis.gl/react-google-maps";
+import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { PremiumInput } from "@/components/ui/PremiumInput";
+import { cn } from "@/lib/utils";
 
 export default function CreateWineryAccount() {
-  const { user, loading, fetchUser } = useAuthStore();
   const router = useRouter();
-  const [submitting, setSubmitting] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
-  const [formData, setFormData] = useState({
-    // User account details
+  const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState(1);
+
+  const [userData, setUserData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     password: "",
-    confirmPassword: "",
     phone: "",
-    
-    // Winery details
+  });
+
+  const [wineryData, setWineryData] = useState({
     wineryName: "",
     wineryAddress: "",
-    wineryLat: "",
-    wineryLong: "",
+    wineryLat: 0,
+    wineryLong: 0,
     wineryPhone: "",
     wineryEmail: "",
     wineryWebsite: "",
     wineryDescription: "",
   });
 
-  useEffect(() => {
-    if (!loading && !user) {
-      fetchUser();
+  const generatePassword = () => {
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%";
+    let password = "";
+    for (let i = 0; i < 12; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-  }, [loading, user, fetchUser]);
-
-  useEffect(() => {
-    if (!loading && user && user.role !== "admin") {
-      router.push("/");
-    }
-  }, [user, loading, router]);
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setUserData({ ...userData, password });
+    toast.info("Secure password generated!");
   };
 
-  const validateForm = () => {
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      toast.error("Please fill in all required user fields (First Name, Last Name, Email, Password)");
+  const validateStep1 = () => {
+    if (!userData.firstName || !userData.lastName || !userData.email || !userData.password || !userData.phone) {
+      toast.error("Please fill all user account fields");
       return false;
     }
-
-    if (!formData.phone) {
-      toast.error("Phone number is required");
-      return false;
-    }
-
-    if (formData.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return false;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match");
-      return false;
-    }
-
-    if (!formData.wineryName || !formData.wineryAddress) {
-      toast.error("Please fill in winery name and address");
-      return false;
-    }
-
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      toast.error("Please enter a valid email address");
+    if (!emailRegex.test(userData.email)) {
+      toast.error("Invalid email format");
       return false;
     }
-
     return true;
   };
 
+  const handleNext = () => {
+    if (validateStep1()) setStep(2);
+  };
+
+  const handleBack = () => setStep(1);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Submitting Create Winery Form...", { userData, wineryData });
 
-    if (!validateForm()) {
+    if (!wineryData.wineryName || !wineryData.wineryAddress) {
+      console.error("Validation Failed: Name or Address missing");
+      toast.error("Winery name and address are required");
       return;
     }
 
-    setSubmitting(true);
-    setErrorMessage(null);
-
+    setLoading(true);
     try {
       const response = await fetch("/api/admin/create-winery-account", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(formData)
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...userData, ...wineryData }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         toast.success("Winery account created successfully!");
-        
-        // Show credentials to admin
-        alert(`Account Created!\n\nEmail: ${formData.email}\nPassword: ${formData.password}\n\nPlease share these credentials with the winery owner.`);
-        
-        // Reset form
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          password: "",
-          confirmPassword: "",
-          phone: "",
-          wineryName: "",
-          wineryAddress: "",
-          wineryLat: "",
-          wineryLong: "",
-          wineryPhone: "",
-          wineryEmail: "",
-          wineryWebsite: "",
-          wineryDescription: "",
-        });
-        
-        // Redirect to users page
-        router.push("/admin/dashboard/users");
+        alert(`✅ Account Created!\n\nEmail: ${userData.email}\nPassword: ${userData.password}\n\nCredentials are active.`);
+        router.push("/admin/dashboard");
       } else {
-        const error = await response.json();
-        const errMsg = error.message || "Failed to create winery account";
-        console.error("Server Error:", errMsg);
-        setErrorMessage(errMsg);
-        toast.error(errMsg);
+        toast.error(data.message || "Failed to create winery account");
       }
-    } catch (error: any) {
-      console.error("Failed to create winery account:", error);
-      const errMsg = `Network Error: ${error.message || "Unknown error"}`;
-      setErrorMessage(errMsg);
-      toast.error(errMsg);
+    } catch (error) {
+      console.error("Error creating winery account:", error);
+      toast.error("An unexpected error occurred.");
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
-  if (loading || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="text-center">
-          <div className="loading loading-spinner loading-lg text-primary"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (user.role !== "admin") {
-    return null;
-  }
-
   return (
-    <div className="min-h-screen bg-gray-100 pt-20 pb-20 md:pb-4">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Create Winery Account</h1>
-            <p className="mt-2 text-gray-600">Set up a new winery owner account</p>
+    <div className="min-h-screen bg-neutral-50 premium-gradient-bg py-12 px-4 sm:px-6 lg:px-8">
+      {/* Background Decoration */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden opacity-20">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-primary rounded-full blur-[120px]" />
+        <div className="absolute -bottom-[10%] -right-[10%] w-[40%] h-[40%] bg-secondary rounded-full blur-[120px]" />
+      </div>
+
+      <div className="max-w-2xl mx-auto relative z-10">
+        <div className="text-center mb-10">
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="inline-block p-4 bg-white rounded-2xl shadow-premium mb-4"
+          >
+            <FaWineGlassAlt className="h-10 w-10 text-primary" />
+          </motion.div>
+          <motion.h2
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="text-4xl font-bold text-neutral-900 tracking-tight"
+          >
+            Onboard New Winery
+          </motion.h2>
+          <motion.p
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1 }}
+            className="mt-3 text-neutral-600 font-medium"
+          >
+            Deploy a premium digital storefront in minutes
+          </motion.p>
+        </div>
+
+        {/* Step Progress */}
+        <div className="mb-10 px-4">
+          <div className="flex items-center justify-between mb-4">
+            {[1, 2].map((i) => (
+              <div key={i} className="flex flex-col items-center">
+                <div className={cn(
+                  "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 shadow-sm",
+                  step >= i ? "bg-primary text-white scale-110" : "bg-white text-neutral-400 border border-neutral-200"
+                )}>
+                  {step > i ? <FaCheckCircle /> : i}
+                </div>
+                <span className={cn(
+                  "mt-2 text-xs font-semibold uppercase tracking-wider",
+                  step >= i ? "text-primary" : "text-neutral-400"
+                )}>
+                  {i === 1 ? "Owner" : "Winery"}
+                </span>
+              </div>
+            ))}
+            <div className="absolute left-[50%] top-[20px] -translate-x-1/2 w-[120px] h-[2px] bg-neutral-200 -z-10">
+              <motion.div
+                className="h-full bg-primary"
+                initial={{ width: 0 }}
+                animate={{ width: step === 2 ? "100%" : "0%" }}
+              />
+            </div>
           </div>
+        </div>
+
+        <GlassCard className="p-0 overflow-hidden bg-white/70">
+          <form onSubmit={handleSubmit}>
+            <AnimatePresence mode="wait">
+              {step === 1 ? (
+                <motion.div
+                  key="step1"
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -20, opacity: 0 }}
+                  className="p-8 space-y-6"
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <PremiumInput
+                      label="First Name"
+                      placeholder="e.g. Robert"
+                      icon={<FaUser />}
+                      value={userData.firstName}
+                      onChange={(e) => setUserData({ ...userData, firstName: e.target.value })}
+                    />
+                    <PremiumInput
+                      label="Last Name"
+                      placeholder="e.g. Mondavi"
+                      icon={<FaUser />}
+                      value={userData.lastName}
+                      onChange={(e) => setUserData({ ...userData, lastName: e.target.value })}
+                    />
+                  </div>
+
+                  <PremiumInput
+                    label="Email Address"
+                    type="email"
+                    placeholder="owner@estates.com"
+                    icon={<FaEnvelope />}
+                    value={userData.email}
+                    onChange={(e) => setUserData({ ...userData, email: e.target.value })}
+                  />
+
+                  <PremiumInput
+                    label="Phone Number"
+                    placeholder="+1 (707) 000-0000"
+                    icon={<FaPhone />}
+                    value={userData.phone}
+                    onChange={(e) => setUserData({ ...userData, phone: e.target.value })}
+                    helperText="International format preferred for SMS automation"
+                  />
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-gray-700 ml-1">Password</label>
+                    <div className="flex space-x-2">
+                      <PremiumInput
+                        label=""
+                        type="text"
+                        placeholder="••••••••••••"
+                        icon={<FaLock />}
+                        className="font-mono"
+                        value={userData.password}
+                        onChange={(e) => setUserData({ ...userData, password: e.target.value })}
+                      />
+                      <button
+                        type="button"
+                        onClick={generatePassword}
+                        className="h-[46px] px-6 bg-neutral-800 text-white rounded-xl hover:bg-black transition-colors flex items-center shadow-lg"
+                      >
+                        <FaMagic className="mr-2" /> Magic
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    className="w-full py-4 bg-primary text-white rounded-2xl font-bold shadow-premium hover:bg-primary/90 transition-all flex items-center justify-center text-lg"
+                  >
+                    Next Details <FaArrowRight className="ml-2" />
+                  </button>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="step2"
+                  initial={{ x: 20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -20, opacity: 0 }}
+                  className="p-8 space-y-6"
+                >
+                  <PremiumInput
+                    label="Winery Name"
+                    placeholder="The Napa Collection"
+                    icon={<FaWineGlassAlt />}
+                    value={wineryData.wineryName}
+                    onChange={(e) => setWineryData({ ...wineryData, wineryName: e.target.value })}
+                  />
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-semibold text-gray-700 ml-1">Physical Address</label>
+                    <div className="relative flex items-center">
+                      <div className="absolute left-3 z-[1] text-gray-400">
+                        <FaMapMarkerAlt />
+                      </div>
+                      <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ""}>
+                        <AddressAutocomplete
+                          value={wineryData.wineryAddress}
+                          onChange={(address, lat, lng) => {
+                            setWineryData({
+                              ...wineryData,
+                              wineryAddress: address,
+                              wineryLat: lat || 0,
+                              wineryLong: lng || 0,
+                            });
+                          }}
+                          className="w-full pl-10 pr-4 py-2.5 bg-white/50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                        />
+                      </APIProvider>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <PremiumInput
+                      label="Public Phone"
+                      placeholder="(707) 123-4567"
+                      icon={<FaPhone />}
+                      value={wineryData.wineryPhone}
+                      onChange={(e) => setWineryData({ ...wineryData, wineryPhone: e.target.value })}
+                    />
+                    <PremiumInput
+                      label="Public Email"
+                      placeholder="info@winery.com"
+                      icon={<FaEnvelope />}
+                      value={wineryData.wineryEmail}
+                      onChange={(e) => setWineryData({ ...wineryData, wineryEmail: e.target.value })}
+                    />
+                  </div>
+
+                  <PremiumInput
+                    label="Official Website"
+                    placeholder="https://www.winery.com"
+                    icon={<FaGlobe />}
+                    value={wineryData.wineryWebsite}
+                    onChange={(e) => setWineryData({ ...wineryData, wineryWebsite: e.target.value })}
+                  />
+
+                  <div className="flex space-x-4">
+                    <button
+                      type="button"
+                      onClick={handleBack}
+                      className="px-8 py-4 bg-white border border-neutral-200 text-neutral-600 rounded-2xl font-bold hover:bg-neutral-50 transition-all flex items-center shadow-md"
+                    >
+                      <FaArrowLeft className="mr-2" /> Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="flex-1 py-4 bg-primary text-white rounded-2xl font-bold shadow-premium hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center justify-center text-lg"
+                    >
+                      {loading ? "Onboarding..." : "Instantiate Estate"}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </form>
+        </GlassCard>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-8 text-center"
+        >
           <button
             onClick={() => router.push("/admin/dashboard")}
-            className="btn btn-ghost btn-sm"
+            className="text-neutral-500 hover:text-primary font-semibold transition-colors flex items-center justify-center mx-auto group"
           >
-            ← Back to Dashboard
+            <FaArrowLeft className="mr-2 transform group-hover:-translate-x-1 transition-transform" />
+            Exit to Dashboard
           </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Error Banner */}
-          {errorMessage && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-red-800">{errorMessage}</p>
-                </div>
-                <button 
-                  type="button"
-                  onClick={() => setErrorMessage(null)}
-                  className="ml-auto text-red-500 hover:text-red-700"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Owner Account Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center mb-4">
-              <FaUser className="text-2xl text-blue-600 mr-3" />
-              <h2 className="text-xl font-bold text-gray-900">Owner Account Details</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.firstName}
-                  onChange={(e) => handleInputChange('firstName', e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="John"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.lastName}
-                  onChange={(e) => handleInputChange('lastName', e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="Smith"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="owner@winery.com"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange('phone', e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="+1 (555) 123-4567"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="Min 6 characters"
-                  minLength={6}
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="Re-enter password"
-                  minLength={6}
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Winery Details Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center mb-4">
-              <FaWineGlass className="text-2xl text-purple-600 mr-3" />
-              <h2 className="text-xl font-bold text-gray-900">Winery Details</h2>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Winery Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.wineryName}
-                  onChange={(e) => handleInputChange('wineryName', e.target.value)}
-                  className="input input-bordered w-full"
-                  placeholder="Napa Valley Wines"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formData.wineryDescription}
-                  onChange={(e) => handleInputChange('wineryDescription', e.target.value)}
-                  className="textarea textarea-bordered w-full h-32"
-                  placeholder="Describe the winery, its history, and specialties..."
-                />
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <FaMapMarkerAlt className="inline mr-2" />
-                    Address <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.wineryAddress}
-                    onChange={(e) => handleInputChange('wineryAddress', e.target.value)}
-                    className="input input-bordered w-full"
-                    placeholder="123 Vineyard Lane, Napa, CA 94558"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Latitude (optional)
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={formData.wineryLat}
-                    onChange={(e) => handleInputChange('wineryLat', e.target.value)}
-                    className="input input-bordered w-full"
-                    placeholder="38.5025"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Longitude (optional)
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    value={formData.wineryLong}
-                    onChange={(e) => handleInputChange('wineryLong', e.target.value)}
-                    className="input input-bordered w-full"
-                    placeholder="-122.2654"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <FaPhone className="inline mr-2" />
-                    Winery Phone
-                  </label>
-                  <input
-                    type="tel"
-                    value={formData.wineryPhone}
-                    onChange={(e) => handleInputChange('wineryPhone', e.target.value)}
-                    className="input input-bordered w-full"
-                    placeholder="+1 (555) 987-6543"
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <FaEnvelope className="inline mr-2" />
-                    Winery Email
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.wineryEmail}
-                    onChange={(e) => handleInputChange('wineryEmail', e.target.value)}
-                    className="input input-bordered w-full"
-                    placeholder="info@winery.com"
-                  />
-                </div>
-                
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <FaGlobe className="inline mr-2" />
-                    Website
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.wineryWebsite}
-                    onChange={(e) => handleInputChange('wineryWebsite', e.target.value)}
-                    className="input input-bordered w-full"
-                    placeholder="winery.com or www.winery.com"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Enter domain (e.g., winery.com, www.winery.com)</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <div className="flex justify-end gap-4">
-            <button
-              type="button"
-              onClick={() => router.push("/admin/dashboard")}
-              className="btn btn-ghost"
-              disabled={submitting}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={submitting}
-            >
-              {submitting ? (
-                <>
-                  <span className="loading loading-spinner loading-sm"></span>
-                  Creating Account...
-                </>
-              ) : (
-                <>
-                  <FaWineGlass className="mr-2" />
-                  Create Winery Account
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-
-        {/* Help Text */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold text-blue-900 mb-2">Important Notes:</h3>
-          <ul className="list-disc list-inside text-sm text-blue-800 space-y-1">
-            <li>The winery owner will receive login credentials to manage their winery</li>
-            <li>They can update winery details, manage inventory, and handle bookings</li>
-            <li>Make sure to securely share the login credentials with the owner</li>
-            <li>The owner can change their password after first login</li>
-          </ul>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

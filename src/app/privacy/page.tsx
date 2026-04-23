@@ -50,7 +50,7 @@ export default function PrivacyPolicy() {
 
             <section className="mb-8">
                 <h2 className="text-xl font-semibold mb-3">5. Contact Us</h2>
-                <p>If you have questions about this policy, please contact us at support@napavalleywineries.com.</p>
+                <p>If you have questions about this policy, please contact us at anabel@nvw.wine.</p>
             </section>
         </div>
     );

@@ -1,47 +1,37 @@
-import { Resend } from 'resend';
-import UserModel from "@/models/user.model";
+import { Resend } from "resend";
 
-// Initialize Resend safely to prevent build errors if env var is missing
-// SAFETY SWITCH: Temporarily disabled (mock only) until domain is verified
-const resend = {
-  emails: {
-    send: async () => {
-      console.warn("Resend email SKIPPED (Safety Mode)");
-      return { id: "mock_id", error: null };
-    }
-  }
-} as any;
-// const resend = process.env.RESEND_API_KEY
-//   ? new Resend(process.env.RESEND_API_KEY)
-//   : { emails: { send: async () => { console.warn("Resend not configured"); return { error: "Resend key missing" }; } } } as any;
-
-// ========================================
-// EMAIL CONFIGURATION
-// ========================================
-
-// No transporter needed for Resend
-
-
-// ========================================
-// ========================================
-// COMMUNICATION CONFIGURATION
-// ========================================
-// ========================================
-
-interface MessageResult {
-  success: boolean;
-  message?: string;
-  error?: string;
-}
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
- * SMS/WhatsApp functionality has been removed from the system.
- * Communication now handled through email and in-app notifications only.
+ * Send an email using Resend.
  */
-export const sendSMS = async (to: string, message: string, userEmail?: string): Promise<MessageResult> => {
-  console.log(`[SMS DISABLED] Communication via email and in-app notifications only`);
-  return { success: false, message: "SMS functionality removed" };
-};
+async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  const fromEmail = process.env.EMAIL_FROM || "Napa Valley Wineries <notifications@napawineries.com>";
+
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("Resend API key missing (RESEND_API_KEY)");
+    return { error: "Resend key missing" };
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to,
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error("Resend error:", error);
+      return { error };
+    }
+
+    return { success: true, id: data?.id };
+  } catch (error) {
+    console.error("Failed to send email via Resend:", error);
+    return { error };
+  }
+}
 
 // ========================================
 // EMAIL TEMPLATES
@@ -198,7 +188,27 @@ interface BookingNotificationData {
   bookingDate: string;
   bookingTime: string;
   numberOfGuests: number;
+  numberOfChildren?: number;
+  numberOfNonDrinkers?: number;
   specialRequests?: string;
+  paymentStatus?: string;
+}
+
+export interface SendBookingNotificationsParams {
+  bookingId: string;
+  customerFirstName: string;
+  customerLastName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  wineryName: string;
+  wineryEmail: string;
+  wineryPhone?: string;
+  bookingDateTime: string; // ISO string
+  numberOfGuests?: number;
+  numberOfChildren?: number;
+  numberOfNonDrinkers?: number;
+  specialRequests?: string;
+  paymentStatus?: string;
 }
 
 function getCustomerBookingConfirmationEmail(data: BookingNotificationData) {
@@ -230,7 +240,11 @@ function getCustomerBookingConfirmationEmail(data: BookingNotificationData) {
         </tr>
         <tr>
           <td style="padding:8px 0;"><strong>Guests:</strong></td>
-          <td style="padding:8px 0;">${data.numberOfGuests}</td>
+          <td style="padding:8px 0;">${data.numberOfGuests} Adults${data.numberOfChildren ? `, ${data.numberOfChildren} Children` : ''}${data.numberOfNonDrinkers ? `, ${data.numberOfNonDrinkers} Non-Drinkers` : ''}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;"><strong>Payment Status:</strong></td>
+          <td style="padding:8px 0;"><span style="color: #2E7D32; font-weight: bold; background: #E8F5E9; padding: 2px 8px; border-radius: 4px;">PAID (MOCK)</span></td>
         </tr>
       </table>
     </div>
@@ -309,7 +323,11 @@ function getWineryBookingNotificationEmail(data: BookingNotificationData) {
         </tr>
         <tr>
           <td style="padding:8px 0;"><strong>Guests:</strong></td>
-          <td style="padding:8px 0;">${data.numberOfGuests}</td>
+          <td style="padding:8px 0;">${data.numberOfGuests} Adults${data.numberOfChildren ? `, ${data.numberOfChildren} Children` : ''}${data.numberOfNonDrinkers ? `, ${data.numberOfNonDrinkers} Non-Drinkers` : ''}</td>
+        </tr>
+         <tr>
+          <td style="padding:8px 0;"><strong>Payment:</strong></td>
+          <td style="padding:8px 0;"><span style="color: #2E7D32; font-weight: bold;">PAID & SECURED</span></td>
         </tr>
       </table>
     </div>
@@ -369,7 +387,11 @@ function getAdminBookingNotificationEmail(data: BookingNotificationData) {
         </tr>
         <tr>
           <td style="padding:8px 0;"><strong>Guests:</strong></td>
-          <td style="padding:8px 0;">${data.numberOfGuests}</td>
+          <td style="padding:8px 0;">${data.numberOfGuests} Adults${data.numberOfChildren ? `, ${data.numberOfChildren} Children` : ''}${data.numberOfNonDrinkers ? `, ${data.numberOfNonDrinkers} Non-Drinkers` : ''}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;"><strong>Payment Status:</strong></td>
+          <td style="padding:8px 0;">PAID (MOCK CHECKOUT)</td>
         </tr>
       </table>
     </div>
@@ -397,44 +419,46 @@ function getMasterItineraryEmail(data: {
         <strong>Date & Time:</strong> ${new Date(w.datetime).toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
       </p>
       <p style="margin: 5px 0; font-size: 14px;">
-        <strong>Guests:</strong> ${w.numberOfGuests}
+        <strong>Guests:</strong> ${w.numberOfGuests} Adults${w.numberOfChildren ? `, ${w.numberOfChildren} Children` : ''}${w.numberOfNonDrinkers ? `, ${w.numberOfNonDrinkers} Non-Drinkers` : ''}
+      </p>
+      <p style="margin: 5px 0; font-size: 12px; color: #2E7D32;">
+        <strong>Status:</strong> Confirmed & Paid
       </p>
     </div>
   `).join('');
 
   const content = `
     <h2 style="color:#6B1E23;">Your Napa Day-Trip Itinerary 🍇</h2>
-    <p>Hi ${data.customerName}, your itinerary has been received! Our partner wineries have been notified and will confirm your slots shortly.</p>
+    <p>Hi ${data.customerName}, your itinerary has been <strong>Paid and Confirmed</strong>! Your slots are locked in with our partner wineries.</p>
     
     <div style="margin: 30px 0;">
-      <h3 style="border-bottom: 2px solid #EEE; padding-bottom: 10px;">The Plan:</h3>
+      <h3 style="border-bottom: 2px solid #EEE; padding-bottom: 10px;">Your Confirmed Schedule:</h3>
       ${wineriesList}
     </div>
 
     <p style="font-size: 14px; color: #666;">
-      <strong>Note:</strong> Each winery manages its own bookings. You will receive a separate confirmation once each winery approves your request. 
+      <strong>Note:</strong> Your payment has been processed successfully. You're all set! Just show up and enjoy the experience.
     </p>
     
     <div style="margin-top: 30px; text-align: center;">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="button">Track Your Requests</a>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="button">View My Itinerary</a>
     </div>
   `;
 
-  return EmailTemplate({ content, subject: "Your Napa Valley Itinerary - Request Received" });
+  return EmailTemplate({ content, subject: "Your Napa Valley Itinerary - Confirmed & Paid 🍷" });
 }
 
 export async function sendMasterItineraryNotification(booking: any, customer: any) {
   try {
-    const from = process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app";
-
     const winerySummaries = booking.wineries.map((w: any) => ({
       wineryName: w.wineryId?.name || "Premium Winery",
       datetime: w.datetime,
-      numberOfGuests: w.numberOfGuests
+      numberOfGuests: w.numberOfGuests,
+      numberOfChildren: w.numberOfChildren,
+      numberOfNonDrinkers: w.numberOfNonDrinkers
     }));
 
-    await resend.emails.send({
-      from,
+    await sendEmail({
       to: customer.email,
       subject: "Your Napa Valley Itinerary Summary 🍷",
       html: getMasterItineraryEmail({
@@ -444,10 +468,6 @@ export async function sendMasterItineraryNotification(booking: any, customer: an
       })
     });
 
-    if (customer.phone && customer.smsConsent) {
-      await sendSMS(customer.phone, `Itinerary Received! We've sent your requests to the wineries. Track your status here: ${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
-    }
-
     return { success: true };
   } catch (error: any) {
     console.error("Master Itinerary Error:", error);
@@ -455,19 +475,7 @@ export async function sendMasterItineraryNotification(booking: any, customer: an
   }
 }
 
-export interface SendBookingNotificationsParams {
-  bookingId: string;
-  customerFirstName: string;
-  customerLastName: string;
-  customerEmail: string;
-  customerPhone?: string;
-  wineryName: string;
-  wineryEmail: string;
-  wineryPhone?: string;
-  bookingDateTime: string; // ISO string
-  numberOfGuests?: number;
-  specialRequests?: string;
-}
+// Interface consolidated at line 275
 
 // ========================================
 // PASSWORD RESET NOTIFICATION
@@ -492,8 +500,7 @@ export async function sendPasswordResetEmail(email: string, resetToken: string) 
 
   const subject = "Reset Your Password - Napa Valley Wineries";
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
+  await sendEmail({
     to: email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -517,8 +524,7 @@ export async function sendWelcomeNotification(user: any, isWinery: boolean = fal
     </div>
   `;
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
+  await sendEmail({
     to: user.email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -559,8 +565,7 @@ export async function sendFinalBookingDecision(booking: any, winery: any, custom
     ` : ''}
   `;
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
+  await sendEmail({
     to: customer.email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -595,8 +600,7 @@ export async function sendHourReminder(customer: any, wineryName: string, time: 
     <p style="font-size: 13px; color: #888;">Safe travels! Please drink responsibly.</p>
   `;
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
+  await sendEmail({
     to: customer.email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -676,24 +680,17 @@ function getErrorNotificationEmail(data: ErrorNotificationParams) {
 
 export async function sendErrorNotification(params: ErrorNotificationParams) {
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || "admin@napawineries.com"; // Fallback
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || "admin@napawineries.com";
 
-    await resend.emails.send({
-      from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
+    await sendEmail({
       to: adminEmail,
       subject: `🚨 [${process.env.NODE_ENV?.toUpperCase() || 'DEV'}] Error: ${params.error.substring(0, 30)}`,
       html: getErrorNotificationEmail(params)
     });
 
-    // Optional: Send SMS for critical server errors
-    if (params.source === 'server' && process.env.ADMIN_PHONE && process.env.NEXT_PUBLIC_ENABLE_SMS === 'true') {
-      await sendSMS(process.env.ADMIN_PHONE, `🚨 Critical App Error: ${params.error.substring(0, 50)}. Check email for stack trace.`);
-    }
-
     return { success: true };
   } catch (error: any) {
     console.error("Failed to send error notification:", error);
-    // Silent fail to avoid loops
     return { success: false, error: error.message };
   }
 }
@@ -702,19 +699,7 @@ export async function sendErrorNotification(params: ErrorNotificationParams) {
 // SEND INITIAL BOOKING NOTIFICATIONS
 // ========================================
 
-export interface SendBookingNotificationsParams {
-  bookingId: string;
-  customerFirstName: string;
-  customerLastName: string;
-  customerEmail: string;
-  customerPhone?: string;
-  wineryName: string;
-  wineryEmail: string;
-  wineryPhone?: string;
-  bookingDateTime: string; // ISO string
-  numberOfGuests?: number;
-  specialRequests?: string;
-}
+// Duplicate removed
 
 export async function sendWineryNotification(params: SendBookingNotificationsParams) {
   try {
@@ -739,14 +724,14 @@ export async function sendWineryNotification(params: SendBookingNotificationsPar
         minute: '2-digit'
       }),
       numberOfGuests: params.numberOfGuests || 1,
-      specialRequests: params.specialRequests
+      numberOfChildren: params.numberOfChildren || 0,
+      numberOfNonDrinkers: params.numberOfNonDrinkers || 0,
+      specialRequests: params.specialRequests,
+      paymentStatus: params.paymentStatus
     };
 
-    const from = process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app";
-
     // 1. Notify Winery Owner
-    await resend.emails.send({
-      from,
+    await sendEmail({
       to: data.wineryEmail,
       subject: `New Booking Request - ${data.customerFirstName}`,
       html: getWineryBookingNotificationEmail(data)
@@ -754,8 +739,7 @@ export async function sendWineryNotification(params: SendBookingNotificationsPar
 
     // 2. Notify Admin
     const adminEmail = process.env.ADMIN_EMAIL || "admin@napawineries.com";
-    await resend.emails.send({
-      from,
+    await sendEmail({
       to: adminEmail,
       subject: `New Booking Alert - ${data.bookingId}`,
       html: getAdminBookingNotificationEmail(data)
@@ -766,6 +750,29 @@ export async function sendWineryNotification(params: SendBookingNotificationsPar
     console.error("Winery Notification Error:", error);
     return { success: false, error: error.message };
   }
+}
+
+export async function sendWineryApprovalNotification(winery: any, user: any) {
+  const subject = "Winery Account Approved! 🍷";
+  const content = `
+    <h2 style="color:#6B1E23; margin-bottom:24px;">Congratulations, ${user.firstName}!</h2>
+    <p>Your winery, <strong>${winery.name}</strong>, has been approved by the Napa Valley Wineries administration.</p>
+    <p>You can now log in to your dashboard to manage your availability, view bookings, and update your profile.</p>
+    <div style="background-color:#F9F9F9; padding:20px; border-radius:8px; margin:24px 0;">
+      <p><strong>Login Email:</strong> ${user.email}</p>
+      <p><strong>Dashboard URL:</strong> <a href="${process.env.NEXT_PUBLIC_APP_URL}/winery-dashboard">${process.env.NEXT_PUBLIC_APP_URL}/winery-dashboard</a></p>
+    </div>
+    <div style="margin:24px 0;">
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/winery-dashboard" class="button">Go to Dashboard</a>
+    </div>
+    <p>If you have any questions, please contact our support team.</p>
+  `;
+
+  return await sendEmail({
+    to: user.email,
+    subject,
+    html: EmailTemplate({ content, subject })
+  });
 }
 
 /** 
@@ -785,5 +792,6 @@ export default {
   sendWelcomeNotification,
   sendHourReminder,
   sendErrorNotification,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendWineryApprovalNotification
 };

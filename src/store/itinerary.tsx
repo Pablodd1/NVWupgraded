@@ -8,7 +8,10 @@ export interface BookingData {
   selectedTastingIndex: number;
   tasting: boolean;
   numberOfGuests?: number;
+  numberOfChildren?: number;
+  numberOfNonDrinkers?: number;
   foodPairings: { name: string; price: number }[];
+  foodPairingQty?: number;
   tours: { description: string; price: number }[];
   otherFeature: { description: string; price: number }[];
 }

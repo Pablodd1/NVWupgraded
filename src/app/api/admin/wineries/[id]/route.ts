@@ -1,27 +1,27 @@
 import { dbConnect } from "@/lib/dbConnect";
 import Winery from "@/models/winery.model";
-import { NextResponse } from "next/server";
-import { getUserIdFromToken } from "@/lib/auth";
 import User from "@/models/user.model";
+import { NextResponse } from "next/server";
+import { requireWineryOrAdmin } from "@/lib/rbac";
+import { sendWineryApprovalNotification } from "@/lib/notifications";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   await dbConnect();
 
   try {
-    const userId = await getUserIdFromToken();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const user = await User.findById(userId);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // Require winery owner or admin role
+    const user = await requireWineryOrAdmin(request);
+    if (user instanceof NextResponse) return user; // Error response
+
     const { id } = await params;
     const winery = await Winery.findById(id);
     if (!winery) {
       return NextResponse.json({ error: "Winery not found" }, { status: 404 });
     }
-    if (user.role !== "admin" && String(winery.owner) !== String(userId)) {
+
+    // Check ownership (admin can delete any, winery owner can only delete their own)
+    const { ownsWinery } = await import("@/lib/rbac");
+    if (!ownsWinery(user, id)) {
       return NextResponse.json({ error: "Forbidden: You do not have permission to delete this winery." }, { status: 403 });
     }
     const deletedWinery = await Winery.findByIdAndDelete(id);
@@ -38,24 +38,34 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   await dbConnect();
   try {
-    const userId = await getUserIdFromToken();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const user = await User.findById(userId);
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    // Require winery owner or admin role
+    const user = await requireWineryOrAdmin(request);
+    if (user instanceof NextResponse) return user; // Error response
+
     const { id } = await params;
     const winery = await Winery.findById(id);
     if (!winery) {
       return NextResponse.json({ error: "Winery not found" }, { status: 404 });
     }
-    if (user.role !== "admin" && String(winery.owner) !== String(userId)) {
+
+    // Check ownership
+    const { ownsWinery } = await import("@/lib/rbac");
+    if (!ownsWinery(user, id)) {
       return NextResponse.json({ error: "Forbidden: You do not have permission to update this winery." }, { status: 403 });
     }
+    
     const data = await request.json();
+    const oldStatus = winery.status;
     const updatedWinery = await Winery.findByIdAndUpdate(id, data, { new: true });
+    
+    // Trigger approval notification if status changed to approved
+    if (oldStatus !== 'approved' && updatedWinery.status === 'approved') {
+        const owner = await User.findById(updatedWinery.owner);
+        if (owner && owner.email) {
+            await sendWineryApprovalNotification(updatedWinery, owner);
+        }
+    }
+
     return NextResponse.json({ message: "Winery updated successfully", updatedWinery });
   } catch (error) {
     console.error("Error updating winery:", error);

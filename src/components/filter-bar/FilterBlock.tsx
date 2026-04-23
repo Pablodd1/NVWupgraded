@@ -19,6 +19,10 @@ type Filters = {
   specialFeatures: string[];
   numberOfPeople: [number, number];
   mountainLocation: boolean;
+  allowsChildren: boolean;
+  allowsNonDrinkers: boolean;
+  handicapAccessible: boolean;
+  uberAvailability: boolean;
 };
 
 interface FilterBlockProps {
@@ -39,7 +43,7 @@ export const FilterBlock = ({
   return (
     <>
       {/* Total Price Range Filter */}
-      <div className="grid gap-4 mt-8 mb-5">
+      <div className="grid gap-4 mt-6 mb-5">
         <label className="text-sm text-gray-900 font-extrabold">Price Range of Tasting</label>
         <Range
           step={10}
@@ -110,16 +114,16 @@ export const FilterBlock = ({
       {/* Wine Types of Tasting Filter */}
       <div className="mt-4">
         <label className="text-sm text-gray-900 font-extrabold">Wine Types of Tasting</label>
-        <div className="mt-2 flex flex-wrap gap-3">
+        <div className="mt-2 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-3">
           {wineTypes.map((type) => (
             <label key={type} className="flex items-center space-x-2 text-xs sm:text-sm">
               <input
                 type="checkbox"
-                className="checkbox checkbox-primary"
+                className="checkbox checkbox-primary checkbox-xs sm:checkbox-sm"
                 checked={filters.wineType[type as keyof typeof filters.wineType]}
                 onChange={(e) => handleFilterChange("wineType", { ...filters.wineType, [type]: e.target.checked })}
               />
-              <span className="capitalize">{type}</span>
+              <span className="capitalize leading-tight">{type}</span>
             </label>
           ))}
         </div>
@@ -129,7 +133,7 @@ export const FilterBlock = ({
       <div className="mt-4">
         <label className="text-sm font-extrabold text-gray-900 flex items-center gap-1">
           American Viticultural Area (AVA)
-         <FaMapMarkerAlt style={{ color: "#5A0C2C" }} />
+          <FaMapMarkerAlt style={{ color: "#5A0C2C" }} />
         </label>
         <Select
           menuPlacement="top"
@@ -156,24 +160,6 @@ export const FilterBlock = ({
         )}
       </div>
 
-      {/* Time Filter */}
-      <div style={{ marginTop: 10 }}>
-        <label className="text-sm text-gray-900 font-extrabold">Preferred Time</label>
-        <select
-          value={filters.time}
-          onChange={(e) => handleFilterChange("time", e.target.value)}
-          className="select select-bordered w-full mt-2 focus:ring-2 focus:ring-indigo-500 text-xs p-2 sm:text-sm"
-        >
-          <option value="">Select Time</option>
-          {timeOptions.map((time) => (
-            <option key={time} value={time}>
-              {time}
-            </option>
-          ))}
-        </select>
-      </div>
-
-
       {/* Special Features Filter */}
       <div className="my-10">
         <button
@@ -184,16 +170,16 @@ export const FilterBlock = ({
           <span>{isFeaturesOpen ? "-" : "+"}</span>
         </button>
         {isFeaturesOpen && (
-          <div className="mt-2 flex flex-wrap gap-2">
+          <div className="mt-2 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap sm:gap-2">
             {specialFeatures.map((feature) => (
               <label key={feature} className="flex items-center space-x-2 text-xs sm:text-sm">
                 <input
                   type="checkbox"
-                  className="checkbox checkbox-primary"
+                  className="checkbox checkbox-primary checkbox-xs sm:checkbox-sm"
                   checked={filters.specialFeatures.includes(feature)}
                   onChange={(e) => handleSpecialFeatureChange(feature, e.target.checked)}
                 />
-                <span>{feature}</span>
+                <span className="leading-tight">{feature}</span>
               </label>
             ))}
           </div>
@@ -202,7 +188,7 @@ export const FilterBlock = ({
 
       {/* Mountain Location Filter */}
       <div className="mt-4">
-        <label className="text-sm text-gray-900 font-extrabold">Mountain Location</label>
+        <label className="text-sm text-gray-900 font-extrabold">Only show Wineries in a mountain</label>
         <div className="mt-2">
           <label className="flex items-center space-x-2 text-xs sm:text-sm">
             <input
@@ -211,13 +197,8 @@ export const FilterBlock = ({
               checked={filters.mountainLocation}
               onChange={(e) => handleFilterChange("mountainLocation", e.target.checked)}
             />
-            <span>Only show mountain AVAs</span>
+            <span>Only show Wineries in a mountain</span>
           </label>
-          {filters.mountainLocation && (
-            <div className="mt-2 text-[11px] sm:text-xs text-gray-600">
-              Mountain AVAs: {mountainAVAs.join(", ")}
-            </div>
-          )}
         </div>
       </div>
     </>

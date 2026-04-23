@@ -5,6 +5,7 @@ import Winery from "@/models/winery.model";
 import { requireAdmin } from "@/lib/rbac";
 import bcrypt from "bcryptjs";
 import { autoGenerateWinerySlots } from "@/lib/slotGenerator";
+import { sendWelcomeNotification } from "@/lib/notifications";
 
 export async function POST(req: NextRequest) {
   try {
@@ -155,6 +156,14 @@ export async function POST(req: NextRequest) {
     const wineryDoc = await Winery.findById(newWinery._id);
     if (wineryDoc) {
       await autoGenerateWinerySlots(wineryDoc, 30);
+    }
+
+    // 4. Send Welcome Email to the new Winery Owner
+    try {
+      await sendWelcomeNotification(newUser, true);
+    } catch (emailError) {
+      console.error("Failed to send welcome email:", emailError);
+      // We don't roll back here as the account is already fully functional
     }
 
     return NextResponse.json(

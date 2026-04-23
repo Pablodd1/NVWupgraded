@@ -1,40 +1,37 @@
 import { dbConnect } from "@/lib/dbConnect";
 import BookingModel from "@/models/booking.model";
-import { NextResponse } from "next/server";
-import { getUserIdFromToken } from "@/lib/auth";
 import User from "@/models/user.model";
+import Winery from "@/models/winery.model";
+import { NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/rbac";
 
 export async function GET(request: Request) {
   try {
-    const userId = await getUserIdFromToken();
-    if (!userId) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
-    const user = await User.findById(userId);
-    if (!user) {
-      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-    }
+    await dbConnect();
+
+    // Ensure models are registered
+    console.log("Models loaded:", {
+      User: !!User,
+      Winery: !!Winery,
+      Booking: !!BookingModel
+    });
+
+    // Require admin role
+    const adminUser = await requireAdmin(request);
+    if (adminUser instanceof NextResponse) return adminUser; // Error response
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const skip = (page - 1) * limit;
-    await dbConnect();
 
-    let bookingQuery = {};
-    if (user.role === "winery") {
-      // Only bookings for this user's winery
-      const wineries = await (await import("@/models/winery.model")).default.find({ owner: userId }).select("_id");
-      const wineryIds = wineries.map((w: any) => w._id);
-      bookingQuery = { "wineries.wineryId": { $in: wineryIds } };
-    }
-
-    const bookings = await BookingModel.find(bookingQuery)
+    // Admin sees all bookings
+    const bookings = await BookingModel.find()
       .sort({ createdAt: -1 })
-      .populate({ path: "userId", model: "User", select: "name email role createdAt" })
-      .populate({ path: "wineries.wineryId", model: "Winery" })
+      .populate({ path: "userId", model: User, select: "firstName lastName email role createdAt" })
+      .populate({ path: "wineries.wineryId", model: Winery })
       .skip(skip)
       .limit(limit);
-    const totalBookings = await BookingModel.countDocuments(bookingQuery);
+    const totalBookings = await BookingModel.countDocuments();
 
     return NextResponse.json({
       bookings,

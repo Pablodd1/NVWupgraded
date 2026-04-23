@@ -13,7 +13,9 @@ import {
   FaGlassCheers,
   FaUsers,
   FaCar,
+  FaCheckCircle,
 } from "react-icons/fa";
+import { CheckCircle2 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/buttons/button";
 import { Card } from "@/components/cards/card";
@@ -25,24 +27,73 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import AvailableSlotsWidget from "@/components/winery/AvailableSlotsWidget";
 import Image from "next/image";
+import { useLanguage } from "@/context/LanguageContext";
+
+import { useAuthStore } from "@/store/authStore";
 
 const WineryDetail = () => {
+  const { user } = useAuthStore();
+  const { t } = useLanguage();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<GeolocationCoordinates | null>(null);
   const [selectedTastingIndex, setSelectedTastingIndex] = useState<number>(0);
   const [selectedFoodPairingOption, setSelectedFoodPairingOption] = useState<string | null>(null);
   const [selectedNumberOfPeople, setSelectedNumberOfPeople] = useState<number | string>(1);
+  const [selectedChildren, setSelectedChildren] = useState<number>(0);
+  const [selectedNonDrinkers, setSelectedNonDrinkers] = useState<number>(0);
+  const [selectedFoodQty, setSelectedFoodQty] = useState<number>(1);
   const { id } = useParams() as { id: string };
   const router = useRouter();
   const { itinerary, setItinerary } = useItinerary();
   const [winery, setWinery] = useState<Winery>(undefined as any);
   const hasFetchedWinery = useRef(false);
 
+  // Auth Overlay
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center space-y-6">
+          <div className="w-16 h-16 bg-wine-primary/10 rounded-full flex items-center justify-center mx-auto">
+            <FaWineGlass className="text-3xl text-wine-primary" />
+          </div>
+          <h2 className="text-2xl font-serif font-bold text-gray-900">{t("auth_overlay_title")}</h2>
+          <p className="text-gray-600">
+            {t("auth_overlay_desc")}
+          </p>
+          <div className="space-y-3">
+            {/* The AuthModal is usually triggered by the Navbar state or we can redirect to login */}
+            <Button
+              className="w-full bg-wine-primary hover:bg-wine-primary/90 text-white py-3 rounded-lg font-bold"
+              onClick={() => {
+                router.push('/?login=true');
+              }}
+            >
+              {t("sign_in")}
+            </Button>
+            <Button
+              variant="ghost"
+              className="w-full text-gray-500 hover:text-gray-700"
+              onClick={() => router.push('/')}
+            >
+              {t("auth_back_to_search")}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Booking State
+  const [selectedFoodPairings, setSelectedFoodPairings] = useState<{ name: string; price: number }[]>([]);
+  const [selectedTours, setSelectedTours] = useState<{ description: string; price: number }[]>([]);
+
   // Get current tasting info based on selection
   const currentTastingInfo = winery?.tasting_info?.[selectedTastingIndex];
 
-  // Get images from the current tasting or fallback to first tasting
-  const currentImages = currentTastingInfo?.images || winery?.tasting_info?.[0]?.images || [];
+  // Get images from the main winery profile or fallback to current tasting/first tasting
+  const currentImages = (winery?.images && winery.images.length > 0)
+    ? winery.images
+    : (currentTastingInfo?.images || winery?.tasting_info?.[0]?.images || []);
 
   // Check if this winery uses external booking
   const hasExternalBooking = currentTastingInfo?.booking_info?.external_booking_link;
@@ -56,16 +107,65 @@ const WineryDetail = () => {
   };
 
   const addToItinerary = () => {
+    const wineryWithBookingDetails = {
+      ...winery,
+      bookingDetails: {
+        selectedTastingIndex,
+        numberOfGuests: Number(selectedNumberOfPeople),
+        numberOfChildren: selectedChildren,
+        numberOfNonDrinkers: selectedNonDrinkers,
+        foodPairings: selectedFoodPairings,
+        foodPairingQty: selectedFoodQty,
+        tours: selectedTours,
+        otherFeature: [],
+        selectedDate: "",
+        selectedTime: "",
+        tasting: true
+      }
+    };
+
     setItinerary(prev => {
       const isAlreadyAdded = prev.some(item => (item._id || item.name) === (winery._id || winery.name));
       if (!isAlreadyAdded) {
-        return [...prev, winery];
+        return [...prev, wineryWithBookingDetails];
       }
       return prev;
     });
 
     toast.success(`${winery?.name} added to your itinerary!`);
     router.push("/itinerary");
+  };
+
+  const handleFoodPairingChange = (pairing: any, qty: number) => {
+    setSelectedFoodPairingOption(pairing.id);
+    setSelectedFoodQty(qty);
+
+    // Update selectedFoodPairings for itinerary
+    const otherPairings = selectedFoodPairings.filter(p => p.name !== pairing.name);
+    const newEntries = qty > 0 ? [{ name: pairing.name, price: pairing.price }] : [];
+    setSelectedFoodPairings([...otherPairings, ...newEntries]);
+
+    toast.success(qty === 0 ? `${pairing.name} removed` : `${qty}x ${pairing.name} selected`);
+  };
+
+  const handleTourToggle = (tour: any) => {
+    // Check if tour is already selected (check if any entry matches description)
+    const isSelected = selectedTours.some(t => t.description === tour.description);
+
+    if (isSelected) {
+      // Remove
+      setSelectedTours(prev => prev.filter(t => t.description !== tour.description));
+      toast.info("Tour removed");
+    } else {
+      // Add for all guests (Per Guest policy)
+      const guestCount = Number(selectedNumberOfPeople) || 1;
+      const newEntries = Array(guestCount).fill({
+        description: tour.description,
+        price: tour.cost // Use 'cost' from tour object, map to 'price' 
+      });
+      setSelectedTours(prev => [...prev, ...newEntries]);
+      toast.success("Tour added for all guests");
+    }
   };
 
   const handleLocationPermission = useCallback(() => {
@@ -126,10 +226,24 @@ const WineryDetail = () => {
     );
   }
 
+  // Calculate Total Price (DEPRECATED for detail page, kept for reference if needed elsewhere)
+  const totalSummary = (() => {
+    return { 
+      tastingPrice: currentTastingInfo?.tasting_price || 0, 
+      childrenFee: 0, 
+      nonDrinkerFee: 0, 
+      foodFee: 0, 
+      tourFee: 0, 
+      total: currentTastingInfo?.tasting_price || 0, 
+      totalFoodItems: 0, 
+      totalTourItems: 0 
+    };
+  })();
+
   return (
     <div className="min-h-screen bg-wine-background md:top-20 top-16 relative">
       {/* Hero Section */}
-      <div className="relative h-[80vh] overflow-hidden">
+      <div className="relative h-[60vh] sm:h-[80vh] overflow-hidden">
         {currentImages.length > 0 ? (
           <Image
             src={currentImages[currentImageIndex]}
@@ -146,8 +260,8 @@ const WineryDetail = () => {
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/50 flex items-center justify-center">
           <div className="text-center text-white max-w-4xl px-4">
-            <h1 className="font-serif text-6xl mb-6 leading-tight">{winery.name}</h1>
-            <p className="text-xl max-w-2xl mx-auto font-light leading-relaxed">{winery.description}</p>
+            <h1 className="font-serif text-3xl sm:text-5xl lg:text-6xl mb-4 sm:mb-6 leading-tight">{winery.name}</h1>
+            <p className="text-sm sm:text-xl max-w-2xl mx-auto font-light leading-relaxed">{winery.description}</p>
             <div className="mt-8">
               {/* Show direct booking button if external booking is configured */}
               {hasExternalBooking ? (
@@ -188,11 +302,11 @@ const WineryDetail = () => {
       </div>
 
       {/* Content Section */}
-      <div className="max-w-7xl mx-auto px-4 py-16 space-y-16">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:py-16 space-y-8 sm:space-y-16">
         {/* Multiple Tasting Selection */}
         {winery.tasting_info && winery.tasting_info.length > 1 && (
-          <div className="bg-white rounded-xl p-8 shadow-lg">
-            <h2 className="font-serif text-3xl mb-6 text-wine-primary">Choose Your Tasting Experience</h2>
+          <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg">
+            <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-6 text-wine-primary">Choose Your Tasting Experience</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {winery.tasting_info.map((tasting, index) => (
                 <Card
@@ -206,7 +320,7 @@ const WineryDetail = () => {
                   <div className="space-y-2 text-sm">
                     <p className="font-semibold text-lg">${tasting.tasting_price.toFixed(2)}</p>
                     <p className="text-gray-500">{tasting.number_of_wines_per_tasting} wines included</p>
-                    <p className="text-gray-500">{tasting.ava}</p>
+                    <p className="text-gray-500 font-medium">Per Person</p>
                   </div>
                 </Card>
               ))}
@@ -236,8 +350,8 @@ const WineryDetail = () => {
                 <FaClock className="h-6 w-6 text-wine-primary" />
               </div>
               <div>
-                <h3 className="font-serif text-lg mb-1">Times</h3>
-                <p className="text-gray-600 text-sm capitalize">{currentTastingInfo?.available_times?.join(", ") || "N/A"}</p>
+                <h3 className="font-serif text-lg mb-1">Tasting Duration</h3>
+                <p className="text-gray-600 text-sm">60-90 minutes</p>
               </div>
             </div>
           </Card>
@@ -248,7 +362,9 @@ const WineryDetail = () => {
               </div>
               <div>
                 <h3 className="font-serif text-lg mb-1">Price</h3>
-                <p className="text-gray-600 text-sm">${currentTastingInfo?.tasting_price?.toFixed(2) ?? "N/A"}</p>
+                <p className="text-gray-600 text-sm">
+                  {`$${currentTastingInfo?.tasting_price?.toFixed(2) ?? "N/A"} per person`}
+                </p>
               </div>
             </div>
           </Card>
@@ -270,9 +386,9 @@ const WineryDetail = () => {
           currentTastingInfo?.tours?.tour_options?.length > 0 ||
           currentTastingInfo?.other_features?.length > 0 ||
           currentTastingInfo?.food_pairing_options?.length > 0) && (
-            <div className="bg-white rounded-lg p-8 shadow-lg">
-              <h2 className="font-serif text-3xl mb-6 text-wine-primary">Tasting Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-white rounded-lg p-4 sm:p-8 shadow-lg">
+              <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-6 text-wine-primary">Tasting Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                 {/* Wine Section - Only show if wine details exist */}
                 {currentTastingInfo?.wine_details && currentTastingInfo.wine_details.length > 0 && (
                   <div>
@@ -335,33 +451,18 @@ const WineryDetail = () => {
                   </div>
                 )}
 
-                {/* Food Pairings Section - Only show if pairings exist */}
-                {currentTastingInfo?.food_pairing_options && currentTastingInfo.food_pairing_options.length > 0 && (
-                  <div>
-                    <h3 className="font-serif text-xl mb-4">Food Pairings</h3>
-                    {currentTastingInfo.food_pairing_options.map((pairing, index) => (
-                      <div key={index + 1} className="mb-4 p-4 border border-gray-200 rounded-lg">
-                        <p className="mb-2">
-                          <strong>{pairing.name}</strong>
-                        </p>
-                        <p className="text-lg font-semibold text-wine-primary">
-                          {pairing.price === 0 ? 'Free' : `$${pairing.price.toFixed(2)}`}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+
               </div>
             </div>
           )}
 
         {/* Tasting Experience Section */}
-        <div className="bg-white rounded-xl p-8 shadow-lg">
-          <div className="flex items-center gap-3 mb-8">
-            <FaGlassCheers className="h-8 w-8 text-wine-primary" />
-            <h2 className="font-serif text-3xl text-wine-primary">Tasting Experience</h2>
+        <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg">
+          <div className="flex items-center gap-3 mb-4 sm:mb-8">
+            <FaGlassCheers className="h-6 w-6 sm:h-8 sm:w-8 text-wine-primary" />
+            <h2 className="font-serif text-2xl sm:text-3xl text-wine-primary">Tasting Experience</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
             <Card className="p-6">
               <h3 className="font-serif text-xl mb-4">What to Expect</h3>
               <div className="space-y-4">
@@ -400,99 +501,35 @@ const WineryDetail = () => {
           </div>
         </div>
 
-        {/* Book a Tasting Section */}
-        <div className="bg-white rounded-lg p-8 shadow-lg">
-          <h2 className="font-serif text-3xl mb-6 text-wine-primary">Book a Tasting</h2>
-
-          {/* External Booking - Direct Flow */}
-          {hasExternalBooking ? (
-            <div className="space-y-6">
-              {/* Information Note */}
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-lg">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <svg className="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-blue-900 mb-2">
-                      External Booking System
-                    </h3>
-                    <p className="text-blue-800 mb-3">
-                      This winery uses their own booking system. When you click the button below, you'll be redirected to <strong>{winery.name}</strong> official booking platform to complete your reservation.
-                    </p>
-                    <p className="text-sm text-blue-700">
-                      ✓ Secure booking process<br />
-                      ✓ Direct confirmation from the winery<br />
-                      ✓ Managed by {winery.name}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Direct External Booking Button */}
-              <Button
-                className="bg-wine-primary hover:bg-wine-primary/90 text-white w-full py-8 text-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                onClick={handleExternalBooking}
-              >
-                <span className="flex items-center justify-center gap-3">
-                  <span>Book Your Tasting Now</span>
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </span>
-              </Button>
-
-              {/* Additional Info */}
-              <p className="text-center text-gray-500 text-sm">
-                You will be redirected to {winery.name}'s booking system in a new window
-              </p>
-            </div>
-          ) : (
-            /* Built-in Booking Flow */
-            <div className="space-y-6">
-              {/* Food Pairing Option Selection */}
-              <div>
-                <label className="text-sm text-gray-900 font-extrabold">Select Food Pairing (Optional)</label>
-                <select
-                  value={selectedFoodPairingOption || ""}
-                  onChange={(e) => setSelectedFoodPairingOption(e.target.value)}
-                  className="select select-bordered w-full mt-2 text-sm"
-                >
-                  <option value="">No food pairing</option>
-                  {currentTastingInfo?.food_pairing_options?.map((option) => (
-                    <option key={option.name} value={option.name} data-price={option.price}>
-                      {option.name} (${option.price.toFixed(2)})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Number of People Selection */}
-              <div>
-                <label className="text-sm text-gray-900 font-extrabold">Number of People</label>
-                <input
-                  type="number"
-                  min={1}
-                  max={currentTastingInfo?.booking_info?.max_guests_per_slot || 20}
-                  value={selectedNumberOfPeople}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    if (value === '') {
-                      setSelectedNumberOfPeople('');
-                    } else {
-                      const numValue = parseInt(value);
-                      if (!isNaN(numValue) && numValue >= 1) {
-                        setSelectedNumberOfPeople(numValue);
-                      }
-                    }
-                  }}
-                  className="input input-bordered w-full mt-2 text-sm"
-                />
-              </div>
-            </div>
-          )}
+        {/* Add to Itinerary - Cleaned Up */}
+        <div className="bg-white rounded-lg p-6 sm:p-10 shadow-lg border border-primary/10 flex flex-col items-center text-center">
+          <h2 className="font-serif text-3xl mb-4 text-wine-primary">Plan Your Visit</h2>
+          <p className="text-gray-600 mb-8 max-w-2xl">
+            Add <strong>{winery.name}</strong> to your personalized Napa Valley itinerary. 
+            You'll be able to select your preferred date, time, and additional options like food pairings or tours in the next step.
+          </p>
+          
+          <Button 
+            className="bg-wine-primary hover:bg-wine-primary/95 text-white px-12 py-8 text-xl font-bold rounded-2xl shadow-xl shadow-wine-primary/20 transition-all hover:scale-[1.02] w-full sm:w-auto"
+            onClick={addToItinerary}
+          >
+            Add to Itinerary
+          </Button>
+          
+          <div className="mt-6 flex flex-wrap justify-center gap-6 text-sm text-gray-500">
+            <span className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              Flexible Scheduling
+            </span>
+            <span className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              Customize Tours
+            </span>
+            <span className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              No Payment Needed Yet
+            </span>
+          </div>
         </div>
 
         {/* Reviews Section - Only show if reviews exist */}
@@ -524,12 +561,34 @@ const WineryDetail = () => {
         )}
 
         {/* Contact & Directions Section */}
-        <div className="bg-white rounded-xl p-8 shadow-lg">
-          <h2 className="font-serif text-3xl mb-8 text-wine-primary">Contact & Directions</h2>
+        <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg">
+          <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-8 text-wine-primary">Contact & Directions</h2>
 
           {/* Hours of Operation */}
-          <div className="mb-8">
-            <h3 className="font-serif text-2xl mb-4 text-wine-primary">Hours of Operation</h3>
+          <div className="mb-12">
+            <h3 className="font-serif text-2xl mb-6 text-wine-primary flex items-center gap-2">
+              <FaClock className="text-wine-secondary" />
+              Hours of Operation
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => {
+                const hours = winery.operating_hours?.[day as keyof typeof winery.operating_hours];
+                const isClosed = !hours || hours.closed;
+                
+                return (
+                  <div key={day} className="flex flex-col p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold uppercase text-gray-500 mb-1">{day}</span>
+                    {isClosed ? (
+                      <span className="text-sm font-medium text-red-500">Closed</span>
+                    ) : (
+                      <span className="text-sm font-medium text-gray-900">
+                        {hours.open} - {hours.close}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -589,22 +648,7 @@ const WineryDetail = () => {
                 </Button>
               )}
 
-              {winery.transportation.lyft_availability && (
-                <Button
-                  onClick={() => {
-                    if (!userLocation) {
-                      handleLocationPermission();
-                      return;
-                    }
-                    // Lyft Universal Link
-                    const url = `https://lyft.com/ride?id=lyft&pickup[latitude]=${userLocation.latitude}&pickup[longitude]=${userLocation.longitude}&destination[latitude]=${winery.location.latitude}&destination[longitude]=${winery.location.longitude}`;
-                    window.open(url, '_blank');
-                  }}
-                  className="bg-[#FF00BF] hover:bg-[#D400A0] text-white w-full py-4 text-lg flex items-center justify-center gap-2"
-                >
-                  <FaCar /> Ride with Lyft
-                </Button>
-              )}
+
 
               {userLocation && (
                 <p className="text-center mt-2 text-gray-600 text-sm">
@@ -615,6 +659,8 @@ const WineryDetail = () => {
           </div>
           {userLocation && <Map userLocation={userLocation} wineryLocation={winery?.location} />}
         </div>
+
+
       </div>
     </div>
   );

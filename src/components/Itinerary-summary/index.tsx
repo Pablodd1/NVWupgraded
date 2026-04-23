@@ -12,46 +12,83 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
   const [totalPrice, setTotalPrice] = useState(0);
 
   useEffect(() => {
-    const calculateTotalPrice = () => {
-      return wineries.reduce((total, winery) => {
+    const calculateTotalPrice = async () => {
+      let total = 0;
+
+      for (const winery of wineries) {
         let wineryCost = 0;
         const bookingDetails = winery.bookingDetails;
         const selectedTastingIndex = bookingDetails?.selectedTastingIndex || 0;
         const currentTastingInfo = winery.tasting_info?.[selectedTastingIndex];
 
-        // Calculate tasting cost using per-person pricing if available, otherwise use legacy pricing
+        // Calculate tasting cost using per-person pricing
         const numberOfGuests = bookingDetails?.numberOfGuests || 1;
-        if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
-          // Use per-person pricing
-          wineryCost += currentTastingInfo.base_booking_fee; // Base fee for first person
-          if (numberOfGuests > 1) {
-            wineryCost += (numberOfGuests - 1) * (currentTastingInfo.additional_guest_fee || 0);
+        wineryCost += (currentTastingInfo?.tasting_price || 0) * numberOfGuests;
+
+        // Check for excess guests and apply dynamic pricing
+        const maxGuestsPerSlot = currentTastingInfo?.booking_info?.max_guests_per_slot || 8;
+        const allowExcessGuests = currentTastingInfo?.booking_info?.allow_excess_guests || false;
+        const excessGuests = Math.max(0, numberOfGuests - maxGuestsPerSlot);
+
+        if (excessGuests > 0 && allowExcessGuests && bookingDetails?.selectedDate && bookingDetails?.selectedTime) {
+          try {
+            // Get dynamic pricing for excess guests
+            const dateStr = new Date(bookingDetails.selectedDate).toISOString().split('T')[0];
+            const timeStr = new Date(bookingDetails.selectedTime).toTimeString().substring(0, 5);
+
+            const response = await fetch(
+              `/api/excess-guests?wineryId=${winery._id}&date=${dateStr}&timeSlot=${timeStr}&guestCount=${numberOfGuests}`
+            );
+
+            if (response.ok) {
+              const data = await response.json();
+              wineryCost = data.pricing.totalPrice;
+            } else {
+              // Fallback to excess guest multiplier
+              const excessMultiplier = currentTastingInfo?.booking_info?.excess_guest_multiplier || 1.5;
+              wineryCost *= excessMultiplier;
+            }
+          } catch (error) {
+            console.error('Error getting excess guest pricing:', error);
+            // Fallback to excess guest multiplier
+            const excessMultiplier = currentTastingInfo?.booking_info?.excess_guest_multiplier || 1.5;
+            wineryCost *= excessMultiplier;
           }
-        } else if (currentTastingInfo?.tasting_price) {
-          // Use legacy pricing
-          wineryCost += currentTastingInfo.tasting_price;
         }
 
-        // Add food pairing prices if selected (multiplied by guests)
+        const guests = bookingDetails?.numberOfGuests || 1;
+        const children = bookingDetails?.numberOfChildren || 0;
+        const nonDrinkers = bookingDetails?.numberOfNonDrinkers || 0;
+        const foodQty = bookingDetails?.foodPairingQty || 1;
+
+        // Add children and non-drinkers pricing
+        wineryCost += (currentTastingInfo?.child_price || 0) * children;
+        wineryCost += (currentTastingInfo?.non_drinker_price || 0) * nonDrinkers;
+
+        // Add food pairing prices if selected (based on foodQty)
         if (bookingDetails?.foodPairings) {
-          wineryCost += bookingDetails.foodPairings.reduce((sum, pairing) => sum + ((pairing.price || 0) * numberOfGuests), 0);
+          wineryCost += bookingDetails.foodPairings.reduce((sum, pairing) => sum + (pairing.price || 0), 0) * foodQty;
         }
 
-        // Add tour prices if selected (multiplied by guests)
+        // Add tour prices if selected
         if (bookingDetails?.tours) {
-          wineryCost += bookingDetails.tours.reduce((sum, tour) => sum + ((tour.price || 0) * numberOfGuests), 0);
+          wineryCost += bookingDetails.tours.reduce((sum, tour) => sum + (tour.price || 0), 0) * guests;
         }
 
-        // Add other features prices if selected (multiplied by guests)
+        // Add other features prices if selected
         if (bookingDetails?.otherFeature) {
-          wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + ((feature.price || 0) * numberOfGuests), 0);
+          wineryCost += bookingDetails.otherFeature.reduce((sum, feature) => sum + (feature.price || 0), 0) * guests;
         }
 
-        return total + wineryCost;
-      }, 0);
+        total += wineryCost;
+      }
+
+      setTotalPrice(total);
     };
 
-    setTotalPrice(calculateTotalPrice());
+    if (wineries.length > 0) {
+      calculateTotalPrice();
+    }
   }, [wineries]);
 
   const totalTime = wineries.length * 1.5;
@@ -97,24 +134,24 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
               // Calculate winery subtotal
               let winerySubtotal = 0;
               const numberOfGuests = bookingDetails?.numberOfGuests || 1;
-              if (currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0) {
-                // Use per-person pricing
-                winerySubtotal += currentTastingInfo.base_booking_fee; // Base fee for first person
-                if (numberOfGuests > 1) {
-                  winerySubtotal += (numberOfGuests - 1) * (currentTastingInfo.additional_guest_fee || 0);
-                }
-              } else if (currentTastingInfo?.tasting_price) {
-                // Use legacy pricing
-                winerySubtotal += currentTastingInfo.tasting_price;
-              }
+              winerySubtotal += (currentTastingInfo?.tasting_price || 0) * numberOfGuests;
+
+              // Guest types
+              const childrenCount = bookingDetails?.numberOfChildren || 0;
+              const nonDrinkerCount = bookingDetails?.numberOfNonDrinkers || 0;
+              const foodQty = bookingDetails?.foodPairingQty || 1;
+
+              winerySubtotal += (currentTastingInfo?.child_price || 0) * childrenCount;
+              winerySubtotal += (currentTastingInfo?.non_drinker_price || 0) * nonDrinkerCount;
+
               if (bookingDetails?.foodPairings) {
-                winerySubtotal += bookingDetails.foodPairings.reduce((sum, p) => sum + (p.price * numberOfGuests), 0);
+                winerySubtotal += bookingDetails.foodPairings.reduce((sum, p) => sum + (p.price || 0), 0) * foodQty;
               }
               if (bookingDetails?.tours) {
-                winerySubtotal += bookingDetails.tours.reduce((sum, t) => sum + (t.price * numberOfGuests), 0);
+                winerySubtotal += bookingDetails.tours.reduce((sum, t) => sum + (t.price || 0), 0) * numberOfGuests;
               }
               if (bookingDetails?.otherFeature) {
-                winerySubtotal += bookingDetails.otherFeature.reduce((sum, f) => sum + (f.price * numberOfGuests), 0);
+                winerySubtotal += bookingDetails.otherFeature.reduce((sum, f) => sum + (f.price || 0), 0) * numberOfGuests;
               }
 
               return (
@@ -131,6 +168,15 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                   {bookingDetails?.selectedDate && bookingDetails?.selectedTime && (
                     <div className="ml-4 text-xs text-green-600">
                       📅 {new Date(bookingDetails.selectedTime).toLocaleDateString()} at {new Date(bookingDetails.selectedTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {(() => {
+                        const maxGuestsPerSlot = currentTastingInfo?.booking_info?.max_guests_per_slot || 8;
+                        const excessGuests = Math.max(0, (bookingDetails?.numberOfGuests || 1) - maxGuestsPerSlot);
+                        return excessGuests > 0 && currentTastingInfo?.booking_info?.allow_excess_guests ? (
+                          <span className="ml-2 text-amber-600 font-medium">
+                            +{excessGuests} excess guests
+                          </span>
+                        ) : null;
+                      })()}
                     </div>
                   )}
                   {bookingDetails &&
@@ -139,28 +185,25 @@ export default function ItinerarySummary({ wineries, onConfirm }: ItinerarySumma
                       bookingDetails.tours?.length > 0 ||
                       bookingDetails.otherFeature?.length > 0) ? (
                     <ul className="ml-4 list-disc text-xs">
-                      {currentTastingInfo?.base_booking_fee !== undefined && currentTastingInfo?.base_booking_fee > 0 ? (
-                        <li>
-                          Tasting (per-person): Base ${currentTastingInfo.base_booking_fee.toFixed(2)}
-                          {bookingDetails?.numberOfGuests && bookingDetails.numberOfGuests > 1 && currentTastingInfo.additional_guest_fee && (
-                            <> + ${((bookingDetails.numberOfGuests - 1) * currentTastingInfo.additional_guest_fee).toFixed(2)} for {bookingDetails.numberOfGuests - 1} additional guests</>
-                          )}
-                        </li>
-                      ) : currentTastingInfo?.tasting_price && (
-                        <li>Tasting: ${currentTastingInfo.tasting_price.toFixed(2)}</li>
+                      <li>Tasting: ${currentTastingInfo?.tasting_price?.toFixed(2)} x {numberOfGuests} = ${((currentTastingInfo?.tasting_price || 0) * numberOfGuests).toFixed(2)}</li>
+                      {(bookingDetails?.numberOfChildren || 0) > 0 && (
+                        <li>Children: ${currentTastingInfo?.child_price || 0} x {bookingDetails?.numberOfChildren} = ${((currentTastingInfo?.child_price || 0) * (bookingDetails?.numberOfChildren || 0)).toFixed(2)}</li>
                       )}
-                      {bookingDetails?.foodPairings?.map((pairing) => (
-                        <li key={pairing.name}>
-                          {pairing.name}: ${pairing.price.toFixed(2)} x {numberOfGuests} = ${(pairing.price * numberOfGuests).toFixed(2)}
+                      {(bookingDetails?.numberOfNonDrinkers || 0) > 0 && (
+                        <li>Non-Drinkers: ${currentTastingInfo?.non_drinker_price || 0} x {bookingDetails?.numberOfNonDrinkers} = ${((currentTastingInfo?.non_drinker_price || 0) * (bookingDetails?.numberOfNonDrinkers || 0)).toFixed(2)}</li>
+                      )}
+                      {bookingDetails?.foodPairings?.map((pairing, idx) => (
+                        <li key={`${pairing.name}-${idx}`}>
+                          {pairing.name}: ${pairing.price.toFixed(2)} x {bookingDetails?.foodPairingQty || 1} = ${(pairing.price * (bookingDetails?.foodPairingQty || 1)).toFixed(2)}
                         </li>
                       ))}
-                      {bookingDetails?.tours?.map((tour) => (
-                        <li key={tour.description}>
+                      {bookingDetails?.tours?.map((tour, idx) => (
+                        <li key={`${tour.description}-${idx}`}>
                           {tour.description}: ${tour.price.toFixed(2)} x {numberOfGuests} = ${(tour.price * numberOfGuests).toFixed(2)}
                         </li>
                       ))}
-                      {bookingDetails?.otherFeature?.map((feature) => (
-                        <li key={feature.description}>
+                      {bookingDetails?.otherFeature?.map((feature, idx) => (
+                        <li key={`${feature.description}-${idx}`}>
                           {feature.description}: ${feature.price.toFixed(2)} x {numberOfGuests} = ${(feature.price * numberOfGuests).toFixed(2)}
                         </li>
                       ))}

@@ -1,33 +1,24 @@
 import { dbConnect } from "@/lib/dbConnect";
 import Winery from "@/models/winery.model";
 import { NextResponse } from "next/server";
-import { getUserIdFromToken } from "@/lib/auth";
-import User from "@/models/user.model";
+import { requireAdmin } from "@/lib/rbac";
 
 export async function GET(request: Request) {
   await dbConnect();
 
-  const userId = await getUserIdFromToken();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  const user = await User.findById(userId);
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  // Require admin role
+  const adminUser = await requireAdmin(request);
+  if (adminUser instanceof NextResponse) return adminUser; // Error response
 
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1", 10);
   const limit = parseInt(searchParams.get("limit") || "10", 10);
 
   try {
-    let query = {};
-    if (user.role === "winery") {
-      query = { owner: userId };
-    }
-    const totalWineries = await Winery.countDocuments(query);
+    // Admin sees all wineries
+    const totalWineries = await Winery.countDocuments();
     const totalPages = Math.ceil(totalWineries / limit);
-    const wineries = await Winery.find(query)
+    const wineries = await Winery.find()
       .skip((page - 1) * limit)
       .limit(limit)
       .lean();

@@ -3,12 +3,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import Link from "next/link";
-import { 
-  FaWineGlass, 
-  FaCalendarAlt, 
-  FaClipboardList, 
-  FaUser, 
-  FaChartLine 
+import {
+  FaWineGlass,
+  FaCalendarAlt,
+  FaClipboardList,
+  FaUser,
+  FaChartLine
 } from "react-icons/fa";
 
 export default function WineryDashboard() {
@@ -37,6 +37,15 @@ export default function WineryDashboard() {
     // Fetch dashboard stats
     const fetchStats = async () => {
       try {
+        // First check if winery profile exists by trying to fetch bookings or profile
+        const profileRes = await fetch("/api/winery-dashboard/profile");
+
+        if (profileRes.status === 404) {
+          // No winery found -> Redirect to onboarding
+          router.push("/winery-dashboard/onboarding");
+          return;
+        }
+
         const [bookingsRes, slotsRes] = await Promise.all([
           fetch("/api/winery-dashboard/bookings"),
           fetch("/api/winery-dashboard/slots")
@@ -45,13 +54,13 @@ export default function WineryDashboard() {
         if (bookingsRes.ok) {
           const bookingsData = await bookingsRes.json();
           const today = new Date().toISOString().split('T')[0];
-          const todayBookings = bookingsData.bookings?.filter((b: any) => 
+          const todayBookings = bookingsData.bookings?.filter((b: any) =>
             b.createdAt?.startsWith(today)
           ).length || 0;
-          const pending = bookingsData.bookings?.filter((b: any) => 
+          const pending = bookingsData.bookings?.filter((b: any) =>
             b.status === "pending"
           ).length || 0;
-          
+
           setStats(prev => ({
             ...prev,
             todayBookings,
@@ -61,13 +70,13 @@ export default function WineryDashboard() {
 
         if (slotsRes.ok) {
           const slotsData = await slotsRes.json();
-          const totalCap = slotsData.slots?.reduce((sum: number, slot: any) => 
+          const totalCap = slotsData.slots?.reduce((sum: number, slot: any) =>
             sum + (slot.totalCapacity || 0), 0
           ) || 0;
-          const available = slotsData.slots?.reduce((sum: number, slot: any) => 
+          const available = slotsData.slots?.reduce((sum: number, slot: any) =>
             sum + (slot.availableCapacity || 0), 0
           ) || 0;
-          
+
           setStats(prev => ({
             ...prev,
             totalCapacity: totalCap,
@@ -109,7 +118,7 @@ export default function WineryDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8">
           <StatCard
             title="Today's Bookings"
             value={stats.todayBookings}
@@ -137,7 +146,7 @@ export default function WineryDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <DashboardCard
             title="Profile Management"
             description="Update your winery details, hours, and contact information"
@@ -146,9 +155,16 @@ export default function WineryDashboard() {
             bgColor="bg-white"
           />
           <DashboardCard
-            title="Inventory & Slots"
-            description="Manage your availability, capacity, and time slots"
+            title="Availability Calendar"
+            description="📅 Set available dates, time slots, and manage capacity"
             icon={<FaCalendarAlt size={32} />}
+            href="/winery-dashboard/availability"
+            bgColor="bg-white"
+          />
+          <DashboardCard
+            title="Inventory & Slots"
+            description="View and filter your time slots in table format"
+            icon={<FaChartLine size={32} />}
             href="/winery-dashboard/inventory"
             bgColor="bg-white"
           />
@@ -165,15 +181,15 @@ export default function WineryDashboard() {
   );
 }
 
-const StatCard = ({ 
-  title, 
-  value, 
-  icon, 
-  bgColor 
-}: { 
-  title: string; 
-  value: number; 
-  icon: React.ReactNode; 
+const StatCard = ({
+  title,
+  value,
+  icon,
+  bgColor
+}: {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
   bgColor: string;
 }) => (
   <div className={`${bgColor} rounded-lg shadow-md p-6`}>
@@ -189,17 +205,17 @@ const StatCard = ({
   </div>
 );
 
-const DashboardCard = ({ 
-  title, 
-  description, 
-  icon, 
-  href, 
-  bgColor 
-}: { 
-  title: string; 
-  description: string; 
-  icon: React.ReactNode; 
-  href: string; 
+const DashboardCard = ({
+  title,
+  description,
+  icon,
+  href,
+  bgColor
+}: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  href: string;
   bgColor: string;
 }) => (
   <Link href={href}>

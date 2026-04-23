@@ -1,8 +1,16 @@
 import mongoose from "mongoose";
 
+// Helper for unique IDs (safe for different Node versions)
+const generateId = () => {
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+};
+
 // FoodPairingOption Schema
 const FoodPairingOptionSchema = new mongoose.Schema({
-  id: { type: String, required: true, default: () => crypto.randomUUID() },
+  id: { type: String, required: true, default: generateId },
   name: { type: String, required: true },
   price: { type: Number, default: 0, min: 0 }, // Allow $0 (free) food pairings
 });
@@ -22,7 +30,7 @@ const ToursSchema = new mongoose.Schema({
 
 // WineDetail Schema
 const WineDetailSchema = new mongoose.Schema({
-  id: { type: String, required: true, default: () => crypto.randomUUID() },
+  id: { type: String, required: true, default: generateId },
   name: { type: String, required: true },
   description: { type: String, required: true },
   year: { type: Number },
@@ -41,6 +49,8 @@ const BookingInfoSchema = new mongoose.Schema({
   },
   available_slots: [{ type: String }],
   external_booking_link: { type: String },
+  allow_excess_guests: { type: Boolean, default: false },
+  excess_guest_multiplier: { type: Number, default: 1.5, min: 1 },
 });
 
 // OtherFeature Schema
@@ -55,13 +65,13 @@ const TastingInfoSchema = new mongoose.Schema({
   tasting_title: { type: String, required: true },
   tasting_description: { type: String, required: true },
   ava: { type: String },
-  tasting_price: { type: Number, default: 0, min: 0 }, // Legacy/Combined price
-  base_booking_fee: { type: Number, default: 0, min: 0 }, // Fixed fee for booking
-  additional_guest_fee: { type: Number, default: 0, min: 0 }, // Fee per guest
+  tasting_price: { type: Number, default: 0, min: 0 }, 
   available_times: [{ type: String }],
   wine_types: [{ type: String }],
   number_of_wines_per_tasting: { type: Number, min: 1, default: 1 },
   special_features: [{ type: String }],
+  child_price: { type: Number, default: 0, min: 0 },
+  non_drinker_price: { type: Number, default: 0, min: 0 },
   images: [{ type: String }],
   food_pairing_options: [FoodPairingOptionSchema],
   tours: ToursSchema,
@@ -85,11 +95,14 @@ const WinerySchema = new mongoose.Schema({
     website: { type: String },
   },
   description: { type: String },
+  images: [{ type: String }],
   tasting_info: [TastingInfoSchema],
   amenities: {
     virtual_sommelier: { type: Boolean, default: false },
     augmented_reality_tours: { type: Boolean, default: false },
     handicap_accessible: { type: Boolean, default: false },
+    allows_children: { type: Boolean, default: false },
+    allows_non_drinkers: { type: Boolean, default: false },
   },
   user_reviews: [
     {
@@ -101,12 +114,22 @@ const WinerySchema = new mongoose.Schema({
   ],
   transportation: {
     uber_availability: { type: Boolean, default: false },
-    lyft_availability: { type: Boolean, default: false },
     distance_from_user: { type: Number, min: 0 },
   },
   payment_method: {
     type: { type: String, enum: ['pay_winery', 'pay_stripe', 'external_booking'], default: 'pay_winery' },
     external_booking_link: { type: String },
+  },
+  is_featured: { type: Boolean, default: false },
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  operating_hours: {
+    monday: { open: { type: String, default: "09:00 AM" }, close: { type: String, default: "05:00 PM" }, closed: { type: Boolean, default: false } },
+    tuesday: { open: { type: String, default: "09:00 AM" }, close: { type: String, default: "05:00 PM" }, closed: { type: Boolean, default: false } },
+    wednesday: { open: { type: String, default: "09:00 AM" }, close: { type: String, default: "05:00 PM" }, closed: { type: Boolean, default: false } },
+    thursday: { open: { type: String, default: "09:00 AM" }, close: { type: String, default: "05:00 PM" }, closed: { type: Boolean, default: false } },
+    friday: { open: { type: String, default: "09:00 AM" }, close: { type: String, default: "05:00 PM" }, closed: { type: Boolean, default: false } },
+    saturday: { open: { type: String, default: "10:00 AM" }, close: { type: String, default: "06:00 PM" }, closed: { type: Boolean, default: false } },
+    sunday: { open: { type: String, default: "10:00 AM" }, close: { type: String, default: "05:00 PM" }, closed: { type: Boolean, default: false } },
   },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 });

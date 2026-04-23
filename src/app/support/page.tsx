@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { toast } from "react-toastify";
-import { FaEnvelope, FaPhone, FaComments, FaInstagram, FaLinkedin, FaFacebook, FaPaperPlane, FaSearch, FaQuestionCircle } from "react-icons/fa";
+import { FaEnvelope, FaPhone, FaComments, FaInstagram, FaFacebook, FaPaperPlane, FaSearch, FaQuestionCircle } from "react-icons/fa";
 
 const SupportPage = () => {
   const { t, language } = useLanguage();
@@ -25,8 +25,8 @@ const SupportPage = () => {
       category: "Booking",
       question: language === 'es' ? "¿Puedo modificar o cancelar mi reserva?" : "Can I modify or cancel my booking?",
       answer: language === 'es'
-        ? "Puedes modificar tu itinerario antes de confirmar. Después de la confirmación, contacta directamente con la bodega o envíanos un email a support@napavalleywineries.com."
-        : "You can modify your itinerary before confirmation. After confirmation, contact the winery directly or email us at support@napavalleywineries.com for assistance."
+        ? "Puedes modificar tu itinerario antes de confirmar. Después de la confirmación, contacta directamente con la bodega o envíanos un email a anabel@nvw.wine."
+        : "You can modify your itinerary before confirmation. After confirmation, contact the winery directly or email us at anabel@nvw.wine for assistance."
     },
     {
       category: "Booking",
@@ -95,8 +95,8 @@ const SupportPage = () => {
       category: "Support",
       question: language === 'es' ? "¿Cómo contacto al soporte?" : "How do I contact support?",
       answer: language === 'es'
-        ? "Email: support@napavalleywineries.com | Chat: botón abajo a la derecha | Formulario: completa el formulario de contacto abajo. Respondemos en 24 horas."
-        : "Email: support@napavalleywineries.com | Chat: bottom right button | Form: fill out the contact form below. We respond within 24 hours."
+        ? "Email: anabel@nvw.wine | Chat: botón abajo a la derecha | Formulario: completa el formulario de contacto abajo. Respondemos en 24 horas."
+        : "Email: anabel@nvw.wine | Chat: bottom right button | Form: fill out the contact form below. We respond within 24 hours."
     }
   ];
 
@@ -124,8 +124,8 @@ const SupportPage = () => {
 
       if (response.ok) {
         toast.success(
-          language === 'es' 
-            ? '¡Mensaje enviado! Te responderemos en 24 horas.' 
+          language === 'es'
+            ? '¡Mensaje enviado! Te responderemos en 24 horas.'
             : 'Message sent! We\'ll respond within 24 hours.'
         );
         setFormData({ name: "", email: "", subject: "", message: "" });
@@ -135,8 +135,8 @@ const SupportPage = () => {
     } catch {
       // Fallback: even if API fails, show success (message logged server-side)
       toast.success(
-        language === 'es' 
-          ? '¡Gracias por tu mensaje! Te contactaremos pronto.' 
+        language === 'es'
+          ? '¡Gracias por tu mensaje! Te contactaremos pronto.'
           : 'Thank you for your message! We\'ll contact you soon.'
       );
       setFormData({ name: "", email: "", subject: "", message: "" });
@@ -147,7 +147,7 @@ const SupportPage = () => {
 
   // Group FAQs by category
   const categories = [...new Set(faqs.map(faq => faq.category))];
-  const filteredFaqs = faqs.filter((faq) => 
+  const filteredFaqs = faqs.filter((faq) =>
     faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
     faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -160,7 +160,7 @@ const SupportPage = () => {
           {language === 'es' ? 'Centro de Ayuda y Soporte' : 'Help & Support Center'}
         </h1>
         <p className="text-gray-600 text-sm md:text-base max-w-2xl mx-auto">
-          {language === 'es' 
+          {language === 'es'
             ? 'Encuentra respuestas rápidas a tus preguntas o contáctanos directamente. Estamos aquí para ayudarte.'
             : 'Find quick answers to your questions or contact us directly. We\'re here to help.'}
         </p>
@@ -217,18 +217,17 @@ const SupportPage = () => {
         <h2 className="text-xl md:text-2xl font-bold text-primary mb-6 flex items-center gap-2">
           <FaQuestionCircle /> {language === 'es' ? 'Preguntas Frecuentes' : 'Frequently Asked Questions'}
         </h2>
-        
+
         {/* Category Tabs */}
         <div className="flex flex-wrap gap-2 mb-6">
           {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setSearchQuery(cat)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition ${
-                searchQuery === cat 
-                  ? 'bg-primary text-white' 
-                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-              }`}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition ${searchQuery === cat
+                ? 'bg-primary text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                }`}
             >
               {cat}
             </button>
@@ -246,8 +245,8 @@ const SupportPage = () => {
         {/* FAQ Accordion */}
         <div className="space-y-3">
           {filteredFaqs.map((faq, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition"
             >
               <button
@@ -280,11 +279,11 @@ const SupportPage = () => {
             <FaPaperPlane /> {language === 'es' ? 'Envíanos un Mensaje' : 'Send Us a Message'}
           </h2>
           <p className="text-gray-500 text-sm mb-6">
-            {language === 'es' 
-              ? 'Tu mensaje será enviado a support@napavalleywineries.com' 
+            {language === 'es'
+              ? 'Tu mensaje será enviado a support@napavalleywineries.com'
               : 'Your message will be sent to support@napavalleywineries.com'}
           </p>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -364,8 +363,8 @@ const SupportPage = () => {
               ) : (
                 <FaPaperPlane />
               )}
-              {isSubmitting 
-                ? (language === 'es' ? 'Enviando...' : 'Sending...') 
+              {isSubmitting
+                ? (language === 'es' ? 'Enviando...' : 'Sending...')
                 : (language === 'es' ? 'Enviar Mensaje' : 'Send Message')}
             </button>
           </form>
@@ -385,8 +384,8 @@ const SupportPage = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">{language === 'es' ? 'Email de Soporte' : 'Support Email'}</p>
-                  <a href="mailto:support@napavalleywineries.com" className="font-semibold text-primary hover:underline">
-                    support@napavalleywineries.com
+                  <a href="mailto:anabel@nvw.wine" className="font-semibold text-primary hover:underline">
+                    anabel@nvw.wine
                   </a>
                 </div>
               </div>
@@ -404,38 +403,7 @@ const SupportPage = () => {
             </div>
           </div>
 
-          {/* Social Media */}
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h3 className="font-bold text-lg text-primary mb-4">
-              {language === 'es' ? 'Síguenos' : 'Follow Us'}
-            </h3>
-            <div className="flex gap-4">
-              <a 
-                href="https://www.instagram.com/winesnvw/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="bg-gradient-to-br from-purple-600 to-pink-500 p-4 rounded-full text-white hover:scale-110 transition"
-              >
-                <FaInstagram className="text-2xl" />
-              </a>
-              <a 
-                href="https://www.linkedin.com/company/winesnvw/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="bg-blue-600 p-4 rounded-full text-white hover:scale-110 transition"
-              >
-                <FaLinkedin className="text-2xl" />
-              </a>
-              <a 
-                href="https://www.facebook.com/people/Wines-Nvw/pfbid02GokGEaA8ZzDCsbwijRW4WYCK4hp63H6W31PwmvPtn4yw69onT6w7gjKpnVWweyysl/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="bg-blue-700 p-4 rounded-full text-white hover:scale-110 transition"
-              >
-                <FaFacebook className="text-2xl" />
-              </a>
-            </div>
-          </div>
+
 
           {/* Response Time */}
           <div className="bg-gradient-to-r from-primary to-secondary p-6 rounded-xl text-white">
@@ -451,10 +419,7 @@ const SupportPage = () => {
                 <span className="w-2 h-2 bg-white rounded-full"></span>
                 {language === 'es' ? 'Chat AI: Instantáneo' : 'AI Chat: Instant'}
               </li>
-              <li className="flex items-center gap-2">
-                <span className="w-2 h-2 bg-white rounded-full"></span>
-                {language === 'es' ? 'Redes sociales: 48 horas' : 'Social Media: 48 hours'}
-              </li>
+
             </ul>
           </div>
         </div>

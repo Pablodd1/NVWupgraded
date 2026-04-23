@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
             bookingDate,
             bookingTime,
             numberOfGuests,
+            numberOfChildren,
+            numberOfNonDrinkers,
             customerFirstName,
             customerLastName,
             customerEmail,
@@ -84,30 +86,29 @@ export async function POST(request: NextRequest) {
 
         let slotInventory = await SlotInventory.findOne({
             wineryId,
-            tastingTitle,
             date: dateString,
             timeSlot: bookingTime,
         });
 
         if (!slotInventory) {
             // Create new slot inventory
-            const maxCapacity = tastingInfo.booking_info?.max_guests_per_slot || 10;
+            const totalCapacity = tastingInfo.booking_info?.max_guests_per_slot || 10;
             slotInventory = new SlotInventory({
                 wineryId,
-                tastingTitle,
                 date: dateString,
                 timeSlot: bookingTime,
-                maxCapacity,
-                currentCapacity: maxCapacity - numberOfGuests,
+                totalCapacity,
+                bookedCapacity: numberOfGuests,
+                availableCapacity: totalCapacity - numberOfGuests,
                 bookings: [],
             });
         } else {
             // Check if enough capacity
-            if (slotInventory.currentCapacity < numberOfGuests) {
+            if (slotInventory.availableCapacity < numberOfGuests) {
                 return NextResponse.json(
                     {
                         error: "Not enough capacity available",
-                        available: slotInventory.currentCapacity,
+                        available: slotInventory.availableCapacity,
                         requested: numberOfGuests,
                     },
                     { status: 400 }
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
             }
 
             // Reduce capacity
-            slotInventory.currentCapacity -= numberOfGuests;
+            slotInventory.bookedCapacity += numberOfGuests;
         }
 
         // Create booking record
@@ -124,6 +125,8 @@ export async function POST(request: NextRequest) {
             tastingTitle,
             bookingDate: new Date(`${dateString}T${bookingTime}`),
             numberOfGuests,
+            numberOfChildren: numberOfChildren || 0,
+            numberOfNonDrinkers: numberOfNonDrinkers || 0,
             customerFirstName: customerFirstName || "External",
             customerLastName: customerLastName || "Customer",
             customerEmail,
@@ -133,15 +136,25 @@ export async function POST(request: NextRequest) {
             paymentStatus: "external", // Mark as external payment
             paymentMethod: "external_booking",
             totalAmount: 0, // No payment processed through our system
+            totalPrice: 0,
+            wineries: [{
+                wineryId,
+                datetime: new Date(`${dateString}T${bookingTime}`),
+                tasting: tastingInfo.tasting_price,
+                numberOfGuests,
+                numberOfChildren: numberOfChildren || 0,
+                numberOfNonDrinkers: numberOfNonDrinkers || 0,
+                status: "confirmed",
+                tours: [],
+                foodPairings: [],
+                otherFeatures: [],
+            }],
             externalBookingReference: externalBookingReference || null,
             createdAt: new Date(),
         });
 
         // Add booking reference to slot inventory
-        slotInventory.bookings.push({
-            bookingId: booking._id.toString(),
-            guestCount: numberOfGuests,
-        });
+        slotInventory.bookings.push(booking._id);
 
         await slotInventory.save();
 
@@ -158,6 +171,8 @@ export async function POST(request: NextRequest) {
                 wineryPhone: winery.contact_info?.phone || "",
                 bookingDateTime: booking.bookingDate.toISOString(),
                 numberOfGuests: booking.numberOfGuests,
+                numberOfChildren: numberOfChildren || 0,
+                numberOfNonDrinkers: numberOfNonDrinkers || 0,
                 specialRequests: booking.specialRequests,
             });
         } catch (notificationError) {
@@ -178,8 +193,8 @@ export async function POST(request: NextRequest) {
                 paymentStatus: booking.paymentStatus,
             },
             inventory: {
-                remainingCapacity: slotInventory.currentCapacity,
-                maxCapacity: slotInventory.maxCapacity,
+                remainingCapacity: slotInventory.availableCapacity,
+                maxCapacity: slotInventory.totalCapacity,
             },
         });
 

@@ -1,0 +1,392 @@
+"use client";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
+import { toast } from "react-toastify";
+import { FaWineGlassAlt, FaMapMarkerAlt, FaPhone, FaCheckCircle, FaImage, FaPlus, FaTrash } from "react-icons/fa";
+import { APIProvider } from "@vis.gl/react-google-maps";
+import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
+
+export default function WineryOnboarding() {
+    const router = useRouter();
+    const { user } = useAuthStore();
+    const [loading, setLoading] = useState(false);
+
+    const [formData, setFormData] = useState({
+        name: "",
+        description: "",
+        address: "",
+        latitude: 0,
+        longitude: 0,
+        phone: "",
+        website: "",
+        allows_children: false,
+        allows_non_drinkers: false,
+        child_price: 0,
+        non_drinker_price: 0
+    });
+    const [images, setImages] = useState<string[]>([]);
+    const [uploading, setUploading] = useState(false);
+
+    const handleImageUpload = async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        setUploading(true);
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                setImages(prev => [...prev, data.url]);
+                toast.success('Image uploaded!');
+            } else {
+                toast.error('Failed to upload image');
+            }
+        } catch (error) {
+            console.error('Upload error:', error);
+            toast.error('Error uploading image');
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const removeImage = (index: number) => {
+        setImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Strict Location Validation
+        if (!formData.latitude || !formData.longitude || formData.latitude === 0 || formData.longitude === 0) {
+            toast.error("Please select a valid address from the dropdown to pin your location on the map.");
+            return;
+        }
+
+        setLoading(true);
+
+        try {
+            // 1. Construct the payload matching the Schema
+            const payload = {
+                name: formData.name,
+                description: formData.description,
+                location: {
+                    address: formData.address,
+                    latitude: formData.latitude,
+                    longitude: formData.longitude,
+                    is_mountain_location: false,
+                },
+                amenities: {
+                    allows_children: formData.allows_children,
+                    allows_non_drinkers: formData.allows_non_drinkers,
+                    handicap_accessible: true // Default during onboarding
+                },
+                contact_info: {
+                    phone: formData.phone,
+                    email: user?.email || "",
+                    website: formData.website
+                },
+                images: images,
+                // Default operating hours
+                operating_hours: {
+                    monday: { open: "09:00 AM", close: "05:00 PM", closed: false },
+                    tuesday: { open: "09:00 AM", close: "05:00 PM", closed: false },
+                    wednesday: { open: "09:00 AM", close: "05:00 PM", closed: false },
+                    thursday: { open: "09:00 AM", close: "05:00 PM", closed: false },
+                    friday: { open: "09:00 AM", close: "05:00 PM", closed: false },
+                    saturday: { open: "10:00 AM", close: "06:00 PM", closed: false },
+                    sunday: { open: "10:00 AM", close: "05:00 PM", closed: false },
+                },
+                // Initialize with one default empty tasting so it's not empty
+                tasting_info: [{
+                    tasting_title: "Signature Tasting",
+                    tasting_description: "Our flagship wine tasting experience.",
+                    tasting_price: 50,
+                    available_times: ["11:00 AM", "01:00 PM", "03:00 PM"],
+                    wine_types: ["Red", "White"],
+                    child_price: formData.child_price,
+                    non_drinker_price: formData.non_drinker_price,
+                    booking_info: {
+                        booking_enabled: true,
+                        max_guests_per_slot: 8,
+                        available_slots: [],
+                        allow_excess_guests: false,
+                        excess_guest_multiplier: 1.5
+                    }
+                }]
+            };
+
+            const res = await fetch("/api/winery-dashboard/profile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                toast.success("Welcome to the platform! Your winery is ready.");
+                router.push("/winery-dashboard");
+            } else {
+                toast.error(data.error || "Failed to create winery");
+            }
+        } catch (error) {
+            console.error("Onboarding error:", error);
+            toast.error("Something went wrong. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-gray-50 flex flex-col justify-start pt-20 pb-24 px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto w-full max-w-md">
+                <div className="flex justify-center">
+                    <FaWineGlassAlt className="text-4xl text-primary" />
+                </div>
+                <h2 className="mt-4 text-center text-2xl font-extrabold text-gray-900">
+                    Setup Your Winery
+                </h2>
+                <p className="mt-1 text-center text-sm text-gray-600">
+                    Let's get your profile started so you can accept bookings.
+                </p>
+            </div>
+
+            <div className="mt-6 mx-auto w-full max-w-md">
+                <div className="bg-white py-6 px-4 shadow rounded-lg sm:px-8 border border-gray-100">
+                    <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
+
+                        {/* Name */}
+                        <div>
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                                Winery Name
+                            </label>
+                            <div className="mt-1">
+                                <input
+                                    id="name"
+                                    name="name"
+                                    type="text"
+                                    required
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                    placeholder="e.g. Napa Valley Estate"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Description */}
+                        <div>
+                            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                                Short Description
+                            </label>
+                            <div className="mt-1">
+                                <textarea
+                                    id="description"
+                                    name="description"
+                                    required
+                                    rows={3}
+                                    value={formData.description}
+                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                    placeholder="Tell us a bit about your history and wines..."
+                                />
+                            </div>
+                        </div>
+
+                        {/* Address */}
+                        <div>
+                            <label htmlFor="address" className="block text-sm font-medium text-gray-700">
+                                Address
+                            </label>
+                            <div className="mt-1 relative rounded-md shadow-sm">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <FaMapMarkerAlt className="text-gray-400" />
+                                </div>
+                                <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+                                    <AddressAutocomplete
+                                        value={formData.address}
+                                        onChange={(address, lat, lng) => {
+                                            setFormData({
+                                                ...formData,
+                                                address,
+                                                latitude: lat || 0,
+                                                longitude: lng || 0
+                                            });
+                                        }}
+                                        className="focus:ring-primary focus:border-primary block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border"
+                                        placeholder="123 Main St, Napa, CA"
+                                        required
+                                    />
+                                </APIProvider>
+                                {formData.latitude !== 0 && formData.longitude !== 0 && (
+                                    <p className="mt-2 text-sm text-green-600 flex items-center">
+                                        <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a 1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        Location confirmed: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Phone */}
+                        <div>
+                            <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
+                                Business Phone
+                            </label>
+                            <div className="mt-1 relative rounded-md shadow-sm">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <FaPhone className="text-gray-400" />
+                                </div>
+                                <input
+                                    id="phone"
+                                    name="phone"
+                                    type="tel"
+                                    required
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    className="focus:ring-primary focus:border-primary block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2"
+                                    placeholder="+1 (707) 555-0123"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Website */}
+                        <div>
+                            <label htmlFor="website" className="block text-sm font-medium text-gray-700">
+                                Website (Optional)
+                            </label>
+                            <div className="mt-1 relative rounded-md shadow-sm">
+                                <input
+                                    id="website"
+                                    name="website"
+                                    type="url"
+                                    value={formData.website}
+                                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                    className="focus:ring-primary focus:border-primary block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm sm:text-sm"
+                                    placeholder="https://yourwinery.com"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Children & Non-Drinker Settings */}
+                        <div className="space-y-4 pt-4 border-t border-gray-100">
+                            <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.allows_children}
+                                        onChange={(e) => setFormData({ ...formData, allows_children: e.target.checked })}
+                                        className="checkbox checkbox-primary checkbox-sm"
+                                    />
+                                    Allows Children
+                                </label>
+                                {formData.allows_children && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500">Child Price ($)</span>
+                                        <input
+                                            type="number"
+                                            value={formData.child_price}
+                                            onChange={(e) => setFormData({ ...formData, child_price: Number(e.target.value) })}
+                                            className="input input-bordered input-xs w-20"
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.allows_non_drinkers}
+                                        onChange={(e) => setFormData({ ...formData, allows_non_drinkers: e.target.checked })}
+                                        className="checkbox checkbox-primary checkbox-sm"
+                                    />
+                                    Non-Drinker Friendly
+                                </label>
+                                {formData.allows_non_drinkers && (
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500">Price ($)</span>
+                                        <input
+                                            type="number"
+                                            value={formData.non_drinker_price}
+                                            onChange={(e) => setFormData({ ...formData, non_drinker_price: Number(e.target.value) })}
+                                            className="input input-bordered input-xs w-20"
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Images */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Winery Photos
+                            </label>
+
+                            {images.length > 0 && (
+                                <div className="grid grid-cols-3 gap-2 mb-3">
+                                    {images.map((img, idx) => (
+                                        <div key={idx} className="relative group aspect-square">
+                                            <img src={img} alt={`Winery photo ${idx + 1}`} className="w-full h-full object-cover rounded-md border" />
+                                            <button
+                                                type="button"
+                                                onClick={() => removeImage(idx)}
+                                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                aria-label="Remove image"
+                                            >
+                                                <FaTrash size={10} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="file"
+                                    id="onboarding-upload"
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleImageUpload(file);
+                                    }}
+                                />
+                                <label
+                                    htmlFor="onboarding-upload"
+                                    className={`btn btn-outline btn-sm gap-2 ${uploading ? 'loading' : ''}`}
+                                >
+                                    <FaPlus size={12} />
+                                    {uploading ? 'Uploading...' : 'Add Photo'}
+                                </label>
+                                <span className="text-xs text-gray-500 italic">Recommended for your landing page.</span>
+                            </div>
+                        </div>
+
+                        <div className="pt-2 pb-2">
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all"
+                            >
+                                {loading ? (
+                                    <span className="loading loading-spinner loading-sm"></span>
+                                ) : (
+                                    "Create Registry & Dashboard"
+                                )}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+}

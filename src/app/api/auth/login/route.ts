@@ -1,26 +1,36 @@
 import { NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbConnect";
 import User from "@/models/user.model";
+import Winery from "@/models/winery.model"; // Ensure model is registered for populate
 import { createToken, setTokenCookie } from "@/lib/auth";
 
 export async function POST(req: Request) {
   let email: string = "";
   let password: string = "";
+
   try {
-    await dbConnect();
     const body = await req.json();
-    email = body.email;
-    password = body.password;
+    // Normalize email input
+    email = (body.email || "").trim().toLowerCase();
+    password = (body.password || "").trim();
 
     console.log("🔐 LOGIN ATTEMPT:", {
       email,
       timestamp: new Date().toISOString()
     });
 
+    // 1. Try Database Connection
+    await dbConnect();
+
+    // 2. Try DB Login
     const user = await User.findOne({ email }).populate('wineryId');
 
     if (!user) {
-      console.warn("❌ Login failed: User not found", { email });
+      console.warn("❌ Login failed: User not found in DB", { email });
+      // Don't return error yet, strictly validation.
+      // Actually, if DB is connected but user not found, we should fail or check demo?
+      // Usually strict. But for this specific project/demo resilience, we might want to check demo if DB fails? 
+      // No, if DB connects, trust DB.
       return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
     }
 
@@ -51,16 +61,10 @@ export async function POST(req: Request) {
 
     await setTokenCookie(token);
 
-    console.log("✅ LOGIN SUCCESSFUL:", {
+    console.log("✅ LOGIN SUCCESSFUL (DB):", {
       userId: user._id.toString(),
       email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      wineryId: user.wineryId?.toString() || "none",
-      ageVerified: user.ageVerified || false,
-      smsOptIn: user.smsOptIn || false,
-      timestamp: new Date().toISOString()
+      role: user.role
     });
 
     // Return sanitized user object
@@ -81,25 +85,34 @@ export async function POST(req: Request) {
       message: "Login successful",
       user: userResponse
     });
+
   } catch (error: any) {
     console.error("❌ LOGIN ERROR (Checking Demo Mode):", {
       error: error.message,
+      email, // Log what email was being attempted
       timestamp: new Date().toISOString()
     });
 
-    // DEMO MODE FALLBACK: Allow login even if DB is offline
+    // 3. DEMO MODE FALLBACK
+    // Use this if DB connection fails
+
+    // Credentials MUST match the actual database users for consistency in demo
     const demoCreds = [
       { email: "admin@napawineries.com", pass: "admin123", role: "admin", name: "System Admin" },
       { email: "owner@napawineries.com", pass: "owner123", role: "winery", name: "Winery Owner", wineryId: "657999acac9c9c0012345671" },
-      { email: "customer@test.com", pass: "customer123", role: "customer", name: "Test Customer" }
+      { email: "customer@test.com", pass: "customer123", role: "customer", name: "Test Customer" },
+      { email: "customer@example.com", pass: "customer123", role: "customer", name: "Example Customer" }
     ];
 
     try {
-      // Use the already parsed credentials
-      const demoUser = demoCreds.find(u => u.email === email && u.pass === password);
+      // Robust check: normalize storage email too just in case
+      const demoUser = demoCreds.find(u =>
+        u.email.toLowerCase() === email &&
+        u.pass === password
+      );
 
       if (demoUser) {
-        console.log("⚠️ DEMO MODE LOGIN:", {
+        console.log("⚠️ DEMO MODE LOGIN SUCCESS:", {
           email: demoUser.email,
           role: demoUser.role,
           timestamp: new Date().toISOString()
@@ -122,7 +135,7 @@ export async function POST(req: Request) {
           user: {
             _id: "demo_" + demoUser.role,
             firstName: demoUser.name.split(' ')[0],
-            lastName: demoUser.name.split(' ')[1],
+            lastName: demoUser.name.split(' ')[1] || "",
             email: demoUser.email,
             role: demoUser.role,
             wineryId: demoUser.wineryId,
@@ -134,7 +147,10 @@ export async function POST(req: Request) {
       console.error("❌ Demo check failed:", innerError);
     }
 
-    console.error("❌ Login failed: Database offline and invalid demo credentials");
-    return NextResponse.json({ error: "Database offline and invalid demo credentials." }, { status: 400 });
+    console.error("❌ Login failed: Database offline AND invalid demo credentials");
+    return NextResponse.json({
+      error: "Login failed. Database may be offline or credentials are invalid.",
+      hint: "Try demo credentials: admin@napawineries.com/admin123"
+    }, { status: 400 });
   }
 }

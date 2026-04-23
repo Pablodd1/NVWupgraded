@@ -16,9 +16,19 @@ import {
   FaLink,
   FaMoneyBillWave,
   FaCheckCircle,
-  FaTimesCircle
+  FaTimesCircle,
+  FaWineBottle,
+  FaImage,
+  FaUserAlt,
+  FaChevronLeft,
+  FaChevronRight,
+  FaClock
 } from "react-icons/fa";
 import { Winery, TastingInfo, FoodPairingOption } from "@/app/interfaces";
+import Select from "react-select";
+import { wineTypes, specialFeatures, avaOrder, timeOptions, daysOfWeek } from "@/data/data";
+import { APIProvider } from "@vis.gl/react-google-maps";
+import { AddressAutocomplete } from "@/components/common/AddressAutocomplete";
 
 export default function WineryProfile() {
   const { user, loading, fetchUser } = useAuthStore();
@@ -26,6 +36,17 @@ export default function WineryProfile() {
   const [profile, setProfile] = useState<Winery | null>(null);
   const [saving, setSaving] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [currentSection, setCurrentSection] = useState(0);
+
+  const sections = [
+    { id: 'identity', label: 'Identity' },
+    { id: 'hours', label: 'Operating Hours' },
+    { id: 'tasting', label: 'Tasting' },
+    { id: 'features', label: 'Features' },
+    { id: 'transport', label: 'Transport' },
+    { id: 'contact', label: 'Contact' },
+    { id: 'account', label: 'Account' }
+  ];
 
   useEffect(() => {
     if (!loading && !user) {
@@ -61,9 +82,12 @@ export default function WineryProfile() {
           }
 
           if (!winery.contact_info) winery.contact_info = { phone: "", email: "", website: "" };
-          if (!winery.amenities) winery.amenities = { handicap_accessible: false };
-          if (!winery.transportation) winery.transportation = { uber_availability: false, lyft_availability: false, distance_from_user: 0 };
+          if (!winery.amenities) winery.amenities = { handicap_accessible: false, allows_children: false, allows_non_drinkers: false, virtual_sommelier: false, augmented_reality_tours: false };
+          if (winery.amenities.allows_children === undefined) winery.amenities.allows_children = false;
+          if (winery.amenities.allows_non_drinkers === undefined) winery.amenities.allows_non_drinkers = false;
+          if (!winery.transportation) winery.transportation = { uber_availability: false, distance_from_user: 0 };
           if (!winery.payment_method) winery.payment_method = { type: 'pay_winery' };
+          if (!winery.images) winery.images = [];
           if (!winery.tasting_info) winery.tasting_info = [];
 
           setProfile(winery);
@@ -100,6 +124,70 @@ export default function WineryProfile() {
     });
   };
 
+  const handleImageUpload = async (file: File, tastingIndex?: number) => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const imageUrl = data.url;
+
+        setProfile(prev => {
+          if (!prev) return prev;
+          const newProfile = { ...prev };
+
+          if (tastingIndex !== undefined) {
+            // Tasting-specific image
+            const newTastings = [...newProfile.tasting_info];
+            if (!newTastings[tastingIndex].images) newTastings[tastingIndex].images = [];
+            newTastings[tastingIndex].images.push(imageUrl);
+            newProfile.tasting_info = newTastings;
+          } else {
+            // Main winery image
+            if (!newProfile.images) newProfile.images = [];
+            newProfile.images.push(imageUrl);
+          }
+
+          return newProfile;
+        });
+
+        toast.success('Image uploaded successfully!');
+      } else {
+        toast.error('Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast.error('Error uploading image');
+    }
+  };
+
+  const removeImage = (imageIndex: number, tastingIndex?: number) => {
+    setProfile(prev => {
+      if (!prev) return prev;
+      const newProfile = { ...prev };
+
+      if (tastingIndex !== undefined) {
+        // Tasting-specific image
+        const newTastings = [...newProfile.tasting_info];
+        newTastings[tastingIndex].images.splice(imageIndex, 1);
+        newProfile.tasting_info = newTastings;
+      } else {
+        // Main winery image
+        if (newProfile.images) {
+          newProfile.images.splice(imageIndex, 1);
+        }
+      }
+
+      return newProfile;
+    });
+  };
+
   const handleTastingChange = (index: number, field: string, value: any) => {
     setProfile(prev => {
       if (!prev) return prev;
@@ -119,6 +207,25 @@ export default function WineryProfile() {
     });
   };
 
+  const toggleTastingArrayItem = (index: number, field: 'special_features' | 'wine_types', item: string) => {
+    setProfile(prev => {
+      if (!prev) return prev;
+      const newProfile = JSON.parse(JSON.stringify(prev));
+      const tasting = newProfile.tasting_info[index];
+      const arr = tasting[field] || [];
+      const idx = arr.indexOf(item);
+
+      if (idx > -1) {
+        arr.splice(idx, 1);
+      } else {
+        arr.push(item);
+      }
+
+      tasting[field] = arr;
+      return newProfile;
+    });
+  };
+
   const addTasting = () => {
     if (!profile) return;
     // Empty tasting template - winery owner fills in all details
@@ -128,6 +235,7 @@ export default function WineryProfile() {
       ava: "",
       tasting_price: 0,
       available_times: [],
+      available_days: [],
       wine_types: [],
       number_of_wines_per_tasting: 0,
       special_features: [],
@@ -137,12 +245,16 @@ export default function WineryProfile() {
       wine_details: [],
       booking_info: {
         booking_enabled: true,
-        max_guests_per_slot: 0,
+        max_guests_per_slot: 8,
         number_of_people: [],
         dynamic_pricing: { enabled: false, weekend_multiplier: 1.0 },
-        available_slots: []
+        available_slots: [],
+        allow_excess_guests: false,
+        excess_guest_multiplier: 1.5
       },
-      other_features: []
+      other_features: [],
+      child_price: 0,
+      non_drinker_price: 0
     };
     setProfile({
       ...profile,
@@ -216,42 +328,47 @@ export default function WineryProfile() {
           <div className="lg:col-span-2 space-y-8">
 
             {/* 1. Basic & Location */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="identity" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-2xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaMapMarkerAlt className="text-wine-secondary" />
                 Identity & Location
               </h2>
               <div className="space-y-6">
                 <div className="form-control">
-                  <label className="label font-bold text-gray-700">Winery Display Name</label>
+                  <label htmlFor="wineryName" className="label font-bold text-gray-700">Winery Display Name</label>
                   <input
+                    id="wineryName"
                     type="text" value={profile.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     className="input input-bordered w-full focus:border-wine-primary"
                     placeholder="e.g. Napa Estate"
-                    aria-label="Winery Display Name"
                   />
                 </div>
                 <div className="form-control">
-                  <label className="label font-bold text-gray-700">Official Description (for AI Search & Results)</label>
+                  <label htmlFor="wineryDescription" className="label font-bold text-gray-700">Official Description (for AI Search & Results)</label>
                   <textarea
+                    id="wineryDescription"
                     value={profile.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     className="textarea textarea-bordered h-32 focus:border-wine-primary"
                     placeholder="Tell guests about your winery's unique experience..."
-                    aria-label="Winery Description"
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="form-control">
                     <label className="label font-bold text-gray-700">Address</label>
-                    <input
-                      type="text" value={profile.location.address}
-                      onChange={(e) => handleInputChange('location.address', e.target.value)}
-                      className="input input-bordered focus:border-wine-primary"
-                      placeholder="123 Wine Way, St. Helena, CA"
-                      aria-label="Street Address"
-                    />
+                    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+                      <AddressAutocomplete
+                        value={profile.location.address}
+                        onChange={(address, lat, lng) => {
+                          handleInputChange('location.address', address);
+                          if (lat !== undefined) handleInputChange('location.latitude', lat);
+                          if (lng !== undefined) handleInputChange('location.longitude', lng);
+                        }}
+                        className="input input-bordered focus:border-wine-primary"
+                        placeholder="123 Wine Way, St. Helena, CA"
+                      />
+                    </APIProvider>
                   </div>
                   <div className="flex items-center gap-4 mt-8">
                     <label className="label cursor-pointer flex gap-3">
@@ -264,6 +381,40 @@ export default function WineryProfile() {
                     </label>
                   </div>
                 </div>
+
+                {/* New Amenities Toggles */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 bg-gray-50 p-4 rounded-xl">
+                  <label className="label cursor-pointer flex gap-3">
+                    <input
+                      type="checkbox" checked={profile.amenities?.allows_children}
+                      onChange={(e) => handleInputChange('amenities.allows_children', e.target.checked)}
+                      className="checkbox checkbox-primary"
+                    />
+                    <span className="label-text font-bold text-gray-700">Allows Children</span>
+                  </label>
+                  <label className="label cursor-pointer flex gap-3">
+                    <input
+                      type="checkbox" checked={profile.amenities?.allows_non_drinkers}
+                      onChange={(e) => handleInputChange('amenities.allows_non_drinkers', e.target.checked)}
+                      className="checkbox checkbox-primary"
+                    />
+                    <span className="label-text font-bold text-gray-700">Non-Drinker Friendly</span>
+                  </label>
+                </div>
+
+                {/* Featured Status (Admin Only Mock) */}
+                {user?.role === 'admin' && (
+                  <div className="mt-4 p-4 border-2 border-primary/20 rounded-xl bg-primary/5">
+                    <label className="label cursor-pointer flex justify-between">
+                      <span className="label-text font-black text-primary uppercase">Feature this Winery (Paid Status)</span>
+                      <input
+                        type="checkbox" checked={profile.is_featured}
+                        onChange={(e) => handleInputChange('is_featured', e.target.checked)}
+                        className="toggle toggle-primary"
+                      />
+                    </label>
+                  </div>
+                )}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="form-control">
                     <label className="label font-bold text-gray-700">Latitude</label>
@@ -286,11 +437,139 @@ export default function WineryProfile() {
                     />
                   </div>
                 </div>
+
+                {/* Main Winery Images */}
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <label className="label font-bold text-gray-700 mb-2 flex items-center gap-2">
+                    <FaImage className="text-wine-secondary" />
+                    Main Winery Photos (Landing Page)
+                  </label>
+
+                  {/* Image Preview Grid */}
+                  {profile.images && profile.images.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-4">
+                      {profile.images.map((img, imgIdx) => (
+                        <div key={imgIdx} className="relative group aspect-video">
+                          <img
+                            src={img}
+                            alt={`Winery ${imgIdx + 1}`}
+                            className="w-full h-full object-cover rounded-xl border border-gray-100 shadow-sm"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(imgIdx)}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                            aria-label="Remove image"
+                          >
+                            <FaTrash size={12} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      id="main-image-upload"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleImageUpload(file);
+                      }}
+                    />
+                    <label
+                      htmlFor="main-image-upload"
+                      className="btn btn-outline btn-primary gap-2"
+                    >
+                      <FaPlus size={14} />
+                      Upload Winery Photo
+                    </label>
+                    <p className="text-sm text-gray-500 italic">These images will show up on your public profile landing page.</p>
+                  </div>
+                </div>
               </div>
             </section>
 
+            {/* 2. Operating Hours */}
+            <section id="hours" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+              <h2 className="text-2xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
+                <FaClock className="text-wine-secondary" />
+                Operating Hours
+              </h2>
+              <div className="space-y-4">
+                {daysOfWeek.map((day) => {
+                  const dayKey = day.toLowerCase() as keyof typeof profile.operating_hours;
+                  const hours = profile.operating_hours?.[dayKey] || { open: "09:00 AM", close: "05:00 PM", closed: false };
+
+                  return (
+                    <div key={day} className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center p-4 border rounded-xl hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <label className="label cursor-pointer flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={!hours.closed}
+                            onChange={(e) => {
+                              const newHours = { ...hours, closed: !e.target.checked };
+                              handleInputChange(`operating_hours.${dayKey}`, newHours);
+                            }}
+                            className="checkbox checkbox-primary checkbox-sm"
+                          />
+                          <span className="font-bold text-gray-700 capitalize">{day}</span>
+                        </label>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className="text-[10px] font-bold uppercase text-gray-500 mb-1">Open</label>
+                        <select
+                          disabled={hours.closed}
+                          value={hours.open}
+                          onChange={(e) => {
+                            const newHours = { ...hours, open: e.target.value };
+                            handleInputChange(`operating_hours.${dayKey}`, newHours);
+                          }}
+                          className="select select-bordered select-sm w-full"
+                        >
+                          {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className="text-[10px] font-bold uppercase text-gray-500 mb-1">Close</label>
+                        <select
+                          disabled={hours.closed}
+                          value={hours.close}
+                          onChange={(e) => {
+                            const newHours = { ...hours, close: e.target.value };
+                            handleInputChange(`operating_hours.${dayKey}`, newHours);
+                          }}
+                          className="select select-bordered select-sm w-full"
+                        >
+                          {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center justify-end">
+                        {hours.closed ? (
+                          <span className="badge badge-error gap-1">
+                            <FaTimesCircle size={10} /> Closed
+                          </span>
+                        ) : (
+                          <span className="badge badge-success gap-1">
+                            <FaCheckCircle size={10} /> Open
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-4 text-sm text-gray-500 italic">Changing these hours will affect how your booking slots are generated.</p>
+            </section>
+
             {/* 2. Tasting Packages (UX & Filtration Management) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="tasting" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-serif font-bold text-wine-primary flex items-center gap-2">
                   <FaWineGlass className="text-wine-secondary" />
@@ -313,49 +592,64 @@ export default function WineryProfile() {
                       <FaTrash size={18} />
                     </button>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Base Booking Fee ($)</label>
-                        <input
-                          type="number" value={tasting.base_booking_fee || 0}
-                          onChange={(e) => handleTastingChange(idx, 'base_booking_fee', Number(e.target.value))}
-                          className="input input-bordered input-sm"
-                          placeholder="0"
-                          aria-label="Base Booking Fee"
-                        />
-                      </div>
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Additional Guest Fee ($)</label>
-                        <input
-                          type="number" value={tasting.additional_guest_fee || 0}
-                          onChange={(e) => handleTastingChange(idx, 'additional_guest_fee', Number(e.target.value))}
-                          className="input input-bordered input-sm"
-                          placeholder="0"
-                          aria-label="Additional Guest Fee"
-                        />
-                      </div>
+                    <div className="form-control mb-4">
+                      <label className="label text-xs font-bold uppercase text-gray-500">Tasting Title</label>
+                      <input
+                        type="text" value={tasting.tasting_title}
+                        onChange={(e) => handleTastingChange(idx, 'tasting_title', e.target.value)}
+                        className="input input-bordered input-sm font-bold shadow-inner"
+                        placeholder="e.g. Reserve Flight"
+                        aria-label="Tasting Title"
+                      />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Tasting Title</label>
-                        <input
-                          type="text" value={tasting.tasting_title}
-                          onChange={(e) => handleTastingChange(idx, 'tasting_title', e.target.value)}
-                          className="input input-bordered input-sm font-bold"
-                          placeholder="e.g. Reserve Flight"
-                          aria-label="Tasting Title"
-                        />
-                      </div>
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Old Tasting Price (Legacy) ($)</label>
-                        <input
-                          type="number" value={tasting.tasting_price}
-                          onChange={(e) => handleTastingChange(idx, 'tasting_price', Number(e.target.value))}
-                          className="input input-bordered input-sm opacity-50"
-                          placeholder="0"
-                          aria-label="Legacy Tasting Price"
-                        />
+                    <div className="bg-white p-4 rounded-xl border border-gray-200 mb-4 shadow-sm">
+                      <label className="label text-xs font-bold uppercase text-gray-800 mb-2 block border-b pb-2">Guest Pricing & Capacity</label>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="form-control">
+                          <label className="label text-[10px] font-bold uppercase text-gray-500">Per Person Fee ($)</label>
+                          <input 
+                            type="number" placeholder="0" className="input input-bordered input-sm" 
+                            value={tasting.tasting_price || ""} 
+                            onChange={(e) => handleTastingChange(idx, "tasting_price", parseFloat(e.target.value) || 0)} 
+                            min={0} 
+                          />
+                        </div>
+                        <div className="form-control">
+                          <label className="label text-[10px] font-bold uppercase text-gray-500">Max Guest Capacity</label>
+                          <input 
+                            type="number" placeholder="Max limit" className="input input-bordered input-sm" 
+                            value={tasting.booking_info?.max_guests_per_slot || ""} 
+                            onChange={(e) => {
+                              const bookingInfo = { ...tasting.booking_info, max_guests_per_slot: parseInt(e.target.value) || 0 };
+                              handleTastingChange(idx, "booking_info", bookingInfo);
+                            }} 
+                            min={0} 
+                          />
+                        </div>
+                        {profile.amenities?.allows_non_drinkers && (
+                          <div className="form-control">
+                            <label className="label text-[10px] font-bold uppercase text-gray-500">Non-Drinker Fee ($)</label>
+                            <input 
+                              type="number" placeholder="0" className="input input-bordered input-sm" 
+                              value={tasting.non_drinker_price || ""} 
+                              onChange={(e) => handleTastingChange(idx, "non_drinker_price", parseFloat(e.target.value) || 0)} 
+                              min={0} 
+                            />
+                          </div>
+                        )}
+                        {profile.amenities?.allows_children && (
+                          <div className="form-control">
+                            <label className="label text-[10px] font-bold uppercase text-gray-500">Kids Underage Fee ($)</label>
+                            <input 
+                              type="number" placeholder="0" className="input input-bordered input-sm" 
+                              value={tasting.child_price || ""} 
+                              onChange={(e) => handleTastingChange(idx, "child_price", parseFloat(e.target.value) || 0)} 
+                              min={0} 
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -370,15 +664,21 @@ export default function WineryProfile() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Wine Types (e.g. Cabernet, Rose)</label>
-                        <input
-                          type="text" value={tasting.wine_types?.join(', ') || ''}
-                          onChange={(e) => handleTastingChange(idx, 'wine_types', e.target.value.split(',').map(s => s.trim()))}
-                          className="input input-bordered input-sm"
-                          placeholder="Red, White, Rosé"
-                          aria-label="Wine Types"
-                        />
+                      <div className="form-control col-span-2">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Wine Types</label>
+                        <div className="flex flex-wrap gap-4 p-3 bg-white rounded-lg border border-gray-100">
+                          {wineTypes.map(type => (
+                            <label key={type} className="flex items-center gap-2 cursor-pointer text-sm">
+                              <input
+                                type="checkbox"
+                                checked={tasting.wine_types?.includes(type)}
+                                onChange={() => toggleTastingArrayItem(idx, 'wine_types', type)}
+                                className="checkbox checkbox-primary checkbox-sm"
+                              />
+                              {type}
+                            </label>
+                          ))}
+                        </div>
                       </div>
                       <div className="form-control">
                         <label className="label text-xs font-bold uppercase text-gray-500">Max Guests</label>
@@ -389,52 +689,318 @@ export default function WineryProfile() {
                           placeholder="e.g. 8"
                         />
                       </div>
+                      <div className="form-control">
+                        <label className="label text-xs font-bold uppercase text-gray-500 flex justify-between">
+                          <span>Allow Excess?</span>
+                          <input
+                            type="checkbox" checked={tasting.booking_info?.allow_excess_guests || false}
+                            onChange={(e) => handleTastingChange(idx, 'booking_info.allow_excess_guests', e.target.checked)}
+                            className="checkbox checkbox-xs"
+                          />
+                        </label>
+                        {tasting.booking_info?.allow_excess_guests && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-[10px] font-bold text-gray-400">MULTIPLIER (X)</span>
+                            <input
+                              type="number" step="0.1" value={tasting.booking_info?.excess_guest_multiplier || 1.5}
+                              onChange={(e) => handleTastingChange(idx, 'booking_info.excess_guest_multiplier', parseFloat(e.target.value))}
+                              className="input input-bordered input-xs w-16"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="form-control mb-4">
+                      <label className="label text-xs font-bold uppercase text-gray-500">Available Days</label>
+                      <div className="flex flex-wrap gap-2 p-3 bg-white rounded-lg border border-gray-100">
+                        {daysOfWeek.map((day: string) => (
+                          <label key={day} className="flex items-center gap-2 cursor-pointer text-sm">
+                            <input
+                              type="checkbox"
+                              checked={tasting.available_days?.includes(day)}
+                              onChange={() => {
+                                const currentDays = tasting.available_days || [];
+                                const newDays = currentDays.includes(day)
+                                  ? currentDays.filter((d: string) => d !== day)
+                                  : [...currentDays, day];
+                                handleTastingChange(idx, 'available_days', newDays);
+                              }}
+                              className="checkbox checkbox-primary checkbox-sm"
+                            />
+                            {day}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="form-control mb-4">
+                      <label className="label text-xs font-bold uppercase text-gray-500">Available Time Slots</label>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 p-3 bg-white rounded-lg border border-gray-100">
+                        {timeOptions.map(time => (
+                          <label key={time} className="flex items-center gap-2 cursor-pointer text-[10px] sm:text-xs">
+                            <input
+                              type="checkbox"
+                              checked={tasting.available_times?.includes(time)}
+                              onChange={() => {
+                                const currentTimes = tasting.available_times || [];
+                                const newTimes = currentTimes.includes(time) 
+                                  ? currentTimes.filter(t => t !== time)
+                                  : [...currentTimes, time];
+                                handleTastingChange(idx, 'available_times', newTimes);
+                              }}
+                              className="checkbox checkbox-primary checkbox-xs"
+                            />
+                            {time}
+                          </label>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Special Features (e.g. Organic, Sustainable)</label>
-                        <input
-                          type="text" value={tasting.special_features?.join(', ') || ''}
-                          onChange={(e) => handleTastingChange(idx, 'special_features', e.target.value.split(',').map(s => s.trim()))}
-                          className="input input-bordered input-sm"
-                          placeholder="Cave Tour, Great Views"
-                          aria-label="Special Features"
-                        />
+                      <div className="form-control col-span-2">
+                        <label className="label text-xs font-bold uppercase text-gray-500">Special Features (Filtration Tags)</label>
+                        <div className="flex flex-wrap gap-4 p-3 bg-white rounded-lg border border-gray-100">
+                          {specialFeatures.map(feature => (
+                            <label key={feature} className="flex items-center gap-2 cursor-pointer text-sm">
+                              <input
+                                type="checkbox"
+                                checked={tasting.special_features?.includes(feature)}
+                                onChange={() => toggleTastingArrayItem(idx, 'special_features', feature)}
+                                className="checkbox checkbox-primary checkbox-sm"
+                              />
+                              {feature}
+                            </label>
+                          ))}
+                        </div>
                       </div>
                       <div className="form-control">
                         <label className="label text-xs font-bold uppercase text-gray-500">AVA Region</label>
-                        <input
-                          type="text" value={tasting.ava}
-                          onChange={(e) => handleTastingChange(idx, 'ava', e.target.value)}
-                          className="input input-bordered input-sm"
-                          placeholder="e.g. Rutherford"
-                          aria-label="AVA Region"
+                        <Select
+                          options={avaOrder.map(ava => ({ value: ava, label: ava }))}
+                          value={tasting.ava ? { value: tasting.ava, label: tasting.ava } : null}
+                          onChange={(option: any) => handleTastingChange(idx, 'ava', option?.value || '')}
+                          className="text-sm"
+                          placeholder="Select AVA..."
                         />
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-6 p-3 bg-white rounded-lg border border-gray-100">
-                      <label className="flex items-center gap-2 cursor-pointer font-bold text-xs uppercase text-gray-500">
-                        <input
-                          type="checkbox" checked={tasting.tours?.available}
-                          onChange={(e) => handleTastingChange(idx, 'tours.available', e.target.checked)}
-                          className="checkbox checkbox-xs"
-                        />
-                        Tour Included?
-                      </label>
-                      {tasting.tours?.available && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold uppercase text-gray-500">Tour Price ($)</span>
+                    <div className="flex flex-col gap-4 p-4 bg-white rounded-lg border border-gray-100 mb-4">
+                      <div className="flex items-center justify-between">
+                        <label className="flex items-center gap-2 cursor-pointer font-bold text-xs uppercase text-gray-500">
                           <input
-                            type="number" value={tasting.tours.tour_price}
-                            onChange={(e) => handleTastingChange(idx, 'tours.tour_price', Number(e.target.value))}
-                            className="input input-bordered input-xs w-20"
-                            placeholder="0"
-                            aria-label="Tour Price"
+                            type="checkbox" checked={tasting.tours?.available}
+                            onChange={(e) => handleTastingChange(idx, 'tours.available', e.target.checked)}
+                            className="checkbox checkbox-xs"
                           />
+                          Tours Available?
+                        </label>
+                        {tasting.tours?.available && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold text-gray-400 uppercase">Default Tour Price ($)</span>
+                            <input
+                              type="number" value={tasting.tours.tour_price}
+                              onChange={(e) => handleTastingChange(idx, 'tours.tour_price', Number(e.target.value))}
+                              className="input input-bordered input-xs w-16"
+                              placeholder="0"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      {tasting.tours?.available && (
+                        <div className="space-y-2">
+                          <p className="text-[10px] font-bold text-gray-400 uppercase">Specific Tour Options</p>
+                          {(tasting.tours.tour_options || []).map((tour, tIdx) => (
+                            <div key={tIdx} className="flex gap-2 items-center">
+                              <input
+                                type="text" value={tour.description}
+                                onChange={(e) => {
+                                  const newOptions = [...tasting.tours.tour_options];
+                                  newOptions[tIdx].description = e.target.value;
+                                  handleTastingChange(idx, 'tours.tour_options', newOptions);
+                                }}
+                                className="input input-bordered input-xs flex-grow"
+                                placeholder="Tour name..."
+                              />
+                              <input
+                                type="number" value={tour.cost}
+                                onChange={(e) => {
+                                  const newOptions = [...tasting.tours.tour_options];
+                                  newOptions[tIdx].cost = Number(e.target.value);
+                                  handleTastingChange(idx, 'tours.tour_options', newOptions);
+                                }}
+                                className="input input-bordered input-xs w-16"
+                                placeholder="$"
+                              />
+                              <button
+                                onClick={() => {
+                                  const newOptions = tasting.tours.tour_options.filter((_, i) => i !== tIdx);
+                                  handleTastingChange(idx, 'tours.tour_options', newOptions);
+                                }}
+                                className="text-red-500 p-1"
+                              ><FaTrash size={10} /></button>
+                            </div>
+                          ))}
+                          <button
+                            onClick={() => {
+                              const newOptions = [...(tasting.tours.tour_options || []), { description: "", cost: 0 }];
+                              handleTastingChange(idx, 'tours.tour_options', newOptions);
+                            }}
+                            className="btn btn-xs btn-ghost gap-1 text-[10px]"
+                          ><FaPlus /> Add Tour Option</button>
                         </div>
                       )}
+                    </div>
+
+                    {/* Food Pairings Manager */}
+                    <div className="bg-white p-4 rounded-lg border border-gray-100 mb-4">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+                        <FaWineBottle /> Food Pairing Options (Per Person)
+                      </p>
+                      <div className="space-y-2">
+                        {(tasting.food_pairing_options || []).map((pairing, fIdx) => (
+                          <div key={fIdx} className="flex gap-2 items-center">
+                            <input
+                              type="text" value={pairing.name}
+                              onChange={(e) => {
+                                const newOptions = [...tasting.food_pairing_options];
+                                newOptions[fIdx].name = e.target.value;
+                                handleTastingChange(idx, 'food_pairing_options', newOptions);
+                              }}
+                              className="input input-bordered input-xs flex-grow"
+                              placeholder="Pairing name..."
+                            />
+                            <input
+                              type="number" value={pairing.price}
+                              onChange={(e) => {
+                                const newOptions = [...tasting.food_pairing_options];
+                                newOptions[fIdx].price = Number(e.target.value);
+                                handleTastingChange(idx, 'food_pairing_options', newOptions);
+                              }}
+                              className="input input-bordered input-xs w-16"
+                              placeholder="$"
+                            />
+                            <button
+                              onClick={() => {
+                                const newOptions = tasting.food_pairing_options.filter((_, i) => i !== fIdx);
+                                handleTastingChange(idx, 'food_pairing_options', newOptions);
+                              }}
+                              className="text-red-500 p-1"
+                            ><FaTrash size={10} /></button>
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => {
+                            const newOptions = [...(tasting.food_pairing_options || []), { id: Math.random().toString(36).substr(2, 9), name: "", price: 0 }];
+                            handleTastingChange(idx, 'food_pairing_options', newOptions);
+                          }}
+                          className="btn btn-xs btn-ghost gap-1 text-[10px]"
+                        ><FaPlus /> Add Food Pairing</button>
+                      </div>
+                    </div>
+
+                    {/* Other Features Manager */}
+                    <div className="bg-white p-4 rounded-lg border border-gray-100 mb-4">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
+                        <FaPlus /> Other Features / Add-ons (Per Person)
+                      </p>
+                      <div className="space-y-2">
+                        {(tasting.other_features || []).map((feature, oIdx) => (
+                          <div key={oIdx} className="flex gap-2 items-center">
+                            <input
+                              type="text" value={feature.description}
+                              onChange={(e) => {
+                                const newOptions = [...tasting.other_features];
+                                newOptions[oIdx].description = e.target.value;
+                                handleTastingChange(idx, 'other_features', newOptions);
+                              }}
+                              className="input input-bordered input-xs flex-grow"
+                              placeholder="Feature name..."
+                            />
+                            <input
+                              type="number" value={feature.cost}
+                              onChange={(e) => {
+                                const newOptions = [...tasting.other_features];
+                                newOptions[oIdx].cost = Number(e.target.value);
+                                handleTastingChange(idx, 'other_features', newOptions);
+                              }}
+                              className="input input-bordered input-xs w-16"
+                              placeholder="$"
+                            />
+                            <button
+                              onClick={() => {
+                                const newOptions = tasting.other_features.filter((_, i) => i !== oIdx);
+                                handleTastingChange(idx, 'other_features', newOptions);
+                              }}
+                              className="text-red-500 p-1"
+                            ><FaTrash size={10} /></button>
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => {
+                            const newOptions = [...(tasting.other_features || []), { description: "", cost: 0, feature_id: Math.random().toString(36).substr(2, 9) }];
+                            handleTastingChange(idx, 'other_features', newOptions);
+                          }}
+                          className="btn btn-xs btn-ghost gap-1 text-[10px]"
+                        ><FaPlus /> Add Feature</button>
+                      </div>
+                    </div>
+
+                    {/* Image Upload Section */}
+                    <div className="mt-6 p-4 bg-white rounded-lg border border-gray-200">
+                      <label className="label text-xs font-bold uppercase text-gray-500 mb-2">
+                        <FaImage className="inline mr-2" />
+                        Tasting Experience Images
+                      </label>
+
+                      {/* Image Preview Grid */}
+                      {tasting.images && tasting.images.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                          {tasting.images.map((img, imgIdx) => (
+                            <div key={imgIdx} className="relative group">
+                              <img
+                                src={img}
+                                alt={`Tasting ${idx + 1} - Image ${imgIdx + 1}`}
+                                className="w-full h-24 object-cover rounded-lg border border-gray-200"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(imgIdx, idx)}
+                                className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                aria-label="Remove image"
+                              >
+                                <FaTrash size={10} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Upload Button */}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          id={`image-upload-${idx}`}
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) handleImageUpload(file, idx);
+                          }}
+                        />
+                        <label
+                          htmlFor={`image-upload-${idx}`}
+                          className="btn btn-sm btn-outline gap-2 cursor-pointer"
+                        >
+                          <FaPlus size={12} />
+                          Add Image
+                        </label>
+                        <span className="text-xs text-gray-500">
+                          {tasting.images?.length || 0} image(s)
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -446,7 +1012,7 @@ export default function WineryProfile() {
           <div className="space-y-8">
 
             {/* 3. Payment Method (Business Control) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="payment" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaCreditCard className="text-wine-secondary" />
                 Payment & Billing
@@ -491,7 +1057,7 @@ export default function WineryProfile() {
             </section>
 
             {/* 4. Special Features (Filtration & UX) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="features" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaPlus className="text-wine-secondary" />
                 Special Features
@@ -510,7 +1076,7 @@ export default function WineryProfile() {
 
 
             {/* 5. Transportation (Directions & Booking) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="transport" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
                 <FaCar className="text-wine-secondary" />
                 Transportation Access
@@ -542,7 +1108,7 @@ export default function WineryProfile() {
             </section>
 
             {/* 6. Contact & Support */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <section id="contact" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
               <h2 className="text-xl font-serif font-bold text-gray-900 mb-6 flex items-center gap-2">
                 <FaPhoneAlt className="text-gray-400" />
                 Public Contact
@@ -564,7 +1130,7 @@ export default function WineryProfile() {
                     type="email" value={profile.contact_info.email}
                     onChange={(e) => handleInputChange('contact_info.email', e.target.value)}
                     className="input input-bordered input-sm"
-                    placeholder="concierge@winery.com"
+                    placeholder="anabel@nvw.wine"
                     aria-label="Public Email Address"
                   />
                 </div>
@@ -578,7 +1144,59 @@ export default function WineryProfile() {
                 </div>
               </div>
             </section>
+
+            {/* 7. Account Settings */}
+            <section id="account" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mt-8">
+              <h2 className="text-xl font-serif font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <FaUserAlt className="text-gray-400" />
+                Account & Security
+              </h2>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Manage your login credentials, name, and phone number securely.
+                </p>
+                <button
+                  onClick={() => router.push('/profile')}
+                  className="w-full btn btn-outline btn-primary mt-4"
+                >
+                  Manage Profile & Password
+                </button>
+              </div>
+            </section>
           </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-3 pb-[calc(12px+env(safe-area-inset-bottom))] flex items-center justify-between z-50 shadow-lg">
+          <button
+            onClick={() => {
+              if (currentSection > 0) {
+                setCurrentSection(currentSection - 1);
+                document.getElementById(sections[currentSection - 1].id)?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            disabled={currentSection === 0}
+            className={`flex items-center gap-1 px-4 py-2 rounded-lg ${currentSection === 0 ? 'text-gray-300' : 'text-primary bg-primary/10'}`}
+          >
+            <FaChevronLeft size={16} />
+            <span className="text-sm font-medium">Prev</span>
+          </button>
+          
+          <span className="text-sm text-gray-500">{currentSection + 1}/{sections.length}</span>
+          
+          <button
+            onClick={() => {
+              if (currentSection < sections.length - 1) {
+                setCurrentSection(currentSection + 1);
+                document.getElementById(sections[currentSection + 1].id)?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            disabled={currentSection === sections.length - 1}
+            className={`flex items-center gap-1 px-4 py-2 rounded-lg ${currentSection === sections.length - 1 ? 'text-gray-300' : 'text-primary bg-primary/10'}`}
+          >
+            <span className="text-sm font-medium">Next</span>
+            <FaChevronRight size={16} />
+          </button>
         </div>
       </div>
     </div>

@@ -27,7 +27,7 @@ export default function TermsOfService() {
                     <li><strong>Message Frequency:</strong> Frequency varies based on your booking activity.</li>
                     <li><strong>Cost:</strong> Message and data rates may apply.</li>
                     <li><strong>Opt-Out:</strong> You can cancel the SMS service at any time. Just text "STOP" to the short code. After you send the SMS message "STOP" to us, we will send you an SMS message to confirm that you have been unsubscribed. After this, you will no longer receive SMS messages from us. If you want to join again, just sign up as you did the first time and we will start sending SMS messages to you again.</li>
-                    <li><strong>Help:</strong> If you are experiencing issues with the messaging program you can reply with the keyword HELP for more assistance, or you can get help directly at support@napavalleywineries.com.</li>
+                    <li><strong>Help:</strong> If you are experiencing issues with the messaging program you can reply with the keyword HELP for more assistance, or you can get help directly at anabel@nvw.wine.</li>
                     <li><strong>Carriers:</strong> Carriers are not liable for delayed or undelivered messages.</li>
                 </ul>
             </section>
@@ -39,7 +39,7 @@ export default function TermsOfService() {
 
             <section className="mb-8">
                 <h2 className="text-xl font-semibold mb-3">5. Contact</h2>
-                <p>Questions? Contact us at support@napavalleywineries.com.</p>
+                <p>Questions? Contact us at anabel@nvw.wine.</p>
             </section>
         </div>
     );
