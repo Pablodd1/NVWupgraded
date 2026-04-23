@@ -3,7 +3,6 @@ import { dbConnect } from "@/lib/dbConnect";
 import { requireWinery } from "@/lib/rbac";
 import SlotInventory from "@/models/slotInventory.model";
 import Winery from "@/models/winery.model";
-import { getMockSlots, addMockSlot, updateMockSlot } from "@/lib/mockInventory";
 
 // GET slots for winery
 export async function GET(request: Request) {
@@ -40,14 +39,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ slots }, { status: 200 });
   } catch (error: any) {
-    console.error("Get slots error (Checking Demo/Mock):", error);
-    try {
-      const user = await requireWinery(request);
-      if (!(user instanceof NextResponse)) {
-        console.log("🚀 Returning mock slots for dashboard");
-        return NextResponse.json({ slots: getMockSlots(user.wineryId || "657999acac9c9c0012345671") }, { status: 200 });
-      }
-    } catch (e) { }
+    console.error("Get slots error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -108,15 +100,7 @@ export async function POST(request: Request) {
       slot
     }, { status: 201 });
   } catch (error: any) {
-    console.error("Create slot error (Checking Demo/Mock):", error);
-    try {
-      const user = await requireWinery(request);
-      if (!(user instanceof NextResponse)) {
-        const { date, timeSlot, totalCapacity } = await request.json();
-        const slot = addMockSlot(user.wineryId || "657999acac9c9c0012345671", { date, timeSlot, totalCapacity });
-        return NextResponse.json({ success: true, message: "Slot created (Mock)", slot }, { status: 201 });
-      }
-    } catch (e) { }
+    console.error("Create slot error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
@@ -179,17 +163,8 @@ export async function PUT(request: Request) {
       slot
     }, { status: 200 });
   } catch (error: any) {
-    console.error("Update slot error (Checking Demo/Mock):", error);
-    try {
-      const user = await requireWinery(request);
-      if (!(user instanceof NextResponse)) {
-        const { slotId, totalCapacity, isBlocked } = await request.clone().json();
-        const slot = updateMockSlot(slotId, { totalCapacity, isBlocked });
-        if (slot) {
-          return NextResponse.json({ success: true, message: "Slot updated (Mock)", slot }, { status: 200 });
-        }
-      }
-    } catch (e) { }
+    console.error("Update slot error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
