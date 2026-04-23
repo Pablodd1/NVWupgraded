@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { SessionStorageService } from "@/lib/localstorage.config";
 import { toast } from "react-toastify";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface ModalProps {
   setShowPopup: React.Dispatch<React.SetStateAction<boolean>>;
@@ -12,6 +13,7 @@ interface ModalProps {
 }
 
 const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
+  const { t } = useLanguage();
   const router = useRouter();
   const [isLoginMode, setIsLoginMode] = useState(showLoginForm);
   const [isWineryRegistration, setIsWineryRegistration] = useState(false);
@@ -91,14 +93,14 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
           </div>
 
           <h2 className="text-center md:text-3xl text-2xl font-black text-gray-900 mb-2 tracking-tight">
-            {isWineryRegistration ? "Partner Portal" : (isLoginMode ? "Unlock the Cellar" : "Join the Club")}
+            {isWineryRegistration ? t("auth_partner_portal") : (isLoginMode ? t("auth_unlock_cellar") : t("auth_join_club"))}
           </h2>
           <p className="text-center text-sm text-gray-500 mb-6 font-medium">
             {isWineryRegistration
-              ? "Register your vineyard to manage bookings and reach new guests."
+              ? t("auth_register_vineyard")
               : (isLoginMode
-                ? "Welcome back to your Napa Valley experience."
-                : "Create your Sommelier Profile to book tastings and curate your journey.")}
+                ? t("auth_welcome_back")
+                : t("auth_create_profile"))}
           </p>
 
           <div className="flex gap-4 justify-center mb-6">
@@ -126,7 +128,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
                 <div className="grid grid-cols-2 gap-3">
                   <input
                     type="text"
-                    placeholder={isWineryRegistration ? "Winery Name" : "First Name (Vintage)"}
+                    placeholder={isWineryRegistration ? t("auth_is_winery_owner") : t("auth_first_name")}
                     name="firstName"
                     value={formData.firstName}
                     className="input input-bordered w-full bg-gray-50 focus:bg-white transition-all rounded-xl"
@@ -135,7 +137,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
                   />
                   <input
                     type="text"
-                    placeholder={isWineryRegistration ? "Contact Name" : "Last Name"}
+                    placeholder={isWineryRegistration ? t("auth_last_name") : t("auth_last_name")}
                     name="lastName"
                     value={formData.lastName}
                     className="input input-bordered w-full bg-gray-50 focus:bg-white transition-all rounded-xl"
@@ -158,7 +160,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
             )}
             <input
               type="email"
-              placeholder="Email Address"
+              placeholder={t("auth_email")}
               className="input input-bordered w-full bg-gray-50 focus:bg-white transition-all rounded-xl"
               required
               name="email"
@@ -168,7 +170,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
             {(!isLoginMode || isWineryRegistration) && (
               <input
                 type="tel"
-                placeholder={isWineryRegistration ? "Business Phone" : "Phone (for reservations)"}
+                placeholder={isWineryRegistration ? t("auth_phone") : t("auth_phone")}
                 name="phone"
                 value={formData.phone}
                 className="input input-bordered w-full bg-gray-50 focus:bg-white transition-all rounded-xl"
@@ -179,7 +181,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
             <div className="relative w-full">
               <input
                 type={showPassword ? "text" : "password"}
-                placeholder="Secret Password"
+                placeholder={t("auth_password")}
                 name="password"
                 className="input input-bordered w-full bg-gray-50 focus:bg-white transition-all rounded-xl"
                 required
@@ -196,7 +198,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
             {isLoginMode && (
               <div className="text-right">
                 <a href="/forgot-password" className="text-xs text-gray-500 hover:text-[#6B1E23] transition-colors">
-                  Forgot Password?
+                  {t("auth_forgot_password")}
                 </a>
               </div>
             )}
@@ -211,7 +213,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
                     className="checkbox checkbox-primary checkbox-sm rounded-md mt-0.5"
                   />
                   <span className="text-xs text-gray-600 group-hover:text-primary transition-colors">
-                    Send me exclusive wine drops and event invites.
+                    {t("auth_marketing_consent")}
                   </span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer group">
@@ -222,8 +224,8 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
                     className="checkbox checkbox-primary checkbox-sm rounded-md mt-0.5"
                   />
                   <span className="text-xs text-gray-600 group-hover:text-primary transition-colors">
-                    Text me booking confirmations.
-                    <br /><span className="text-[10px] opacity-70">Reply STOP to unsubscribe at any time. Msg & data rates may apply. See <a href="/privacy" className="underline" onClick={(e) => e.stopPropagation()}>Privacy Policy</a>.</span>
+                    {t("auth_sms_consent")}
+                    <br /><span className="text-[10px] opacity-70">{t("auth_sms_disclaimer")}</span>
                   </span>
                 </label>
               </div>
@@ -236,7 +238,7 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
                   onClick={handleGuestMode}
                   className="btn btn-ghost w-full sm:w-auto rounded-xl font-bold text-gray-500 hover:bg-gray-100"
                 >
-                  Just Browsing
+                  {t("auth_just_browsing")}
                 </button>
               )}
               <button
@@ -245,28 +247,28 @@ const AuthModal = ({ setShowPopup, showLoginForm = false }: ModalProps) => {
                 className="btn btn-primary w-full sm:w-auto rounded-xl font-bold shadow-lg shadow-primary/30 flex-1"
               >
                 {isSubmitting && <span className="loading loading-spinner loading-xs"></span>}
-                {isWineryRegistration ? "Request Partner Access" : (isLoginMode ? "Open Cellar" : "Mint Membership")}
+                {isWineryRegistration ? t("auth_request_access") : (isLoginMode ? t("auth_open_cellar") : t("auth_mint_membership"))}
               </button>
             </div>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-500">
-              {isLoginMode ? "New to the Valley?" : "Have a pass already?"}
+              {isLoginMode ? t("auth_new_to_valley") : t("auth_have_pass")}
               <button onClick={() => setIsLoginMode(!isLoginMode)} className="text-primary ml-2 font-bold hover:underline">
-                {isLoginMode ? "Get on the List" : "Login Here"}
+                {isLoginMode ? t("auth_get_on_list") : t("auth_login_here")}
               </button>
             </p>
 
             {!isLoginMode && !isWineryRegistration && (
               <p className="mt-4 text-xs text-gray-400">
-                Are you a Winery Owner? <a href="#" onClick={(e) => { e.preventDefault(); setIsWineryRegistration(true); setIsLoginMode(false); }} className="text-gray-600 underline">Register your Vineyard</a>
+                {t("auth_is_winery_owner")} <a href="#" onClick={(e) => { e.preventDefault(); setIsWineryRegistration(true); setIsLoginMode(false); }} className="text-gray-600 underline">{t("auth_register_winery")}</a>
               </p>
             )}
 
             {isWineryRegistration && (
               <p className="mt-4 text-xs text-gray-400">
-                Not a winery? <a href="#" onClick={(e) => { e.preventDefault(); setIsWineryRegistration(false); setIsLoginMode(true); }} className="text-gray-600 underline">Back to Guest Login</a>
+                {t("auth_not_winery")} <a href="#" onClick={(e) => { e.preventDefault(); setIsWineryRegistration(false); setIsLoginMode(true); }} className="text-gray-600 underline">{t("auth_back_to_login")}</a>
               </p>
             )}
           </div>

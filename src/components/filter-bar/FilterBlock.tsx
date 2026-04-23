@@ -188,7 +188,7 @@ export const FilterBlock = ({
 
       {/* Mountain Location Filter */}
       <div className="mt-4">
-        <label className="text-sm text-gray-900 font-extrabold">Mountain Location</label>
+        <label className="text-sm text-gray-900 font-extrabold">Only show Wineries in a mountain</label>
         <div className="mt-2">
           <label className="flex items-center space-x-2 text-xs sm:text-sm">
             <input
@@ -197,7 +197,7 @@ export const FilterBlock = ({
               checked={filters.mountainLocation}
               onChange={(e) => handleFilterChange("mountainLocation", e.target.checked)}
             />
-            <span>Only show mountain AVAs</span>
+            <span>Only show Wineries in a mountain</span>
           </label>
         </div>
       </div>

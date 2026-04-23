@@ -14,6 +14,7 @@ import { useAuthStore } from "@/store/authStore";
 import { loadStripe } from "@stripe/stripe-js";
 import { toast } from "react-toastify";
 import DateOfBirthModal from "@/components/modal/DateOfBirthModal";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Initialize Stripe with your publishable key
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
@@ -28,6 +29,7 @@ export default function ItineraryPage() {
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [showDateOfBirthModal, setShowDateOfBirthModal] = useState(false);
   const { user } = useAuthStore();
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -325,16 +327,16 @@ export default function ItineraryPage() {
   return (
     <div className="bg-gray-100 min-h-screen pt-24 md:pt-28 pb-32 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-7xl mx-auto">
-        <h1 className="md:text-2xl font-bold text-gray-900">Your Itinerary</h1>
-        <p className="text-gray-600 mb-4 md:text-md text-sm">Plan your perfect wine-tasting experience.</p>
+        <h1 className="md:text-2xl font-bold text-gray-900">{t("itinerary_title")}</h1>
+        <p className="text-gray-600 mb-4 md:text-md text-sm">{t("itinerary_subtitle")}</p>
 
         {itinerary.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-80 text-center text-gray-500">
             <Wine size={50} className="text-gray-400 mb-4" />
-            <p className="text-lg font-semibold">Your itinerary is empty</p>
-            <p className="text-sm text-gray-600">Start adding wineries to create your perfect wine tour!</p>
+            <p className="text-lg font-semibold">{t("itinerary_empty")}</p>
+            <p className="text-sm text-gray-600">{t("itinerary_empty_desc")}</p>
             <Button variant="secondary" className="mt-4" onClick={() => router.push("/")}>
-              Browse Wineries
+              {t("itinerary_browse")}
             </Button>
           </div>
         ) : (
@@ -352,10 +354,10 @@ export default function ItineraryPage() {
 
               <div className="flex gap-4 mt-6">
                 <Button variant="destructive" onClick={handleClearAll}>
-                  Clear All
+                  {t("itinerary_clear_all")}
                 </Button>
                 <Button onClick={() => router.push("/")} variant="outline">
-                  Back to Wineries
+                  {t("itinerary_back")}
                 </Button>
               </div>
             </div>
@@ -377,31 +379,30 @@ export default function ItineraryPage() {
 
 
           <>
-            <h2 className="lg:text-2xl text-xl font-bold text-gray-900 mt-4 text-center">Your Itinerary has been Sent! 🍇</h2>
+            <h2 className="lg:text-2xl text-xl font-bold text-gray-900 mt-4 text-center">{t("itinerary_success_title")}</h2>
             <p className="text-gray-600 mt-2 text-center text-sm md:text-base">
-              We've delivered your requests to each winery. They will review and confirm your slots shortly.
-              Get ready for a premium Napa Valley experience!
+              {t("itinerary_success_desc1")}
+              {t("itinerary_success_desc2")}
             </p>
 
             <p className="text-gray-500 text-sm mt-4 text-center italic">
-              A summary has been sent to <strong>{user?.email || "your email"}</strong>. You will receive individual confirmation emails as each winery approves your request.
+              {t("itinerary_success_email").replace("{email}", user?.email || "your email")}
             </p>
 
             <div className="border-t w-full my-4"></div>
 
-            <h3 className="text-lg font-semibold text-gray-900 text-left w-full">What’s Next?</h3>
+            <h3 className="text-lg font-semibold text-gray-900 text-left w-full">{t("itinerary_next_steps")}</h3>
             <ul className="text-gray-600 text-sm mt-2 space-y-2 text-left w-full">
-              <li>📍 Review your itinerary details in your email.</li>
-              <li>🍷 Make sure to bring your ID if required by the wineries.</li>
-              <li>🚗 Need a ride? Book an Uber or Lyft below.</li>
-              <li>📸 Don’t forget to take pictures and share your experience!</li>
+              <li>{t("itinerary_step1")}</li>
+              <li>{t("itinerary_step2")}</li>
+              <li>{t("itinerary_step3")}</li>
+              <li>{t("itinerary_step4")}</li>
             </ul>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-6 w-full">
               <Button onClick={() => handleRideClick("uber")} className="bg-black text-white w-full">
-                🚗 Book an Uber
+                {t("itinerary_book_uber")}
               </Button>
-
             </div>
           </>
 

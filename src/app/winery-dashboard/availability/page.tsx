@@ -331,6 +331,34 @@ export default function AvailabilityManagement() {
     );
   }
 
+  const handleRegenerateSlots = async () => {
+    if (!confirm("This will automatically create booking slots for the next 30 days based on your operating hours. Slots with existing bookings will not be affected. Continue?")) {
+      return;
+    }
+
+    setLoadingSlots(true);
+    try {
+      const response = await fetch("/api/winery-dashboard/slots/regenerate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ daysAhead: 30, cleanExisting: true })
+      });
+
+      if (response.ok) {
+        toast.success("Slots generated successfully!");
+        fetchSlots();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || "Failed to generate slots");
+      }
+    } catch (error) {
+      console.error("Regeneration error:", error);
+      toast.error("Error generating slots");
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
   const allTimeSlots = [...DEFAULT_TIME_SLOTS, ...customTimeSlots];
 
   return (
@@ -348,6 +376,13 @@ export default function AvailabilityManagement() {
           <div className="flex flex-wrap gap-2">
             <button onClick={() => router.push("/winery-dashboard")} className="btn btn-ghost btn-sm">
               ← Dashboard
+            </button>
+            <button 
+              onClick={handleRegenerateSlots} 
+              className={`btn btn-outline btn-sm gap-1 ${loadingSlots ? 'loading' : ''}`}
+              disabled={loadingSlots}
+            >
+              <FaCalendarAlt size={12} /> Auto-Generate
             </button>
             <button onClick={() => setShowBulkModal(true)} className="btn btn-secondary btn-sm">
               <FaCopy className="mr-1" /> Bulk Create

@@ -60,7 +60,8 @@ export async function PUT(request: Request) {
       'transportation',
       'payment_method',
       'other_features',
-      'images'
+      'images',
+      'operating_hours'
     ];
 
     allowedUpdates.forEach(field => {

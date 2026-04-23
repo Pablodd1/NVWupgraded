@@ -21,7 +21,8 @@ import {
   FaImage,
   FaUserAlt,
   FaChevronLeft,
-  FaChevronRight
+  FaChevronRight,
+  FaClock
 } from "react-icons/fa";
 import { Winery, TastingInfo, FoodPairingOption } from "@/app/interfaces";
 import Select from "react-select";
@@ -39,6 +40,7 @@ export default function WineryProfile() {
 
   const sections = [
     { id: 'identity', label: 'Identity' },
+    { id: 'hours', label: 'Operating Hours' },
     { id: 'tasting', label: 'Tasting' },
     { id: 'features', label: 'Features' },
     { id: 'transport', label: 'Transport' },
@@ -83,7 +85,7 @@ export default function WineryProfile() {
           if (!winery.amenities) winery.amenities = { handicap_accessible: false, allows_children: false, allows_non_drinkers: false, virtual_sommelier: false, augmented_reality_tours: false };
           if (winery.amenities.allows_children === undefined) winery.amenities.allows_children = false;
           if (winery.amenities.allows_non_drinkers === undefined) winery.amenities.allows_non_drinkers = false;
-          if (!winery.transportation) winery.transportation = { uber_availability: false, lyft_availability: false, distance_from_user: 0 };
+          if (!winery.transportation) winery.transportation = { uber_availability: false, distance_from_user: 0 };
           if (!winery.payment_method) winery.payment_method = { type: 'pay_winery' };
           if (!winery.images) winery.images = [];
           if (!winery.tasting_info) winery.tasting_info = [];
@@ -488,6 +490,82 @@ export default function WineryProfile() {
                   </div>
                 </div>
               </div>
+            </section>
+
+            {/* 2. Operating Hours */}
+            <section id="hours" className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+              <h2 className="text-2xl font-serif font-bold text-wine-primary mb-6 flex items-center gap-2">
+                <FaClock className="text-wine-secondary" />
+                Operating Hours
+              </h2>
+              <div className="space-y-4">
+                {daysOfWeek.map((day) => {
+                  const dayKey = day.toLowerCase() as keyof typeof profile.operating_hours;
+                  const hours = profile.operating_hours?.[dayKey] || { open: "09:00 AM", close: "05:00 PM", closed: false };
+
+                  return (
+                    <div key={day} className="grid grid-cols-1 sm:grid-cols-4 gap-4 items-center p-4 border rounded-xl hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <label className="label cursor-pointer flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={!hours.closed}
+                            onChange={(e) => {
+                              const newHours = { ...hours, closed: !e.target.checked };
+                              handleInputChange(`operating_hours.${dayKey}`, newHours);
+                            }}
+                            className="checkbox checkbox-primary checkbox-sm"
+                          />
+                          <span className="font-bold text-gray-700 capitalize">{day}</span>
+                        </label>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className="text-[10px] font-bold uppercase text-gray-500 mb-1">Open</label>
+                        <select
+                          disabled={hours.closed}
+                          value={hours.open}
+                          onChange={(e) => {
+                            const newHours = { ...hours, open: e.target.value };
+                            handleInputChange(`operating_hours.${dayKey}`, newHours);
+                          }}
+                          className="select select-bordered select-sm w-full"
+                        >
+                          {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+
+                      <div className="flex flex-col">
+                        <label className="text-[10px] font-bold uppercase text-gray-500 mb-1">Close</label>
+                        <select
+                          disabled={hours.closed}
+                          value={hours.close}
+                          onChange={(e) => {
+                            const newHours = { ...hours, close: e.target.value };
+                            handleInputChange(`operating_hours.${dayKey}`, newHours);
+                          }}
+                          className="select select-bordered select-sm w-full"
+                        >
+                          {timeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+
+                      <div className="flex items-center justify-end">
+                        {hours.closed ? (
+                          <span className="badge badge-error gap-1">
+                            <FaTimesCircle size={10} /> Closed
+                          </span>
+                        ) : (
+                          <span className="badge badge-success gap-1">
+                            <FaCheckCircle size={10} /> Open
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-4 text-sm text-gray-500 italic">Changing these hours will affect how your booking slots are generated.</p>
             </section>
 
             {/* 2. Tasting Packages (UX & Filtration Management) */}

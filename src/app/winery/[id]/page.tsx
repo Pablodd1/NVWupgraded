@@ -27,11 +27,13 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import AvailableSlotsWidget from "@/components/winery/AvailableSlotsWidget";
 import Image from "next/image";
+import { useLanguage } from "@/context/LanguageContext";
 
 import { useAuthStore } from "@/store/authStore";
 
 const WineryDetail = () => {
   const { user } = useAuthStore();
+  const { t } = useLanguage();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [userLocation, setUserLocation] = useState<GeolocationCoordinates | null>(null);
   const [selectedTastingIndex, setSelectedTastingIndex] = useState<number>(0);
@@ -54,31 +56,26 @@ const WineryDetail = () => {
           <div className="w-16 h-16 bg-wine-primary/10 rounded-full flex items-center justify-center mx-auto">
             <FaWineGlass className="text-3xl text-wine-primary" />
           </div>
-          <h2 className="text-2xl font-serif font-bold text-gray-900">Unlock Exclusive Access</h2>
+          <h2 className="text-2xl font-serif font-bold text-gray-900">{t("auth_overlay_title")}</h2>
           <p className="text-gray-600">
-            Sign up or log in to view exclusive winery details, book tastings, and create your personalized itinerary.
+            {t("auth_overlay_desc")}
           </p>
           <div className="space-y-3">
             {/* The AuthModal is usually triggered by the Navbar state or we can redirect to login */}
             <Button
               className="w-full bg-wine-primary hover:bg-wine-primary/90 text-white py-3 rounded-lg font-bold"
               onClick={() => {
-                // Trigger global auth modal via event or direct state if possible, or redirect
-                // For now, let's assume we can push to a login route or trigger the modal
-                // Since AuthModal is in Layout/Navbar, we might need a way to open it.
-                // A simple redirect to home with a query param might work if the home page opens the modal.
-                // Or we can just redirect to home
                 router.push('/?login=true');
               }}
             >
-              Sign In / Sign Up
+              {t("sign_in")}
             </Button>
             <Button
               variant="ghost"
               className="w-full text-gray-500 hover:text-gray-700"
               onClick={() => router.push('/')}
             >
-              Back to Search
+              {t("auth_back_to_search")}
             </Button>
           </div>
         </div>
@@ -568,8 +565,30 @@ const WineryDetail = () => {
           <h2 className="font-serif text-2xl sm:text-3xl mb-4 sm:mb-8 text-wine-primary">Contact & Directions</h2>
 
           {/* Hours of Operation */}
-          <div className="mb-8">
-            <h3 className="font-serif text-2xl mb-4 text-wine-primary">Hours of Operation</h3>
+          <div className="mb-12">
+            <h3 className="font-serif text-2xl mb-6 text-wine-primary flex items-center gap-2">
+              <FaClock className="text-wine-secondary" />
+              Hours of Operation
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => {
+                const hours = winery.operating_hours?.[day as keyof typeof winery.operating_hours];
+                const isClosed = !hours || hours.closed;
+                
+                return (
+                  <div key={day} className="flex flex-col p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <span className="text-xs font-bold uppercase text-gray-500 mb-1">{day}</span>
+                    {isClosed ? (
+                      <span className="text-sm font-medium text-red-500">Closed</span>
+                    ) : (
+                      <span className="text-sm font-medium text-gray-900">
+                        {hours.open} - {hours.close}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
@@ -629,22 +648,7 @@ const WineryDetail = () => {
                 </Button>
               )}
 
-              {winery.transportation.lyft_availability && (
-                <Button
-                  onClick={() => {
-                    if (!userLocation) {
-                      handleLocationPermission();
-                      return;
-                    }
-                    // Lyft Universal Link
-                    const url = `https://lyft.com/ride?id=lyft&pickup[latitude]=${userLocation.latitude}&pickup[longitude]=${userLocation.longitude}&destination[latitude]=${winery.location.latitude}&destination[longitude]=${winery.location.longitude}`;
-                    window.open(url, '_blank');
-                  }}
-                  className="bg-[#FF00BF] hover:bg-[#D400A0] text-white w-full py-4 text-lg flex items-center justify-center gap-2"
-                >
-                  <FaCar /> Ride with Lyft
-                </Button>
-              )}
+
 
               {userLocation && (
                 <p className="text-center mt-2 text-gray-600 text-sm">

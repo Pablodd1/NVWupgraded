@@ -60,6 +60,13 @@ export default function WineryOnboarding() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Strict Location Validation
+        if (!formData.latitude || !formData.longitude || formData.latitude === 0 || formData.longitude === 0) {
+            toast.error("Please select a valid address from the dropdown to pin your location on the map.");
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -69,11 +76,14 @@ export default function WineryOnboarding() {
                 description: formData.description,
                 location: {
                     address: formData.address,
-                    latitude: formData.latitude || 0,
-                    longitude: formData.longitude || 0,
+                    latitude: formData.latitude,
+                    longitude: formData.longitude,
                     is_mountain_location: false,
+                },
+                amenities: {
                     allows_children: formData.allows_children,
-                    allows_non_drinkers: formData.allows_non_drinkers
+                    allows_non_drinkers: formData.allows_non_drinkers,
+                    handicap_accessible: true // Default during onboarding
                 },
                 contact_info: {
                     phone: formData.phone,
@@ -81,12 +91,22 @@ export default function WineryOnboarding() {
                     website: formData.website
                 },
                 images: images,
+                // Default operating hours
+                operating_hours: {
+                    monday: { open: "09:00 AM", close: "05:00 PM", closed: false },
+                    tuesday: { open: "09:00 AM", close: "05:00 PM", closed: false },
+                    wednesday: { open: "09:00 AM", close: "05:00 PM", closed: false },
+                    thursday: { open: "09:00 AM", close: "05:00 PM", closed: false },
+                    friday: { open: "09:00 AM", close: "05:00 PM", closed: false },
+                    saturday: { open: "10:00 AM", close: "06:00 PM", closed: false },
+                    sunday: { open: "10:00 AM", close: "05:00 PM", closed: false },
+                },
                 // Initialize with one default empty tasting so it's not empty
                 tasting_info: [{
                     tasting_title: "Signature Tasting",
                     tasting_description: "Our flagship wine tasting experience.",
                     tasting_price: 50,
-                    available_times: ["11:00", "13:00", "15:00"],
+                    available_times: ["11:00 AM", "01:00 PM", "03:00 PM"],
                     wine_types: ["Red", "White"],
                     child_price: formData.child_price,
                     non_drinker_price: formData.non_drinker_price,

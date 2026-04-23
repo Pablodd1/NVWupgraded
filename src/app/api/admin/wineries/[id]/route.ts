@@ -1,7 +1,9 @@
 import { dbConnect } from "@/lib/dbConnect";
 import Winery from "@/models/winery.model";
+import User from "@/models/user.model";
 import { NextResponse } from "next/server";
 import { requireWineryOrAdmin } from "@/lib/rbac";
+import { sendWineryApprovalNotification } from "@/lib/notifications";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   await dbConnect();
@@ -51,8 +53,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (!ownsWinery(user, id)) {
       return NextResponse.json({ error: "Forbidden: You do not have permission to update this winery." }, { status: 403 });
     }
+    
     const data = await request.json();
+    const oldStatus = winery.status;
     const updatedWinery = await Winery.findByIdAndUpdate(id, data, { new: true });
+    
+    // Trigger approval notification if status changed to approved
+    if (oldStatus !== 'approved' && updatedWinery.status === 'approved') {
+        const owner = await User.findById(updatedWinery.owner);
+        if (owner && owner.email) {
+            await sendWineryApprovalNotification(updatedWinery, owner);
+        }
+    }
+
     return NextResponse.json({ message: "Winery updated successfully", updatedWinery });
   } catch (error) {
     console.error("Error updating winery:", error);

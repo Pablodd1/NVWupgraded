@@ -54,7 +54,8 @@ export async function GET(req: Request) {
         if (filters.searchQuery) {
           query.$or = [
             { name: { $regex: filters.searchQuery, $options: "i" } },
-            { description: { $regex: filters.searchQuery, $options: "i" } }
+            { description: { $regex: filters.searchQuery, $options: "i" } },
+            { "location.address": { $regex: filters.searchQuery, $options: "i" } }
           ];
         }
 

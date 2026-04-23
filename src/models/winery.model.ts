@@ -114,7 +114,6 @@ const WinerySchema = new mongoose.Schema({
   ],
   transportation: {
     uber_availability: { type: Boolean, default: false },
-    lyft_availability: { type: Boolean, default: false },
     distance_from_user: { type: Number, min: 0 },
   },
   payment_method: {
@@ -122,6 +121,16 @@ const WinerySchema = new mongoose.Schema({
     external_booking_link: { type: String },
   },
   is_featured: { type: Boolean, default: false },
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  operating_hours: {
+    monday: { open: { type: String, default: "09:00 AM" }, close: { type: String, default: "05:00 PM" }, closed: { type: Boolean, default: false } },
+    tuesday: { open: { type: String, default: "09:00 AM" }, close: { type: String, default: "05:00 PM" }, closed: { type: Boolean, default: false } },
+    wednesday: { open: { type: String, default: "09:00 AM" }, close: { type: String, default: "05:00 PM" }, closed: { type: Boolean, default: false } },
+    thursday: { open: { type: String, default: "09:00 AM" }, close: { type: String, default: "05:00 PM" }, closed: { type: Boolean, default: false } },
+    friday: { open: { type: String, default: "09:00 AM" }, close: { type: String, default: "05:00 PM" }, closed: { type: Boolean, default: false } },
+    saturday: { open: { type: String, default: "10:00 AM" }, close: { type: String, default: "06:00 PM" }, closed: { type: Boolean, default: false } },
+    sunday: { open: { type: String, default: "10:00 AM" }, close: { type: String, default: "05:00 PM" }, closed: { type: Boolean, default: false } },
+  },
   owner: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 });
 

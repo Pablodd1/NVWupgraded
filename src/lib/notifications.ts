@@ -1,115 +1,37 @@
-import { Resend } from 'resend';
-import UserModel from "@/models/user.model";
+import { Resend } from "resend";
 
-// Initialize Resend safely to prevent build errors if env var is missing
-// Initialize Resend safely
-const resend = process.env.RESEND_API_KEY
-  ? new Resend(process.env.RESEND_API_KEY)
-  : {
-    emails: {
-      send: async () => {
-        console.warn("Resend not configured (RESEND_API_KEY missing)");
-        return { error: "Resend key missing" };
-      }
-    }
-  } as any;
-
-// ========================================
-// EMAIL CONFIGURATION
-// ========================================
-
-// No transporter needed for Resend
-
-
-// ========================================
-// ========================================
-// WHATSAPP CONFIGURATION (Plivo)
-// ========================================
-// ========================================
-
-interface MessageResult {
-  success: boolean;
-  message?: string;
-  error?: string;
-}
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
- * Send a WhatsApp message via Plivo.
- * The function keeps the same signature as the old `sendSMS` so the rest of the code
- * does not need to change. It respects the same age‑verification and opt‑in checks.
+ * Send an email using Resend.
  */
-async function sendWhatsApp(to: string, message: string, userEmail?: string): Promise<MessageResult> {
-  // SAFETY SWITCH: Temporarily disabled until Plivo/WhatsApp is fully verified
-  // const whatsappEnabled = process.env.ENABLE_WHATSAPP === "true";
-  const whatsappEnabled = false;
+async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string }) {
+  const fromEmail = process.env.EMAIL_FROM || "Napa Valley Wineries <notifications@napawineries.com>";
 
-  if (!whatsappEnabled) {
-    return { success: false, message: "WhatsApp temporarily disabled for safety" };
+  if (!process.env.RESEND_API_KEY) {
+    console.warn("Resend API key missing (RESEND_API_KEY)");
+    return { error: "Resend key missing" };
   }
-
-  // ---------------------------------------------------
-  // 1️⃣  Re‑use the same compliance checks we had for SMS
-  // ---------------------------------------------------
-  if (userEmail) {
-    try {
-      const user = await UserModel.findOne({ email: userEmail });
-      if (!user) {
-        console.warn(`WhatsApp not sent: User not found (${userEmail})`);
-        return { success: false, error: "User not found" };
-      }
-      if (!user.ageVerified) {
-        console.warn(`WhatsApp not sent: User age not verified (${userEmail})`);
-        return { success: false, error: "Age not verified" };
-      }
-      if (!user.smsOptIn || !user.smsOptInAgeConfirmed) {
-        console.warn(`WhatsApp not sent: User has not opted in to WhatsApp (${userEmail})`);
-        return { success: false, error: "WhatsApp opt‑in required" };
-      }
-      console.log(`✅ Age verification and WhatsApp opt‑in confirmed for ${userEmail}`);
-    } catch (dbError) {
-      console.error("Database check error:", dbError);
-      // Continue with sending – fallback to best‑effort
-    }
-  }
-
-  // ---------------------------------------------------
-  // 2️⃣  Pull Plivo credentials from env
-  // ---------------------------------------------------
-  const authId = process.env.PLIVO_AUTH_ID;
-  const authToken = process.env.PLIVO_AUTH_TOKEN;
-  const fromNumber = process.env.PLIVO_WHATSAPP_NUMBER; // must be a WhatsApp‑enabled number
-
-  if (!authId || !authToken || !fromNumber) {
-    console.warn("Plivo credentials not configured. WhatsApp not sent.");
-    return { success: false, error: "Plivo not configured" };
-  }
-
-  // ---------------------------------------------------
-  // 3️⃣  Build the message payload – Plivo expects a JSON body
-  // ---------------------------------------------------
-  const plivo = require("plivo");
-  const client = new plivo.Client(authId, authToken);
-
-  // Add the mandatory opt‑out line for compliance
-  const compliantMessage = `${message}\n\nReply STOP to opt out.`;
 
   try {
-    const response = await client.messages.create(
-      fromNumber, // source (must start with "whatsapp:")
-      `whatsapp:${to}`,
-      compliantMessage,
-      { url: undefined } // optional callback URL – not needed for simple send
-    );
-    console.log(`✅ WhatsApp sent via Plivo: ${response.messageUuid}`);
-    return { success: true, message: response.messageUuid[0] };
-  } catch (err: any) {
-    console.error("❌ WhatsApp error via Plivo:", err.message || err);
-    return { success: false, error: err.message || "Unknown error" };
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to,
+      subject,
+      html,
+    });
+
+    if (error) {
+      console.error("Resend error:", error);
+      return { error };
+    }
+
+    return { success: true, id: data?.id };
+  } catch (error) {
+    console.error("Failed to send email via Resend:", error);
+    return { error };
   }
 }
-
-// Backwards‑compatible alias – existing code calls `sendSMS`
-export const sendSMS = sendWhatsApp; // keep original export name for other modules
 
 // ========================================
 // EMAIL TEMPLATES
@@ -528,8 +450,6 @@ function getMasterItineraryEmail(data: {
 
 export async function sendMasterItineraryNotification(booking: any, customer: any) {
   try {
-    const from = process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app";
-
     const winerySummaries = booking.wineries.map((w: any) => ({
       wineryName: w.wineryId?.name || "Premium Winery",
       datetime: w.datetime,
@@ -538,8 +458,7 @@ export async function sendMasterItineraryNotification(booking: any, customer: an
       numberOfNonDrinkers: w.numberOfNonDrinkers
     }));
 
-    await resend.emails.send({
-      from,
+    await sendEmail({
       to: customer.email,
       subject: "Your Napa Valley Itinerary Summary 🍷",
       html: getMasterItineraryEmail({
@@ -548,10 +467,6 @@ export async function sendMasterItineraryNotification(booking: any, customer: an
         wineries: winerySummaries
       })
     });
-
-    if (customer.phone && customer.smsConsent) {
-      await sendSMS(customer.phone, `Itinerary Received! We've sent your requests to the wineries. Track your status here: ${process.env.NEXT_PUBLIC_APP_URL}/dashboard`);
-    }
 
     return { success: true };
   } catch (error: any) {
@@ -585,8 +500,7 @@ export async function sendPasswordResetEmail(email: string, resetToken: string) 
 
   const subject = "Reset Your Password - Napa Valley Wineries";
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
+  await sendEmail({
     to: email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -610,8 +524,7 @@ export async function sendWelcomeNotification(user: any, isWinery: boolean = fal
     </div>
   `;
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
+  await sendEmail({
     to: user.email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -652,8 +565,7 @@ export async function sendFinalBookingDecision(booking: any, winery: any, custom
     ` : ''}
   `;
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
+  await sendEmail({
     to: customer.email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -688,8 +600,7 @@ export async function sendHourReminder(customer: any, wineryName: string, time: 
     <p style="font-size: 13px; color: #888;">Safe travels! Please drink responsibly.</p>
   `;
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
+  await sendEmail({
     to: customer.email,
     subject,
     html: EmailTemplate({ content, subject })
@@ -769,24 +680,17 @@ function getErrorNotificationEmail(data: ErrorNotificationParams) {
 
 export async function sendErrorNotification(params: ErrorNotificationParams) {
   try {
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || "admin@napawineries.com"; // Fallback
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.EMAIL_FROM || "admin@napawineries.com";
 
-    await resend.emails.send({
-      from: process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app",
+    await sendEmail({
       to: adminEmail,
       subject: `🚨 [${process.env.NODE_ENV?.toUpperCase() || 'DEV'}] Error: ${params.error.substring(0, 30)}`,
       html: getErrorNotificationEmail(params)
     });
 
-    // Optional: Send SMS for critical server errors
-    if (params.source === 'server' && process.env.ADMIN_PHONE && process.env.NEXT_PUBLIC_ENABLE_SMS === 'true') {
-      await sendSMS(process.env.ADMIN_PHONE, `🚨 Critical App Error: ${params.error.substring(0, 50)}. Check email for stack trace.`);
-    }
-
     return { success: true };
   } catch (error: any) {
     console.error("Failed to send error notification:", error);
-    // Silent fail to avoid loops
     return { success: false, error: error.message };
   }
 }
@@ -826,11 +730,8 @@ export async function sendWineryNotification(params: SendBookingNotificationsPar
       paymentStatus: params.paymentStatus
     };
 
-    const from = process.env.EMAIL_FROM || "notifications@arkeuwilue.resend.app";
-
     // 1. Notify Winery Owner
-    await resend.emails.send({
-      from,
+    await sendEmail({
       to: data.wineryEmail,
       subject: `New Booking Request - ${data.customerFirstName}`,
       html: getWineryBookingNotificationEmail(data)
@@ -838,8 +739,7 @@ export async function sendWineryNotification(params: SendBookingNotificationsPar
 
     // 2. Notify Admin
     const adminEmail = process.env.ADMIN_EMAIL || "admin@napawineries.com";
-    await resend.emails.send({
-      from,
+    await sendEmail({
       to: adminEmail,
       subject: `New Booking Alert - ${data.bookingId}`,
       html: getAdminBookingNotificationEmail(data)
@@ -850,6 +750,29 @@ export async function sendWineryNotification(params: SendBookingNotificationsPar
     console.error("Winery Notification Error:", error);
     return { success: false, error: error.message };
   }
+}
+
+export async function sendWineryApprovalNotification(winery: any, user: any) {
+  const subject = "Winery Account Approved! 🍷";
+  const content = `
+    <h2 style="color:#6B1E23; margin-bottom:24px;">Congratulations, ${user.firstName}!</h2>
+    <p>Your winery, <strong>${winery.name}</strong>, has been approved by the Napa Valley Wineries administration.</p>
+    <p>You can now log in to your dashboard to manage your availability, view bookings, and update your profile.</p>
+    <div style="background-color:#F9F9F9; padding:20px; border-radius:8px; margin:24px 0;">
+      <p><strong>Login Email:</strong> ${user.email}</p>
+      <p><strong>Dashboard URL:</strong> <a href="${process.env.NEXT_PUBLIC_APP_URL}/winery-dashboard">${process.env.NEXT_PUBLIC_APP_URL}/winery-dashboard</a></p>
+    </div>
+    <div style="margin:24px 0;">
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/winery-dashboard" class="button">Go to Dashboard</a>
+    </div>
+    <p>If you have any questions, please contact our support team.</p>
+  `;
+
+  return await sendEmail({
+    to: user.email,
+    subject,
+    html: EmailTemplate({ content, subject })
+  });
 }
 
 /** 
@@ -869,5 +792,6 @@ export default {
   sendWelcomeNotification,
   sendHourReminder,
   sendErrorNotification,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  sendWineryApprovalNotification
 };

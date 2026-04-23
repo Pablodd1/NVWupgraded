@@ -41,24 +41,26 @@ export const AddressAutocomplete = ({
 
             autoCompleteRef.current.addListener('place_changed', () => {
                 const place = autoCompleteRef.current?.getPlace();
-                if (place?.formatted_address) {
+                if (place?.formatted_address && place.geometry?.location) {
+                    const lat = place.geometry.location.lat();
+                    const lng = place.geometry.location.lng();
                     setInputValue(place.formatted_address);
-                    const lat = place.geometry?.location?.lat();
-                    const lng = place.geometry?.location?.lng();
                     onChange(place.formatted_address, lat, lng);
+                } else if (place?.formatted_address) {
+                    // Fallback if geometry is missing but address is there
+                    setInputValue(place.formatted_address);
+                    onChange(place.formatted_address);
                 }
             });
         } catch (error) {
-            console.warn("Google Maps Autocomplete failed to initialize (likely invalid API key):", error);
+            console.error("Google Maps Autocomplete failed:", error);
         }
 
         return () => {
             if (autoCompleteRef.current) {
                 try {
                     google.maps.event.clearInstanceListeners(autoCompleteRef.current);
-                } catch (e) {
-                    // Ignore cleanup errors
-                }
+                } catch (e) {}
             }
         };
     }, [places]);
@@ -66,7 +68,8 @@ export const AddressAutocomplete = ({
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setInputValue(val);
-        onChange(val);
+        // Important: if user manually types, we clear coordinates to force a search/selection
+        onChange(val, undefined, undefined);
     };
 
     return (
@@ -78,6 +81,7 @@ export const AddressAutocomplete = ({
             placeholder={placeholder}
             className={className}
             required={required}
+            autoComplete="off"
         />
     );
 };
