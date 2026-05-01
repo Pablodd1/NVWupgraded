@@ -59,58 +59,6 @@ export interface OperatingHours {
   saturday: DayHours;
   sunday: DayHours;
 }
-
-// OperatingHours.ts
-export interface DayHours {
-  open: string;
-  close: string;
-  closed: boolean;
-}
-
-export interface OperatingHours {
-  monday: DayHours;
-  tuesday: DayHours;
-  wednesday: DayHours;
-  thursday: DayHours;
-  friday: DayHours;
-  saturday: DayHours;
-  sunday: DayHours;
-}
-
-// OperatingHours.ts
-export interface DayHours {
-  open: string;
-  close: string;
-  closed: boolean;
-}
-
-export interface OperatingHours {
-  monday: DayHours;
-  tuesday: DayHours;
-  wednesday: DayHours;
-  thursday: DayHours;
-  friday: DayHours;
-  saturday: DayHours;
-  sunday: DayHours;
-}
-
-// OperatingHours.ts
-export interface DayHours {
-  open: string;
-  close: string;
-  closed: boolean;
-}
-
-export interface OperatingHours {
-  monday: DayHours;
-  tuesday: DayHours;
-  wednesday: DayHours;
-  thursday: DayHours;
-  friday: DayHours;
-  saturday: DayHours;
-  sunday: DayHours;
-}
-
 // BookingInfo.ts
 export interface BookingInfo {
   booking_enabled: boolean;
