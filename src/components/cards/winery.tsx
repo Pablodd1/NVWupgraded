@@ -137,7 +137,7 @@ export default function WineryBookingCard({ winery, onUpdate, onRemove }: Winery
       tours,
       otherFeature,
     });
-  }, [selectedDate, selectedTime, selectedTastingIndex, numberOfGuests, numberOfChildren, numberOfNonDrinkers, foodQtys, tourQtys, otherQtys]);
+  }, [winery._id, winery.name, onUpdate, selectedDate, selectedTime, selectedTastingIndex, numberOfGuests, numberOfChildren, numberOfNonDrinkers, foodQtys, tourQtys, otherQtys, currentTastingInfo]);
 
   // Price summary
   const subtotal = (() => {

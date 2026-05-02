@@ -311,18 +311,22 @@ export default function ItineraryPage() {
     window.open(rideURL, "_blank");
   };
 
-  // Sort itinerary without causing infinite loop
-  useEffect(() => {
-    const sortedItinerary = [...itinerary].sort((a, b) => {
+  // Memoize sorted itinerary for display to prevent infinite re-render loops
+  const sortedItinerary = useMemo(() => {
+    if (itinerary.length === 0) return [];
+    
+    return [...itinerary].sort((a, b) => {
       const timeA = a.bookingDetails?.selectedTime ? new Date(a.bookingDetails.selectedTime).getTime() : Infinity;
       const timeB = b.bookingDetails?.selectedTime ? new Date(b.bookingDetails.selectedTime).getTime() : Infinity;
-      return timeA - timeB;
+      
+      if (timeA !== timeB) return timeA - timeB;
+      
+      const dateA = a.bookingDetails?.selectedDate ? new Date(a.bookingDetails.selectedDate).getTime() : Infinity;
+      const dateB = b.bookingDetails?.selectedDate ? new Date(b.bookingDetails.selectedDate).getTime() : Infinity;
+      
+      return dateA - dateB;
     });
-    // Only update if the order has changed to prevent infinite loop
-    if (JSON.stringify(sortedItinerary) !== JSON.stringify(itinerary)) {
-      setItinerary(sortedItinerary);
-    }
-  }, [itinerary, setItinerary]);
+  }, [itinerary]);
 
   return (
     <div className="bg-gray-100 min-h-screen pt-24 md:pt-28 pb-32 px-4 sm:px-6 lg:px-8 relative">
@@ -342,15 +346,18 @@ export default function ItineraryPage() {
         ) : (
           <div className="flex gap-10 flex-wrap lg:flex-nowrap mb-10">
             <div className="lg:w-4/5 w-full">
-              {itinerary.map((winery) => (
-                <div key={winery._id || winery.name} className="mb-4 w-full">
-                  <WineryBookingCard winery={winery} onUpdate={handleUpdate} onRemove={handleRemove} />
-                </div>
-              ))}
+              {sortedItinerary.map((winery) => (
+              <WineryBookingCard
+                key={winery._id || winery.name}
+                winery={winery}
+                onRemove={() => handleRemove(winery)}
+                onUpdate={(id, data) => handleUpdate(winery, data)}
+              />
+            ))}
             </div>
 
             <div className="lg:w-2/5 w-full">
-              <ItinerarySummary wineries={itinerary} onConfirm={handleConfirmBooking} />
+              <ItinerarySummary wineries={sortedItinerary} onConfirm={handleConfirmBooking} />
 
               <div className="flex gap-4 mt-6">
                 <Button variant="destructive" onClick={handleClearAll}>
