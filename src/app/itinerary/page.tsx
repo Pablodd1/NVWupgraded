@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import ItinerarySummary from "@/components/Itinerary-summary";
 import { useItinerary, BookingData, ItineraryWinery } from "@/store/itinerary";
 import AuthModal from "@/components/modal/AuthModal";
