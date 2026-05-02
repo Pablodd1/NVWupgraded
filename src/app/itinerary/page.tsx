@@ -83,7 +83,7 @@ export default function ItineraryPage() {
     }
   };
 
-  const handleRemove = (id: string) => setItinerary(itinerary.filter((winery) => winery._id !== id));
+  const handleRemove = (id: string) => setItinerary(itinerary.filter((winery) => (winery._id || winery.name) !== id));
 
   const handleClearAll = () => {
     setShowRideModal(false);
@@ -350,8 +350,8 @@ export default function ItineraryPage() {
               <WineryBookingCard
                 key={winery._id || winery.name}
                 winery={winery}
-                onRemove={() => handleRemove(winery)}
-                onUpdate={(id, data) => handleUpdate(winery, data)}
+                onRemove={() => handleRemove(winery._id || winery.name)}
+                onUpdate={handleUpdate}
               />
             ))}
             </div>
