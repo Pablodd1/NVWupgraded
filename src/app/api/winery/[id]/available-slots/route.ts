@@ -41,6 +41,11 @@ export async function GET(
       .limit(50) // Limit to 50 nearest slots
       .lean();
 
+    // FALLBACK: If no slots found in DB, throw error to trigger mock fallback
+    if (availableSlots.length === 0) {
+      throw new Error("No slots found in database for this winery.");
+    }
+
     // Group slots by date
     const slotsByDate = new Map<string, any[]>();
 

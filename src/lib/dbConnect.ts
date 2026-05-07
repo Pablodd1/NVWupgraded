@@ -25,12 +25,15 @@ export async function dbConnect() {
   if (!cached.promise) {
     const opts = {
       dbName: "nvw",
-      bufferCommands: true, // Enable buffering to handle initial connection delay better
+      bufferCommands: true,
+      connectTimeoutMS: 15000,
+      serverSelectionTimeoutMS: 15000,
+      socketTimeoutMS: 45000,
     };
 
 
     cached.promise = mongoose.connect(MONGO_URI, opts).then((mongoose) => {
-
+      console.log("✅ MongoDB Connected Successfully");
       return mongoose;
     });
   }

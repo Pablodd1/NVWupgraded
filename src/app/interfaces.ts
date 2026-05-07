@@ -59,7 +59,6 @@ export interface OperatingHours {
   saturday: DayHours;
   sunday: DayHours;
 }
-
 // BookingInfo.ts
 export interface BookingInfo {
   booking_enabled: boolean;
