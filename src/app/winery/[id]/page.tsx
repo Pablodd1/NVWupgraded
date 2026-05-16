@@ -42,6 +42,8 @@ const WineryDetail = () => {
   const [selectedChildren, setSelectedChildren] = useState<number>(0);
   const [selectedNonDrinkers, setSelectedNonDrinkers] = useState<number>(0);
   const [selectedFoodQty, setSelectedFoodQty] = useState<number>(1);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedTime, setSelectedTime] = useState<string>("");
   const { id } = useParams() as { id: string };
   const router = useRouter();
   const { itinerary, setItinerary } = useItinerary();
@@ -118,8 +120,8 @@ const WineryDetail = () => {
         foodPairingQty: selectedFoodQty,
         tours: selectedTours,
         otherFeature: [],
-        selectedDate: "",
-        selectedTime: "",
+        selectedDate,
+        selectedTime,
         tasting: true
       }
     };
@@ -504,14 +506,58 @@ const WineryDetail = () => {
         {/* Add to Itinerary - Cleaned Up */}
         <div className="bg-white rounded-lg p-6 sm:p-10 shadow-lg border border-primary/10 flex flex-col items-center text-center">
           <h2 className="font-serif text-3xl mb-4 text-wine-primary">Plan Your Visit</h2>
-          <p className="text-gray-600 mb-8 max-w-2xl">
-            Add <strong>{winery.name}</strong> to your personalized Napa Valley itinerary. 
-            You'll be able to select your preferred date, time, and additional options like food pairings or tours in the next step.
-          </p>
+          
+          <div className="w-full max-w-2xl text-left mb-8 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="form-control w-full">
+                <label className="label"><span className="label-text font-bold">Select Date</span></label>
+                <input 
+                  type="date" 
+                  className="input input-bordered w-full" 
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                />
+              </div>
+              <div className="form-control w-full">
+                <label className="label"><span className="label-text font-bold">Select Time</span></label>
+                <select 
+                  className="select select-bordered w-full" 
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                >
+                  <option value="" disabled>Pick a time</option>
+                  {currentTastingInfo?.available_times?.map((time: string) => (
+                    <option key={time} value={time}>{time}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+              <div className="form-control w-full">
+                <label className="label"><span className="label-text font-bold">Number of Guests</span></label>
+                <input 
+                  type="number" 
+                  min="1"
+                  max={currentTastingInfo?.booking_info?.max_guests_per_slot || 20}
+                  className="input input-bordered w-full" 
+                  value={selectedNumberOfPeople}
+                  onChange={(e) => setSelectedNumberOfPeople(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
           
           <Button 
             className="bg-wine-primary hover:bg-wine-primary/95 text-white px-12 py-8 text-xl font-bold rounded-2xl shadow-xl shadow-wine-primary/20 transition-all hover:scale-[1.02] w-full sm:w-auto"
-            onClick={addToItinerary}
+            onClick={() => {
+              if (!selectedDate || !selectedTime) {
+                toast.error("Please select a date and time for your visit.");
+                return;
+              }
+              addToItinerary();
+            }}
           >
             Add to Itinerary
           </Button>

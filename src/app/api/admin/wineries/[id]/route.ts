@@ -1,9 +1,11 @@
+export const dynamic = "force-dynamic";
 import { dbConnect } from "@/lib/dbConnect";
 import Winery from "@/models/winery.model";
 import User from "@/models/user.model";
 import { NextResponse } from "next/server";
-import { requireWineryOrAdmin } from "@/lib/rbac";
+import { requireWineryOrAdmin, ownsWinery } from "@/lib/rbac";
 import { sendWineryApprovalNotification } from "@/lib/notifications";
+import { autoGenerateWinerySlots } from "@/lib/slotGenerator";
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   await dbConnect();
@@ -20,7 +22,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     }
 
     // Check ownership (admin can delete any, winery owner can only delete their own)
-    const { ownsWinery } = await import("@/lib/rbac");
     if (!ownsWinery(user, id)) {
       return NextResponse.json({ error: "Forbidden: You do not have permission to delete this winery." }, { status: 403 });
     }
@@ -49,7 +50,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     // Check ownership
-    const { ownsWinery } = await import("@/lib/rbac");
     if (!ownsWinery(user, id)) {
       return NextResponse.json({ error: "Forbidden: You do not have permission to update this winery." }, { status: 403 });
     }
@@ -57,6 +57,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const data = await request.json();
     const oldStatus = winery.status;
     const updatedWinery = await Winery.findByIdAndUpdate(id, data, { new: true });
+
+    // Regenerate slots based on updated operating hours/tasting info
+    await autoGenerateWinerySlots(updatedWinery, 30);
     
     // Trigger approval notification if status changed to approved
     if (oldStatus !== 'approved' && updatedWinery.status === 'approved') {

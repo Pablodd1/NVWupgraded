@@ -6,6 +6,7 @@ import { FilterIcon, SearchIcon } from "lucide-react";
 import { MdRestore } from "react-icons/md";
 import { FilterBlock } from "./FilterBlock";
 import { Filters, useFilterStore } from "@/hooks/useFilterStore";
+import { Exo_2 } from "next/font/google";
 
 interface FilterProps {
   wineries: Winery[];

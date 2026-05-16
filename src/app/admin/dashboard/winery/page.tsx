@@ -166,13 +166,8 @@ export default function WineryAdminStepperPage() {
         return false;
       }
 
-      // Check if there are any images
-      const hasImages = tasting.images && tasting.images.length > 0;
-
-      if (!hasImages) {
-        toast.error(`Tasting #${i + 1}: At least one image is required`);
-        return false;
-      }
+      // Remove strict image requirement for tasting info since main images exist.
+      // We will allow saving without tasting-specific images.
     }
 
     return true;

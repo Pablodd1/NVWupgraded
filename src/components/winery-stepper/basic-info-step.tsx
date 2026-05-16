@@ -1,5 +1,6 @@
 import { Winery } from "@/app/interfaces";
-import { MapSelector } from "../map/map-selector";
+import { APIProvider } from "@vis.gl/react-google-maps";
+import { AddressAutocomplete } from "../common/AddressAutocomplete";
 import { MultipleImageUpload } from "../Multi-image-upload";
 
 type BasicInfoFormProps = {
@@ -121,12 +122,23 @@ export const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormD
         <label className="label">
           <span className="label-text font-bold">Address & Location</span>
         </label>
-        <MapSelector
-          latitude={formData.location.latitude}
-          longitude={formData.location.longitude}
-          address={formData.location.address}
-          onChange={updateLocation}
-        />
+        <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+          <AddressAutocomplete
+            value={formData.location.address}
+            onChange={(address, lat, lng) => updateLocation(lat || 0, lng || 0, address)}
+            className="input input-bordered w-full"
+            placeholder="123 Main St, Napa, CA"
+            required
+          />
+        </APIProvider>
+        {formData.location.latitude !== 0 && formData.location.longitude !== 0 && (
+            <p className="mt-2 text-sm text-green-600 flex items-center">
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a 1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Location confirmed: {formData.location.latitude.toFixed(4)}, {formData.location.longitude.toFixed(4)}
+            </p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 bg-gray-50 p-4 rounded-xl border">
           <label className="cursor-pointer label flex justify-between md:justify-start gap-4">
             <span className="label-text font-semibold">Mountain Location</span>

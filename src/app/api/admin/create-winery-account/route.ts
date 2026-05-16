@@ -1,9 +1,9 @@
+export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbConnect";
 import User from "@/models/user.model";
 import Winery from "@/models/winery.model";
 import { requireAdmin } from "@/lib/rbac";
-import bcrypt from "bcryptjs";
 import { autoGenerateWinerySlots } from "@/lib/slotGenerator";
 import { sendWelcomeNotification } from "@/lib/notifications";
 

@@ -3,6 +3,7 @@ import { dbConnect } from "@/lib/dbConnect";
 import { requireWinery } from "@/lib/rbac";
 import Winery from "@/models/winery.model";
 import User from "@/models/user.model";
+import { autoGenerateWinerySlots } from "@/lib/slotGenerator";
 
 // GET winery profile
 export async function GET(request: Request) {
@@ -72,6 +73,8 @@ export async function PUT(request: Request) {
 
     await winery.save();
 
+    await autoGenerateWinerySlots(winery, 30);
+
     return NextResponse.json({
       success: true,
       message: "Winery profile updated successfully",
@@ -113,6 +116,8 @@ export async function POST(request: Request) {
 
     // Update user to link wineryId
     await User.findByIdAndUpdate(user.userId, { wineryId: newWinery._id });
+
+    await autoGenerateWinerySlots(newWinery, 30);
 
     return NextResponse.json({
       success: true,

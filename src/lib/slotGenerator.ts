@@ -106,16 +106,21 @@ export async function autoGenerateWinerySlots(winery: any, daysAhead: number = 3
         // Save the winery update
         await winery.save();
 
-        // 2. Create the SlotInventory records
+        // Update SlotInventory records
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Delete existing unbooked slots from today onwards to allow for updates to operating hours
+        // We only delete 'available' slots that have no bookings to avoid breaking existing reservations
+        await SlotInventory.deleteMany({
+            wineryId: winery._id,
+            date: { $gte: today },
+            bookedCapacity: 0,
+            status: 'available'
+        });
+
         const dates = generateDates(daysAhead);
         const slotsToCreate = [];
-
-        // Check if slots already exist to avoid duplicates if this is an update
-        const existingCount = await SlotInventory.countDocuments({ wineryId: winery._id });
-        if (existingCount > 0) {
-            console.log(`Slots already exist for ${winery.name}. Updating SlotInventory is not implemented here yet.`);
-            return;
-        }
 
         const operatingHours = winery.operating_hours || {};
 

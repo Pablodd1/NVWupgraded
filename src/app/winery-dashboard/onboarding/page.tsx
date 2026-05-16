@@ -116,7 +116,8 @@ export default function WineryOnboarding() {
                         available_slots: [],
                         allow_excess_guests: false,
                         excess_guest_multiplier: 1.5
-                    }
+                    },
+                    images: []
                 }]
             };
 
