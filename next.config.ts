@@ -30,6 +30,10 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: '**.unsplash.com' },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
       { protocol: 'https', hostname: '**.googleusercontent.com' },
+      // ImgBB CDN – used by /api/upload for winery photos
+      { protocol: 'https', hostname: 'i.ibb.co' },
+      { protocol: 'https', hostname: 'ibb.co' },
+      { protocol: 'https', hostname: '**.imgbb.com' },
     ],
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

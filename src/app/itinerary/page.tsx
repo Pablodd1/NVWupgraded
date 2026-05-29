@@ -306,7 +306,7 @@ export default function ItineraryPage() {
     const pickupTime = Math.floor(Date.now() / 1000) + 30 * 60;
     let rideURL = "";
     if (service === "uber") {
-      rideURL = `https://m.uber.com/ul/?action=setPickup&pickup[latitude]=${location.latitude}&pickup[longitude]=${location.longitude}&dropoff[latitude]=${earliestWinery.location.latitude}&dropoff[longitude]=${earliestWinery.location.longitude}&pickup_time=${pickupTime}&intent=ride`;
+      rideURL = `https://m.uber.com/ul/?action=setPickup&pickup[latitude]=${location.latitude}&pickup[longitude]=${location.longitude}&dropoff[latitude]=${earliestWinery.location.latitude}&dropoff[longitude]=${earliestWinery.location.longitude}&dropoff[nickname]=${encodeURIComponent(earliestWinery.name)}`;
     }
     window.open(rideURL, "_blank");
   };

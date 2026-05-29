@@ -42,7 +42,9 @@ export async function GET(req: Request) {
     const skip = (page - 1) * limit;
 
     const filtersParam = searchParams.get("filters");
-    let query: any = {};
+    
+    // Only fetch wineries that have been approved by an admin
+    let query: any = { status: "approved" };
 
     if (filtersParam) {
       try {

@@ -198,8 +198,6 @@ export async function POST(req: Request) {
     await booking.save();
 
     return NextResponse.json({ message: "success", sessionId: session.id, booking }, { status: 201 });
-
-    return NextResponse.json({ message: "success", sessionId: session.id, booking }, { status: 201 });
   } catch (error: any) {
     console.error("Stripe error:", error);
     return NextResponse.json({ message: error.message }, { status: 400 });

@@ -503,6 +503,11 @@ const WineryDetail = () => {
           </div>
         </div>
 
+        {/* Available Slots Widget */}
+        <div className="mb-10">
+          <AvailableSlotsWidget wineryId={winery._id} />
+        </div>
+
         {/* Add to Itinerary - Cleaned Up */}
         <div className="bg-white rounded-lg p-6 sm:p-10 shadow-lg border border-primary/10 flex flex-col items-center text-center">
           <h2 className="font-serif text-3xl mb-4 text-wine-primary">Plan Your Visit</h2>

@@ -3,6 +3,12 @@ import { getAISearchFilters, generateConversationalResponse } from '@/lib/gemini
 import Winery from '@/models/winery.model';
 import { dbConnect } from '@/lib/dbConnect';
 
+// Simple in-memory cache for AI filter results to save Gemini API costs
+// Note: In a serverless environment (Vercel), this cache is per-instance and clears on cold starts,
+// but it is highly effective for traffic spikes.
+const filterCache = new Map<string, any>();
+const CACHE_TTL_MS = 1000 * 60 * 60; // 1 hour cache
+
 export async function POST(req: Request) {
     try {
         const { query, history, context } = await req.json();
@@ -12,9 +18,31 @@ export async function POST(req: Request) {
 
         await dbConnect();
 
-        // 1. Use AI to interpret the query
-        const filters = await getAISearchFilters(query);
-        console.log('AI Interpreted Filters:', filters);
+        // Normalize query for caching
+        const normalizedQuery = query.toLowerCase().trim();
+
+        // 1. Use AI to interpret the query (with caching)
+        let filters;
+        const cachedItem = filterCache.get(normalizedQuery);
+        
+        if (cachedItem && Date.now() - cachedItem.timestamp < CACHE_TTL_MS) {
+            filters = cachedItem.data;
+            console.log('Using cached AI Filters for:', normalizedQuery);
+        } else {
+            filters = await getAISearchFilters(query);
+            
+            // Limit cache size to prevent memory leaks in long-running instances
+            if (filterCache.size > 1000) {
+                const firstKey = filterCache.keys().next().value;
+                if (firstKey) filterCache.delete(firstKey);
+            }
+            
+            filterCache.set(normalizedQuery, {
+                data: filters,
+                timestamp: Date.now()
+            });
+            console.log('AI Interpreted Filters (Fresh):', filters);
+        }
 
         // 2. Build MongoDB query
         const mongoQuery: any = {};

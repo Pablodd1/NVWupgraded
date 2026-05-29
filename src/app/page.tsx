@@ -205,14 +205,24 @@ export default function Home() {
         </div>
 
         <div className="lg:col-span-3 space-y-6 lg:ml-10 mb-20">
-          {/* Voice Search Toggle Header */}
+          {/* Hero Section */}
+          <div className="mb-10 px-2">
+            <h1 className="text-4xl md:text-6xl font-serif font-black text-wine-primary mb-4 leading-tight">
+              Experience the <span className="text-primary">Best of Napa</span>
+            </h1>
+            <p className="text-lg md:text-xl text-gray-600 max-w-3xl leading-relaxed">
+              Plan your ultimate winery itinerary with AI-powered suggestions, real-time availability, and secure booking in one place.
+            </p>
+          </div>
+
+          {/* Search Header */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 sm:p-6 rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 mb-6 gap-3">
             <div>
               <h2 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-                {nlpQuery ? "🍷 AI Selections" : ""}
+                {nlpQuery ? "🍷 AI Selections" : "🍷 All Wineries"}
               </h2>
               <p className="text-sm text-gray-500 font-medium mt-1">
-                {nlpQuery ? "Curated by your AI Sommelier" : ""}
+                {nlpQuery ? "Curated by your AI Sommelier" : "Browse our collection of world-class estates"}
               </p>
             </div>
 
