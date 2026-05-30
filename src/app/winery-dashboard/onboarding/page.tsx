@@ -368,7 +368,10 @@ export default function WineryOnboarding() {
                                     <FaPlus size={12} />
                                     {uploading ? 'Uploading...' : 'Add Photo'}
                                 </label>
-                                <span className="text-xs text-gray-500 italic">Recommended for your landing page.</span>
+                                <span className="text-xs text-gray-500 italic flex flex-col">
+                                    <span>Recommended for your landing page.</span>
+                                    <span>Supported formats: JPG, PNG, WEBP, GIF. Max size: 5MB.</span>
+                                </span>
                             </div>
                         </div>
 

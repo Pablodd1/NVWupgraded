@@ -486,7 +486,10 @@ export default function WineryProfile() {
                       <FaPlus size={14} />
                       Upload Winery Photo
                     </label>
-                    <p className="text-sm text-gray-500 italic">These images will show up on your public profile landing page.</p>
+                    <div className="text-sm text-gray-500 italic flex flex-col">
+                      <p>These images will show up on your public profile landing page.</p>
+                      <p>Supported formats: JPG, PNG, WEBP, GIF. Max size: 5MB.</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -997,8 +1000,9 @@ export default function WineryProfile() {
                           <FaPlus size={12} />
                           Add Image
                         </label>
-                        <span className="text-xs text-gray-500">
-                          {tasting.images?.length || 0} image(s)
+                        <span className="text-xs text-gray-500 flex flex-col">
+                          <span>{tasting.images?.length || 0} image(s)</span>
+                          <span className="italic mt-1">Supported formats: JPG, PNG, WEBP, GIF. Max size: 5MB.</span>
                         </span>
                       </div>
                     </div>
