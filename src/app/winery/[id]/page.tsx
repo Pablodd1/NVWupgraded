@@ -505,7 +505,7 @@ const WineryDetail = () => {
 
         {/* Available Slots Widget */}
         <div className="mb-10">
-          <AvailableSlotsWidget wineryId={winery._id} />
+          {winery._id && <AvailableSlotsWidget wineryId={winery._id} />}
         </div>
 
         {/* Add to Itinerary - Cleaned Up */}

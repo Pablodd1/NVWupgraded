@@ -14,7 +14,7 @@ export async function generateMetadata(
 
   try {
     await dbConnect();
-    const winery = await WineryModel.findById(id).lean();
+    const winery = (await WineryModel.findById(id).lean()) as any;
 
     if (!winery) {
       return {
