@@ -67,6 +67,7 @@ const TastingInfoSchema = new mongoose.Schema({
   ava: { type: String },
   tasting_price: { type: Number, default: 0, min: 0 }, 
   available_times: [{ type: String }],
+  available_dates: [{ type: String }],
   wine_types: [{ type: String }],
   number_of_wines_per_tasting: { type: Number, min: 1, default: 1 },
   special_features: [{ type: String }],

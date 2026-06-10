@@ -18,7 +18,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Forbidden: Only winery or admin users can create a winery." }, { status: 403 });
     }
     const data = await req.json();
-    const winery = await Winery.create({ ...data, owner: userId });
+    
+    // Whitelist only allowed fields to prevent mass-assignment vulnerabilities
+    // Option B: Auto-approve newly created wineries so they immediately appear on the homepage
+    const safeData = {
+      name: data.name,
+      location: data.location,
+      contact_info: data.contact_info,
+      description: data.description,
+      images: data.images,
+      tasting_info: data.tasting_info,
+      amenities: data.amenities,
+      transportation: data.transportation,
+      payment_method: data.payment_method,
+      operating_hours: data.operating_hours,
+      status: "approved", 
+      owner: userId
+    };
+
+    const winery = await Winery.create(safeData);
 
     // Auto-generate slots for the next 30 days
     await autoGenerateWinerySlots(winery, 30);

@@ -236,6 +236,7 @@ export default function WineryProfile() {
       tasting_price: 0,
       available_times: [],
       available_days: [],
+      available_dates: [],
       wine_types: [],
       number_of_wines_per_tasting: 0,
       special_features: [],
@@ -684,15 +685,6 @@ export default function WineryProfile() {
                         </div>
                       </div>
                       <div className="form-control">
-                        <label className="label text-xs font-bold uppercase text-gray-500">Max Guests</label>
-                        <input
-                          type="number" value={tasting.booking_info?.max_guests_per_slot || ''}
-                          onChange={(e) => handleTastingChange(idx, 'booking_info.max_guests_per_slot', parseInt(e.target.value))}
-                          className="input input-bordered input-sm"
-                          placeholder="e.g. 8"
-                        />
-                      </div>
-                      <div className="form-control">
                         <label className="label text-xs font-bold uppercase text-gray-500 flex justify-between">
                           <span>Allow Excess?</span>
                           <input
@@ -712,6 +704,16 @@ export default function WineryProfile() {
                           </div>
                         )}
                       </div>
+                    </div>
+
+                    <div className="form-control mb-4">
+                      <label className="label text-xs font-bold uppercase text-gray-500">External Booking URL (Overrides Internal Payments)</label>
+                      <input
+                        type="url" value={tasting.booking_info?.external_booking_link || ''}
+                        onChange={(e) => handleTastingChange(idx, 'booking_info.external_booking_link', e.target.value)}
+                        className="input input-bordered input-sm font-semibold"
+                        placeholder="e.g. https://exploretock.com/..."
+                      />
                     </div>
 
                     <div className="form-control mb-4">
@@ -735,6 +737,52 @@ export default function WineryProfile() {
                           </label>
                         ))}
                       </div>
+                    </div>
+
+                    <div className="form-control mb-4">
+                      <label className="label text-xs font-bold uppercase text-gray-500">Specific Dates (Optional Override)</label>
+                      <div className="flex gap-2 mb-2">
+                        <input
+                          type="date"
+                          id={`date-picker-${idx}`}
+                          className="input input-bordered input-sm"
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-primary btn-sm"
+                          onClick={(e) => {
+                            const dateInput = document.getElementById(`date-picker-${idx}`) as HTMLInputElement;
+                            const dateVal = dateInput.value;
+                            if (dateVal) {
+                               const currentDates = tasting.available_dates || [];
+                               if (!currentDates.includes(dateVal)) {
+                                 handleTastingChange(idx, 'available_dates', [...currentDates, dateVal]);
+                               }
+                               dateInput.value = '';
+                            }
+                          }}
+                        >
+                          Add Date
+                        </button>
+                      </div>
+                      {tasting.available_dates && tasting.available_dates.length > 0 && (
+                        <div className="flex flex-wrap gap-2 p-3 bg-white rounded-lg border border-gray-100 mt-2">
+                          {tasting.available_dates.map((date: string) => (
+                            <span key={date} className="badge badge-primary gap-1 p-3 text-xs font-semibold">
+                              {date}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  handleTastingChange(idx, 'available_dates', (tasting.available_dates || []).filter((d: string) => d !== date));
+                                }}
+                                className="hover:text-red-200"
+                              >
+                                <FaTimesCircle size={14} />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <div className="form-control mb-4">

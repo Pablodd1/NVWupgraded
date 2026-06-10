@@ -103,6 +103,7 @@ export interface TastingInfo {
   tasting_price: number;
   available_times: string[];
   available_days?: string[];
+  available_dates?: string[];
   wine_types: string[];
   number_of_wines_per_tasting: number;
   special_features: string[];
