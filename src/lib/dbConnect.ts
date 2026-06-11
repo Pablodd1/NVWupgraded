@@ -24,7 +24,6 @@ export async function dbConnect() {
 
   if (!cached.promise) {
     const opts = {
-      dbName: "nvw",
       bufferCommands: true,
       connectTimeoutMS: 15000,
       serverSelectionTimeoutMS: 15000,
