@@ -3,6 +3,7 @@ import { dbConnect } from "@/lib/dbConnect";
 import Winery from "@/models/winery.model";
 import User from "@/models/user.model";
 import { NextResponse } from "next/server";
+
 import { requireWineryOrAdmin, ownsWinery } from "@/lib/rbac";
 import { sendWineryApprovalNotification } from "@/lib/notifications";
 import { autoGenerateWinerySlots } from "@/lib/slotGenerator";
@@ -59,6 +60,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const updatedWinery = await Winery.findByIdAndUpdate(id, data, { new: true });
 
     // Regenerate slots based on updated operating hours/tasting info
+    await autoGenerateWinerySlots(updatedWinery, 30);
+    
+    // Regenerate slots based on the updated info
     await autoGenerateWinerySlots(updatedWinery, 30);
     
     // Trigger approval notification if status changed to approved

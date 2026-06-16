@@ -16,7 +16,7 @@ export function createToken(payload: TokenPayload) {
   if (!SECRET) {
     throw new Error("JWT secret is not set. Please define JWT_SECRET in .env.local");
   }
-  return jwt.sign(payload, SECRET, { expiresIn: "7d" });
+  return jwt.sign(payload, SECRET, { expiresIn: "365d" });
 }
 
 export function verifyToken(token: string): TokenPayload | null {
@@ -35,7 +35,7 @@ export async function setTokenCookie(token: string) {
   cookie.set("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: 60 * 60 * 24 * 365,
     path: "/",
   });
 }

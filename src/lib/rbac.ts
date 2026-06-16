@@ -17,7 +17,9 @@ export interface AuthenticatedUser {
  */
 export async function authenticateRequest(request: Request): Promise<AuthenticatedUser | null> {
   try {
-    const token = request.headers.get("cookie")?.split("token=")[1]?.split(";")[0];
+    const cookieHeader = request.headers.get("cookie") || "";
+    const match = cookieHeader.match(/(?:^|;)\s*token=([^;]+)/);
+    const token = match ? match[1] : null;
     
     if (!token) {
       return null;

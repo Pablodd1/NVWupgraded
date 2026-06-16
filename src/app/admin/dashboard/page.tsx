@@ -119,6 +119,42 @@ export default function Dashboard() {
           <QuickLink href="/admin/dashboard/create-winery" label="Partners" icon={<Plus size={20} />} sub="Onboard new wineries" color="bg-primary text-white" />
         </div>
 
+        {/* Main Accounts & Credentials Quick Reference */}
+        <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 p-6 mb-10">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h3 className="text-xl font-bold text-gray-800">🔑 Main System Accounts & Passwords</h3>
+              <p className="text-sm text-gray-500 mt-1">Quick reference of primary credentials for testing. To reset or change passwords, click "Manage Passwords".</p>
+            </div>
+            <Link href="/admin/dashboard/users" className="btn btn-primary rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider shadow-md shadow-primary/20">
+              Manage Passwords
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-5 bg-red-50/40 border border-red-100 rounded-2xl">
+              <span className="px-2.5 py-0.5 bg-red-100 text-red-800 text-[10px] font-black rounded-full uppercase tracking-widest">Platform Admin</span>
+              <h4 className="text-base font-bold text-gray-900 mt-3">admin@napawineries.com</h4>
+              <p className="text-sm text-gray-600 mt-1">Default: <span className="font-mono bg-white px-2 py-0.5 rounded border font-semibold">Admin123!</span></p>
+              <p className="text-xs text-gray-400 mt-3">Access: Users, wineries, analytics, global system controls</p>
+            </div>
+
+            <div className="p-5 bg-purple-50/40 border border-purple-100 rounded-2xl">
+              <span className="px-2.5 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-black rounded-full uppercase tracking-widest">Winery Owner</span>
+              <h4 className="text-base font-bold text-gray-900 mt-3">owner@nvw.com</h4>
+              <p className="text-sm text-gray-600 mt-1">Default: <span className="font-mono bg-white px-2 py-0.5 rounded border font-semibold">owner123</span></p>
+              <p className="text-xs text-gray-400 mt-3">Access: Operating hours, pricing, availability slots, profile photos</p>
+            </div>
+
+            <div className="p-5 bg-blue-50/40 border border-blue-100 rounded-2xl">
+              <span className="px-2.5 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-black rounded-full uppercase tracking-widest">Test Customer</span>
+              <h4 className="text-base font-bold text-gray-900 mt-3">customer@test.com</h4>
+              <p className="text-sm text-gray-600 mt-1">Default: <span className="font-mono bg-white px-2 py-0.5 rounded border font-semibold">customer123</span></p>
+              <p className="text-xs text-gray-400 mt-3">Access: Itinerary building, voice search, tasting bookings</p>
+            </div>
+          </div>
+        </div>
+
         {/* Bookings Table */}
         <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-white/50 backdrop-blur-sm">

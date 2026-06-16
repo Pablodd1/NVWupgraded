@@ -1,8 +1,8 @@
 import BookingModel from "@/models/booking.model";
-import { NextResponse } from "next/server";
-import User from "@/models/user.model";
-import Winery from "@/models/winery.model";
+import UserModel from "@/models/user.model";
+import WineryModel from "@/models/winery.model";
 import { sendFinalBookingDecision } from "@/lib/notifications";
+import { NextResponse } from "next/server";
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string; status: string }> }) {
   const { id: bookingId, status } = await params;
@@ -33,8 +33,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     // Notify Customer of Admin Decision
     try {
-      const user = await User.findById(booking.userId);
-      const firstWinery = await Winery.findById(booking.wineries[0].wineryId);
+      const user = await UserModel.findById(booking.userId);
+      const firstWinery = await WineryModel.findById(booking.wineries[0].wineryId);
 
       if (user && firstWinery) {
         // 'cancelled' in admin translates to 'declined' in our notification template for customer clarity
