@@ -429,7 +429,7 @@ export default function AvailabilityManagement() {
               <div className="grid grid-cols-7 gap-1">
                 {calendarDays.map((day, idx) => {
                   if (!day) {
-                    return <div key={`empty-${idx}`} className="h-20 bg-gray-50 rounded" />;
+                    return <div key={`empty-${idx}`} className="min-h-[5rem] md:min-h-[6rem] bg-gray-50 rounded" />;
                   }
 
                   const dateStr = day.toISOString().split('T')[0];
@@ -445,7 +445,7 @@ export default function AvailabilityManagement() {
                       onClick={() => !isPast && setSelectedDate(dateStr)}
                       disabled={isPast}
                       className={`
-                        h-20 p-1 rounded-lg border-2 transition-all text-left flex flex-col
+                        min-h-[5rem] md:min-h-[6rem] p-1 rounded-lg border-2 transition-all text-left flex flex-col
                         ${isPast ? 'bg-gray-100 opacity-50 cursor-not-allowed' : 'hover:border-primary cursor-pointer'}
                         ${isSelected ? 'border-primary bg-primary/10' : 'border-transparent'}
                         ${isToday ? 'ring-2 ring-primary ring-offset-1' : ''}

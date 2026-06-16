@@ -28,11 +28,11 @@ export async function POST(request: NextRequest) {
 
     const apiKey = process.env.IMGBB_API_KEY;
     if (!apiKey) {
-      console.error("IMGBB_API_KEY is not configured");
-      return NextResponse.json(
-        { error: "Image upload service is not configured. Contact support." },
-        { status: 500 }
-      );
+      console.warn("IMGBB_API_KEY is not configured. Falling back to base64 data URI.");
+      const buffer = await file.arrayBuffer();
+      const base64 = Buffer.from(buffer).toString("base64");
+      const url = `data:${file.type};base64,${base64}`;
+      return NextResponse.json({ url }, { status: 200 });
     }
 
     const imgbbFormData = new FormData();
