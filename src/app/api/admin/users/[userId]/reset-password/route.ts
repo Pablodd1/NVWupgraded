@@ -36,11 +36,8 @@ export async function POST(
       );
     }
 
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password
-    user.password = hashedPassword;
+    // Update password (triggers pre-save hook)
+    user.password = newPassword;
     await user.save();
 
     return NextResponse.json(

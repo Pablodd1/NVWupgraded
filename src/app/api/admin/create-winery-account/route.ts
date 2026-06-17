@@ -140,8 +140,7 @@ export async function POST(req: NextRequest) {
 
     // Update user with winery ID
     try {
-      newUser.wineryId = newWinery._id;
-      await newUser.save();
+      await User.findByIdAndUpdate(newUser._id, { wineryId: newWinery._id });
     } catch (updateError: any) {
       // Rollback: Delete user and winery
       await User.findByIdAndDelete(newUser._id);
