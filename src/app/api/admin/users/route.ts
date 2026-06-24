@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/dbConnect";
 import User from "@/models/user.model";
 import { requireAdmin } from "@/lib/rbac";
+import Winery from "@/models/winery.model"; // Added to prevent MissingSchemaError on populate
 
 export async function GET(req: NextRequest) {
   try {
