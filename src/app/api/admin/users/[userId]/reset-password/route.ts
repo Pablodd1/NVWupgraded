@@ -36,9 +36,11 @@ export async function POST(
       );
     }
 
-    // Update password (triggers pre-save hook)
-    user.password = newPassword;
-    await user.save();
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password using findByIdAndUpdate to bypass validation of other fields
+    await User.findByIdAndUpdate(targetUserId, { password: hashedPassword });
 
     return NextResponse.json(
       {
