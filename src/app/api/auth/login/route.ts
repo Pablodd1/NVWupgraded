@@ -23,14 +23,24 @@ export async function POST(req: Request) {
     await dbConnect();
 
     // 2. Try DB Login
-    const user = await User.findOne({ email }).populate('wineryId');
+    let user = await User.findOne({ email }).populate('wineryId');
+
+    // 2.5 Seed missing admin account if they use the right default credentials
+    if (!user && email === 'admin@napawineries.com' && password === 'admin123') {
+      user = await User.create({
+        firstName: 'System',
+        lastName: 'Admin',
+        email: 'admin@napawineries.com',
+        password: 'admin123',
+        phone: '0000000000',
+        role: 'admin',
+        isActive: true,
+      });
+      console.log("🌱 Seeded missing admin user in DB.");
+    }
 
     if (!user) {
       console.warn("❌ Login failed: User not found in DB", { email });
-      // Don't return error yet, strictly validation.
-      // Actually, if DB is connected but user not found, we should fail or check demo?
-      // Usually strict. But for this specific project/demo resilience, we might want to check demo if DB fails? 
-      // No, if DB connects, trust DB.
       return NextResponse.json({ error: "Invalid credentials" }, { status: 400 });
     }
 
