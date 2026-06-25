@@ -41,3 +41,7 @@ core
 
 # Exclude unrelated projects
 Dentist-demo/
+
+# Submodule backups
+.git-submodule-backup/
+.gk/
