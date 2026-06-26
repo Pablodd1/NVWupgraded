@@ -17,6 +17,7 @@ import { getAppConfig, saveAppConfig } from './services/firestoreService';
 const App: React.FC = () => {
   // Detection for Embed Mode (when used as a widget in another site)
   const isEmbedMode = new URLSearchParams(window.location.search).get('embed') === 'true';
+  const isAdminMode = new URLSearchParams(window.location.search).get('admin') === 'true' || window.location.hash === '#admin';
 
   // Widget Visibility
   const [isWidgetOpen, setIsWidgetOpen] = useState(isEmbedMode);
@@ -25,7 +26,7 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isAuthReady, setIsAuthReady] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<Tab>(Tab.CHAT);
+  const [activeTab, setActiveTab] = useState<Tab>(isAdminMode ? Tab.ADMIN_SETTINGS : Tab.CHAT);
   const [emergencyMode, setEmergencyMode] = useState(false);
   const [language, setLanguage] = useState<Language>('es');
   
@@ -140,11 +141,15 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     if (!isAuthReady) {
-      return <div className="h-full w-full flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div></div>;
+      return <div className="h-screen w-screen flex items-center justify-center bg-slate-50"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div></div>;
     }
 
-    if ((activeTab === Tab.ADMIN_SETTINGS || activeTab === Tab.CALENDAR) && !isLoggedIn) {
-        return <LoginScreen config={activeConfig} onLogin={() => setIsLoggedIn(true)} />;
+    if ((activeTab === Tab.ADMIN_SETTINGS || activeTab === Tab.CALENDAR || isAdminMode) && !isLoggedIn) {
+        return (
+          <div className={isAdminMode ? "h-screen w-screen" : "h-full w-full"}>
+            <LoginScreen config={activeConfig} onLogin={() => setIsLoggedIn(true)} />
+          </div>
+        );
     }
 
     switch (activeTab) {
@@ -234,8 +239,8 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Widget Trigger Button (Hidden in Embed Mode as the Iframe is usually already the widget) */}
-      {!isEmbedMode && (
+      {/* Widget Trigger Button (Hidden in Embed Mode or Admin Mode) */}
+      {!isEmbedMode && !isAdminMode && (
         <button 
           onClick={() => setIsWidgetOpen(!isWidgetOpen)}
           className={`fixed bottom-6 right-6 w-16 h-16 rounded-full shadow-2xl flex items-center justify-center transition-all duration-500 hover:scale-110 active:scale-95 z-[10000] 
@@ -251,22 +256,32 @@ const App: React.FC = () => {
         </button>
       )}
 
-      {/* Widget Layout Container */}
-      {isWidgetOpen && (
-        <div className={isEmbedMode ? "h-full w-full" : ""}>
-          <Layout 
-            activeTab={activeTab} 
-            onTabChange={setActiveTab}
-            config={activeConfig}
-            onOpenDashboard={() => setActiveTab(Tab.ADMIN_SETTINGS)}
-            language={language}
-            setLanguage={setLanguage}
-            onLogout={handleLogout}
-            onCloseWidget={() => isEmbedMode ? null : setIsWidgetOpen(false)}
-            isEmbedMode={isEmbedMode}
-          >
-            {renderContent()}
-          </Layout>
+      {/* Widget Layout Container or Standalone Admin */}
+      {(isWidgetOpen || isAdminMode) && (
+        <div className={isEmbedMode || isAdminMode ? "h-screen w-screen bg-slate-50 overflow-auto" : ""}>
+          {isAdminMode ? (
+            <div className="h-full w-full max-w-6xl mx-auto p-4 md:p-8">
+               <div className="flex justify-between items-center mb-8">
+                  <h1 className="text-2xl font-black text-slate-800">Administrator Console</h1>
+                  <button onClick={handleLogout} className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-50">Log Out</button>
+               </div>
+               {renderContent()}
+            </div>
+          ) : (
+            <Layout 
+              activeTab={activeTab} 
+              onTabChange={setActiveTab}
+              config={activeConfig}
+              onOpenDashboard={() => setActiveTab(Tab.ADMIN_SETTINGS)}
+              language={language}
+              setLanguage={setLanguage}
+              onLogout={handleLogout}
+              onCloseWidget={() => isEmbedMode ? null : setIsWidgetOpen(false)}
+              isEmbedMode={isEmbedMode}
+            >
+              {renderContent()}
+            </Layout>
+          )}
         </div>
       )}
     </div>
