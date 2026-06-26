@@ -5,6 +5,7 @@ import { getSystemInstruction, TOOLS } from "../constants";
 import { decodeAudioData, decode, encode, pcmToWavBlob } from "../utils/audioUtils";
 import { Language, VoiceName } from "../types";
 import { trackUsage } from "./usageService";
+import firebaseConfig from "../firebase-applet-config.json";
 
 // Helper for stateless reset
 export const resetChatSession = () => {
@@ -28,7 +29,7 @@ async function retryWithBackoff<T>(fn: () => Promise<T>, retries = 3, delay = 10
  * Explicitly exported to fix the AdminDashboard error.
  */
 export async function playGeminiTTS(text: string, voiceName: string = 'Kore') {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || firebaseConfig.apiKey;
   const ai = new GoogleGenAI({ apiKey: apiKey as string });
   const response = await retryWithBackoff(() => ai.models.generateContent({
     model: "gemini-2.5-flash-preview-tts",
@@ -77,7 +78,7 @@ export async function* sendMessageToGemini(
   onToolSuccess?: (toolName: string, result: any) => void,
   customGreeting?: string
 ) {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || firebaseConfig.apiKey;
   const ai = new GoogleGenAI({ apiKey: apiKey as string });
   let instructions = getSystemInstruction(language, customGreeting);
   if (emergencyMode) {
@@ -134,7 +135,7 @@ export async function* sendMessageToGemini(
  */
 export async function generateEmbedding(text: string): Promise<number[] | null> {
   try {
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || firebaseConfig.apiKey;
     const ai = new GoogleGenAI({ apiKey: apiKey as string });
     const result = await retryWithBackoff(() => ai.models.embedContent({
       model: 'gemini-embedding-2-preview',
@@ -172,7 +173,7 @@ export const connectLiveSession = async (
     voiceName: VoiceName = 'Kore',
     customGreeting?: string
 ) => {
-  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || firebaseConfig.apiKey;
   const ai = new GoogleGenAI({ apiKey: apiKey as string });
   const startTime = Date.now();
 
@@ -212,8 +213,8 @@ export const connectLiveSession = async (
     instructions += "\n\n[SYSTEM OVERRIDE: EMERGENCY MODE ACTIVE]. Respond concisely.";
   }
 
-  const sessionPromise = ai.live.connect({
-    model: 'gemini-2.5-flash-native-audio-preview-12-2025',
+  const connectConfig: any = {
+    model: 'gemini-2.0-flash-exp', // the typical Live API model, 2.5 flash native audio doesn't exist yet
     callbacks: {
       onopen: () => {
         callbacks.onOpen();
@@ -226,7 +227,9 @@ export const connectLiveSession = async (
             int16[i] = inputData[i] * 32768;
           }
           const pcmData = encode(new Uint8Array(int16.buffer));
-          sessionPromise.then(s => s.sendRealtimeInput({ media: { mimeType: 'audio/pcm;rate=16000', data: pcmData } }));
+          if (sessionController) {
+              sessionController.sendRealtimeInput({ media: { mimeType: 'audio/pcm;rate=16000', data: pcmData } });
+          }
         };
         source.connect(scriptProcessor);
         scriptProcessor.connect(inputAudioContext.destination);
@@ -273,19 +276,21 @@ export const connectLiveSession = async (
                 if (callbacks.onToolSuccess) {
                   callbacks.onToolSuccess(fc.name, { status: 'success', ...fc.args });
                 }
-                sessionPromise.then(s => s.sendToolResponse({
-                  functionResponses: [{
-                    id: fc.id || '',
-                    name: fc.name || '',
-                    response: { result: "ok" }
-                  }]
-                }));
+                if (sessionController) {
+                  sessionController.sendToolResponse({
+                    functionResponses: [{
+                      id: fc.id || '',
+                      name: fc.name || '',
+                      response: { result: "ok" }
+                    }]
+                  });
+                }
             }
           }
         }
         callbacks.onMessage(null, null, !!message.serverContent?.interrupted);
       },
-      onerror: (e) => {
+      onerror: (e: any) => {
         console.error("Live API Error:", e);
         callbacks.onError(new Error("CONNECTION_ERROR"));
       },
@@ -305,12 +310,28 @@ export const connectLiveSession = async (
       tools: [{ functionDeclarations: TOOLS }],
       outputAudioTranscription: {},
     }
+  };
+
+  let sessionController: any = null;
+  const connectPromise = ai.live.connect(connectConfig);
+  const sessionPromise = Promise.race([
+      connectPromise,
+      new Promise<any>((_, reject) => setTimeout(() => reject(new Error("LIVE_API_TIMEOUT - The API key might be suspended or invalid.")), 8000))
+  ]);
+  
+  sessionPromise.then(s => {
+      sessionController = s;
+  }).catch(e => {
+      console.error("Live API Connection Failed:", e);
+      callbacks.onError(e);
   });
 
   return {
     disconnect: async () => {
       clearInterval(visualizerInterval);
-      sessionPromise.then(s => s.close());
+      if (sessionController) {
+          try { sessionController.close(); } catch(e) {}
+      }
       if (stream) stream.getTracks().forEach(t => t.stop());
       inputAudioContext.close();
       outputAudioContext.close();

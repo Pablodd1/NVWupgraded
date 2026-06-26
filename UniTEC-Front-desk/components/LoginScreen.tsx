@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, ArrowRight, Lock, Loader2 } from 'lucide-react';
 import { BusinessConfig } from '../types';
-import { signInWithGoogle, auth } from '../firebase';
+import { loginWithCredentials, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 
 interface LoginScreenProps {
@@ -13,6 +13,8 @@ interface LoginScreenProps {
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -28,9 +30,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     setIsLoading(true);
     setError('');
     try {
-      await signInWithGoogle();
+      await loginWithCredentials(email, password);
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
+      setError('Invalid email or password');
       setIsLoading(false);
     }
   };
@@ -52,14 +54,32 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                         <Lock size={12} /> {error}
                     </div>
                 )}
+                <div className="space-y-3 pb-2">
+                    <input 
+                        type="email" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Admin Email" 
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
+                        required
+                    />
+                    <input 
+                        type="password" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Password" 
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all"
+                        required
+                    />
+                </div>
 
                 <button 
                     type="submit"
-                    disabled={isLoading}
+                    disabled={isLoading || !email || !password}
                     className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20 transition-all active:scale-[0.98] disabled:opacity-50"
                 >
                     {isLoading ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
-                    {isLoading ? 'Authenticating...' : 'Sign in with Google'}
+                    {isLoading ? 'Authenticating...' : 'Sign in'}
                 </button>
             </form>
         </div>
