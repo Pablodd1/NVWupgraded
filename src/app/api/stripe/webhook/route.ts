@@ -6,12 +6,7 @@ import UserModel from '@/models/user.model';
 import WineryModel from '@/models/winery.model';
 import { sendBookingNotifications, sendMasterItineraryNotification } from '@/lib/notifications';
 
-// Ensure this route runs on Node runtime, not Edge, so the raw body can be read
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export const dynamic = 'force-dynamic';
 
 const getStripe = () => {
   if (!process.env.STRIPE_SECRET_KEY) {

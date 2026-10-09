@@ -21,7 +21,15 @@ import { Button } from "@/components/buttons/button";
 import { Card } from "@/components/cards/card";
 import BookingCalendar from "@/components/booking-calendar";
 import { Winery } from "@/app/interfaces";
-import Map from "@/components/map";
+import dynamic from "next/dynamic";
+const Map = dynamic(() => import("@/components/map"), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-80 bg-gray-100 animate-pulse rounded-xl flex items-center justify-center text-gray-400">
+      Loading map...
+    </div>
+  ),
+});
 import { useItinerary } from "@/store/itinerary";
 import { toast } from "react-toastify";
 import axios from "axios";
