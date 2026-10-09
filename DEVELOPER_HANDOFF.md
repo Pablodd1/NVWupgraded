@@ -16,8 +16,6 @@ Welcome! This document provides everything you need to run, test, develop, and d
 - **Media Hosting**: ImgBB CDN API (`/api/upload`) with fallback to base64 data URIs.
 - **Styling**: Tailwind CSS, DaisyUI, Preline, and Framer Motion.
 
-> **Embedded Subproject**: The `UniTEC-Front-desk` directory is an independent Vite/React 19 AI receptionist application utilizing Gemini Live audio streaming for wholesale building materials.
-
 ---
 
 ## 2. Directory Structure
@@ -37,7 +35,6 @@ NVWupgraded/
 │   ├── models/                   # Mongoose data models (User, Winery, Booking, SlotInventory)
 │   └── store/                    # Zustand stores (authStore, uiStore) & ItineraryContext
 ├── scripts/                      # Database seeders and maintenance scripts
-├── UniTEC-Front-desk/            # Embedded Gemini Live voice assistant sub-app
 ├── .env.example                  # Environment variable reference
 ├── env.template                  # Deployment environment template
 └── package.json                  # Dependencies and build scripts

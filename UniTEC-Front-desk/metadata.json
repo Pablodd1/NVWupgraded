@@ -1,8 +1,0 @@
-{
-  "name": "UNITEC Design Recepcionista",
-  "description": "AI-powered front desk for UNITEC USA DESIGN, specializing in wholesale construction materials.",
-  "requestFramePermissions": [
-    "microphone",
-    "camera"
-  ]
-}
