@@ -31,13 +31,13 @@ const getStripe = () => {
 };
 
 export async function POST(req: Request) {
+  const reservedSlots: Array<{ slotId: any; wineryId: any; guestsReserved: number }> = [];
   try {
     await dbConnect();
     const { bookData, line_items, success_url, cancel_url, metadata }: CheckoutSessionRequest = await req.json();
 
     // 1. Check slot availability and reserve capacity
     const reservationErrors = [];
-    const reservedSlots = [];
 
     for (const wineryBooking of bookData) {
       const { wineryId, dateTime, numberOfGuests = 1, numberOfChildren = 0, numberOfNonDrinkers = 0 } = wineryBooking;
@@ -199,6 +199,21 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ message: "success", sessionId: session.id, booking }, { status: 201 });
   } catch (error: any) {
+    if (reservedSlots.length > 0) {
+      console.warn("Rolling back reserved slots due to Stripe session error...");
+      for (const reserved of reservedSlots) {
+        try {
+          const slot = await SlotInventory.findById(reserved.slotId);
+          if (slot) {
+            slot.bookedCapacity -= reserved.guestsReserved;
+            slot.availableCapacity += reserved.guestsReserved;
+            await slot.save();
+          }
+        } catch (rollbackErr) {
+          console.error("Failed to rollback slot reservation:", rollbackErr);
+        }
+      }
+    }
     console.error("Stripe error:", error);
     return NextResponse.json({ message: error.message }, { status: 400 });
   }

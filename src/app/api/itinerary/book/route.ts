@@ -10,6 +10,7 @@ import { sendBookingNotifications, sendMasterItineraryNotification } from "@/lib
 
 
 export async function POST(req: NextRequest) {
+  const reservedSlots: Array<{ slotId: any; wineryId: any; date: string; timeSlot: string; guestsReserved: number }> = [];
   try {
     const userId = await getUserIdFromToken();
     if (!userId) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
@@ -28,7 +29,6 @@ export async function POST(req: NextRequest) {
 
     // CRITICAL: Check slot availability and reserve capacity Atomicly
     const reservationErrors: string[] = [];
-    const reservedSlots: any[] = [];
 
     for (const wineryBooking of data) {
       const { wineryId, dateTime, numberOfGuests = 1, numberOfChildren = 0, numberOfNonDrinkers = 0 } = wineryBooking;
@@ -286,6 +286,18 @@ export async function POST(req: NextRequest) {
       notifications: notificationResults
     }, { status: 201 });
   } catch (error) {
+    if (reservedSlots.length > 0) {
+      console.warn("Rolling back reserved slots due to unexpected booking creation error...");
+      for (const reserved of reservedSlots) {
+        try {
+          await SlotInventory.findByIdAndUpdate(reserved.slotId, {
+            $inc: { bookedCapacity: -reserved.guestsReserved, availableCapacity: reserved.guestsReserved }
+          });
+        } catch (rollbackErr) {
+          console.error("Failed to rollback slot reservation:", rollbackErr);
+        }
+      }
+    }
     console.error("Error creating booking:", error);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
